@@ -1,0 +1,28 @@
+{
+  "name": "visual-inspector",
+  "version": "0.1.0",
+  "description": "Zero-config visual development tool for Chrome-based applications",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @visual-inspector/app dev",
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": [
+    "visual-inspector",
+    "electron",
+    "devtools",
+    "cdp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  },
+  "dependencies": {
+    "electron": "^33.4.11"
+  }
+}
