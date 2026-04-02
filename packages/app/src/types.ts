@@ -3,6 +3,7 @@ export type DebugMethod = 'web' | 'desktop' | 'static' | 'connect'
 export type WindowPreset = 'default' | 'sidebar'
 export type CanvasTool = 'select' | 'browse'
 export type ActiveEditProperty =
+  | 'labels'
   | 'size'
   | 'padding'
   | 'margin'
@@ -15,6 +16,9 @@ export type ActiveEditProperty =
   | 'typography'
   | 'overflow'
   | 'image'
+
+export type ElementPreset = 'container' | 'text' | 'image'
+export type OverlayDensity = 'roomy' | 'compact' | 'tight'
 
 export interface BoxModelRect {
   x: number
@@ -69,6 +73,56 @@ export interface InspectorSelectionMeta {
   /** 浮动按钮直接修改 DOM 后的同步通知 */
   nudge?: boolean
   styles?: Record<string, string>
+  nudgeChange?: OverlayNudgeChange
+}
+
+export interface StyleHistoryEntry {
+  undoPatch: Record<string, string>
+  redoPatch: Record<string, string>
+  diffKeys: string[]
+}
+
+export interface OverlayNudgeChange {
+  keys: string[]
+  beforeStyles: Record<string, string>
+  afterStyles: Record<string, string>
+}
+
+export interface ElementCapabilityProfile {
+  preset: ElementPreset
+  density: OverlayDensity
+  childCount: number
+  supportsSize: boolean
+  supportsPadding: boolean
+  supportsMargin: boolean
+  supportsGap: boolean
+  supportsGapShortcut: boolean
+  supportsLayout: boolean
+  supportsTypography: boolean
+  supportsMedia: boolean
+  supportsPosition: boolean
+  supportsPositionSection: boolean
+}
+
+export interface PageEditLedgerEntry {
+  backendNodeId: number
+  selector: string
+  displayName: string
+  tagName: string
+  preset: ElementPreset
+  boxModel: {
+    width: number | null
+    height: number | null
+  }
+  styleDiff: Record<string, string>
+  updatedAt: number
+}
+
+export interface ExportPromptSummaryMeta {
+  elementCount: number
+  modifiedCount: number
+  tagCount: number
+  taggedElementCount: number
 }
 
 export interface ExternalOverlayState {

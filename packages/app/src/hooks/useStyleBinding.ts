@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { InspectedElement } from '../types'
+import type { InspectedElement, OverlayNudgeChange, StyleHistoryEntry } from '../types'
 
 interface UseStyleBindingOptions {
   element: InspectedElement | null
   selectionRevision: number
+  externalNudgeChange?: OverlayNudgeChange | null
+  externalNudgeTick?: number
   onElementChange: (element: InspectedElement) => void
+  onStyleDiffChange?: (element: InspectedElement, styleDiff: Record<string, string>) => void
 }
 
 function expandStylePatch(stylePatch: Record<string, string>) {
@@ -26,7 +29,14 @@ function readEffectiveStyleValue(propertyName: string, styles: Record<string, st
   return styles[propertyName] || ''
 }
 
-export function useStyleBinding({ element, selectionRevision, onElementChange }: UseStyleBindingOptions) {
+export function useStyleBinding({
+  element,
+  selectionRevision,
+  externalNudgeChange,
+  externalNudgeTick,
+  onElementChange,
+  onStyleDiffChange,
+}: UseStyleBindingOptions) {
   const [draftStyles, setDraftStyles] = useState<Record<string, string>>({})
   const [styleDiff, setStyleDiff] = useState<Record<string, string>>({})
   const [pendingField, setPendingField] = useState<string | null>(null)
@@ -34,38 +44,11 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
   const [redoDepth, setRedoDepth] = useState(0)
   const baselineRef = useRef<Record<string, string>>({})
   const resetRevisionRef = useRef<number>(-1)
+  const handledExternalTickRef = useRef<number>(0)
   const timersRef = useRef<Record<string, number>>({})
   const draftStylesRef = useRef<Record<string, string>>({})
-  const historyRef = useRef<Array<{ undoPatch: Record<string, string>; redoPatch: Record<string, string>; diffKeys: string[] }>>([])
-  const redoRef = useRef<Array<{ undoPatch: Record<string, string>; redoPatch: Record<string, string>; diffKeys: string[] }>>([])
-
-  useEffect(() => {
-    if (!element) {
-      baselineRef.current = {}
-      setDraftStyles({})
-      setStyleDiff({})
-      setPendingField(null)
-      draftStylesRef.current = {}
-      historyRef.current = []
-      redoRef.current = []
-      setHistoryDepth(0)
-      setRedoDepth(0)
-      return
-    }
-
-    if (resetRevisionRef.current !== selectionRevision) {
-      resetRevisionRef.current = selectionRevision
-      baselineRef.current = element.computedStyles
-      setStyleDiff({})
-      historyRef.current = []
-      redoRef.current = []
-      setHistoryDepth(0)
-      setRedoDepth(0)
-    }
-
-    setDraftStyles(element.computedStyles)
-    draftStylesRef.current = element.computedStyles
-  }, [element, selectionRevision])
+  const historyRef = useRef<StyleHistoryEntry[]>([])
+  const redoRef = useRef<StyleHistoryEntry[]>([])
 
   useEffect(() => {
     return () => {
@@ -91,6 +74,14 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
       }
     }, 160)
   }, [onElementChange])
+
+  const clearHistory = useCallback(() => {
+    setStyleDiff({})
+    historyRef.current = []
+    redoRef.current = []
+    setHistoryDepth(0)
+    setRedoDepth(0)
+  }, [])
 
   const syncDraftAndDiff = useCallback((stylePatch: Record<string, string>, diffKeys: string[]) => {
     setDraftStyles((current) => {
@@ -122,10 +113,19 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
     })
   }, [])
 
-  const updateStyles = useCallback((stylePatch: Record<string, string>, fieldKey = `styles:${Object.keys(stylePatch).sort().join(',')}`) => {
+  const pushHistoryEntry = useCallback((entry: StyleHistoryEntry) => {
+    historyRef.current.push(entry)
+    redoRef.current = []
+    setHistoryDepth(historyRef.current.length)
+    setRedoDepth(0)
+  }, [])
+
+  const commitPanelStyleChange = useCallback((stylePatch: Record<string, string>, fieldKey = `styles:${Object.keys(stylePatch).sort().join(',')}`) => {
     if (!element) return
 
     const diffKeys = Object.keys(stylePatch)
+    if (diffKeys.length === 0) return
+
     const expandedPatch = expandStylePatch(stylePatch)
     const undoPatch = diffKeys.reduce<Record<string, string>>((current, propertyName) => {
       current[propertyName] = readEffectiveStyleValue(propertyName, draftStylesRef.current)
@@ -133,14 +133,9 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
     }, {})
 
     const hasRealChange = diffKeys.some((propertyName) => undoPatch[propertyName] !== stylePatch[propertyName])
-    if (!hasRealChange) {
-      return
-    }
+    if (!hasRealChange) return
 
-    historyRef.current.push({ undoPatch, redoPatch: stylePatch, diffKeys })
-    redoRef.current = []
-    setHistoryDepth(historyRef.current.length)
-    setRedoDepth(0)
+    pushHistoryEntry({ undoPatch, redoPatch: stylePatch, diffKeys })
 
     syncDraftAndDiff(expandedPatch, diffKeys)
 
@@ -151,13 +146,86 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
         styles: expandedPatch,
       }),
     )
-  }, [element, scheduleUpdate, syncDraftAndDiff])
+  }, [element, pushHistoryEntry, scheduleUpdate, syncDraftAndDiff])
+
+  const commitExternalStyleChange = useCallback((change: OverlayNudgeChange) => {
+    const diffKeys = change.keys.filter(Boolean)
+    if (diffKeys.length === 0) return
+
+    const undoPatch = diffKeys.reduce<Record<string, string>>((current, propertyName) => {
+      current[propertyName] = change.beforeStyles[propertyName]
+        ?? readEffectiveStyleValue(propertyName, draftStylesRef.current)
+      return current
+    }, {})
+    const redoPatch = diffKeys.reduce<Record<string, string>>((current, propertyName) => {
+      current[propertyName] = change.afterStyles[propertyName] ?? ''
+      return current
+    }, {})
+
+    const hasRealChange = diffKeys.some((propertyName) => undoPatch[propertyName] !== redoPatch[propertyName])
+    if (!hasRealChange) return
+
+    pushHistoryEntry({ undoPatch, redoPatch, diffKeys })
+    syncDraftAndDiff(expandStylePatch(redoPatch), diffKeys)
+  }, [pushHistoryEntry, syncDraftAndDiff])
+
+  useEffect(() => {
+    if (!element) {
+      baselineRef.current = {}
+      handledExternalTickRef.current = 0
+      setDraftStyles({})
+      setStyleDiff({})
+      setPendingField(null)
+      draftStylesRef.current = {}
+      historyRef.current = []
+      redoRef.current = []
+      setHistoryDepth(0)
+      setRedoDepth(0)
+      return
+    }
+
+    if (resetRevisionRef.current !== selectionRevision) {
+      resetRevisionRef.current = selectionRevision
+      baselineRef.current = element.computedStyles
+      handledExternalTickRef.current = externalNudgeTick ?? 0
+      clearHistory()
+      setDraftStyles(element.computedStyles)
+      draftStylesRef.current = element.computedStyles
+      return
+    }
+
+    if (
+      typeof externalNudgeTick === 'number'
+      && externalNudgeTick > 0
+      && externalNudgeTick !== handledExternalTickRef.current
+      && externalNudgeChange
+    ) {
+      handledExternalTickRef.current = externalNudgeTick
+      commitExternalStyleChange(externalNudgeChange)
+      return
+    }
+
+    setDraftStyles(element.computedStyles)
+    draftStylesRef.current = element.computedStyles
+  }, [
+    clearHistory,
+    commitExternalStyleChange,
+    element,
+    externalNudgeChange,
+    externalNudgeTick,
+    selectionRevision,
+  ])
+
+  useEffect(() => {
+    if (!element || !onStyleDiffChange) return
+    onStyleDiffChange(element, styleDiff)
+  }, [element, onStyleDiffChange, styleDiff])
 
   const updateStyle = useCallback((propertyName: string, propertyValue: string) => {
     if (!element) return
 
-    updateStyles({ [propertyName]: propertyValue }, `style:${propertyName}`)
-  }, [element, updateStyles])
+    commitPanelStyleChange({ [propertyName]: propertyValue }, `style:${propertyName}`)
+  }, [commitPanelStyleChange, element])
 
   const updateTextContent = useCallback((textContent: string) => {
     if (!element) return
@@ -268,8 +336,10 @@ export function useStyleBinding({ element, selectionRevision, onElementChange }:
     canUndo: historyDepth > 0,
     canRedo: redoDepth > 0,
     canReset: Object.keys(styleDiff).length > 0,
+    commitPanelStyleChange,
+    commitExternalStyleChange,
     updateStyle,
-    updateStyles,
+    updateStyles: commitPanelStyleChange,
     updateTextContent,
     updateAttribute,
     undoLastStyleChange,

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
 import { useAdaptiveWindowPreset } from './hooks/useAdaptiveWindowPreset'
-import type { ActiveEditProperty, CanvasTool, DiscoveredApp, ElementTag, ElementTagTarget, InspectorMode, InspectedElement, ProjectLaunchStatus } from './types'
+import type { ActiveEditProperty, CanvasTool, DiscoveredApp, ElementPreset, ElementTag, ElementTagTarget, ExportPromptSummaryMeta, InspectorMode, InspectedElement, OverlayNudgeChange, PageEditLedgerEntry, ProjectLaunchStatus } from './types'
 import './App.css'
 
 const DEFAULT_WORKBENCH_WIDTH = 320
@@ -28,6 +28,8 @@ const EMPTY_PROJECT_SESSION: ProjectLaunchStatus = {
   },
   message: '',
 }
+
+const EMPTY_EXPORT_PROMPT_PREVIEW = '当前页面还没有记录到结构化微调或标签意图。先在画布或属性面板里修改对象，底部会自动汇总为可直接交给 AI 编程工具执行的页面级提示词。'
 
 function getRelevantApps(apps: DiscoveredApp[], mode: InspectorMode) {
   return apps.filter((app) => {
@@ -79,33 +81,234 @@ function tagHasTarget(tag: ElementTag, backendNodeId: number) {
   return tag.targets.some((target) => target.backendNodeId === backendNodeId)
 }
 
-function buildStyleDiffPrompt(
+function hasNestedMarkup(element: InspectedElement) {
+  const tags = element.outerHTMLPreview.match(/<([a-z0-9-]+)/gi) || []
+  return tags.length > 1
+}
+
+function getElementPresetForExport(element: InspectedElement): ElementPreset {
+  const display = element.computedStyles.display || ''
+  const isLayoutContainer = ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(display)
+
+  if (element.tagName === 'img') return 'image'
+  if (isLayoutContainer || hasNestedMarkup(element)) return 'container'
+  if (element.textContentPreview && !['img', 'svg'].includes(element.tagName)) return 'text'
+  return 'container'
+}
+
+function buildLedgerEntry(
   element: InspectedElement,
-  styleDiff: Record<string, string>,
-  tags: ElementTag[],
+  styleDiff: Record<string, string> = {},
+  updatedAt = Date.now(),
+): PageEditLedgerEntry {
+  return {
+    backendNodeId: element.backendNodeId,
+    selector: buildElementSelector(element),
+    displayName: buildElementSelector(element),
+    tagName: element.tagName.toLowerCase(),
+    preset: getElementPresetForExport(element),
+    boxModel: {
+      width: element.boxModel ? Math.round(element.boxModel.width) : null,
+      height: element.boxModel ? Math.round(element.boxModel.height) : null,
+    },
+    styleDiff,
+    updatedAt,
+  }
+}
+
+function getTagTextsForTarget(tags: ElementTag[], backendNodeId: number) {
+  return tags
+    .filter((tag) => tagHasTarget(tag, backendNodeId))
+    .map((tag) => tag.text.trim())
+    .filter(Boolean)
+}
+
+function areStyleDiffsEqual(
+  left: Record<string, string>,
+  right: Record<string, string>,
 ) {
-  const selector = buildElementSelector(element)
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+
+  return leftKeys.every((key) => left[key] === right[key])
+}
+
+interface PageExportElement extends PageEditLedgerEntry {
+  tags: string[]
+}
+
+function buildPageExportElements(
+  pageEditLedger: Record<number, PageEditLedgerEntry>,
+  tags: ElementTag[],
+  currentElement: InspectedElement | null,
+): PageExportElement[] {
+  const backendNodeIds = new Set<number>()
+
+  Object.values(pageEditLedger).forEach((entry) => {
+    backendNodeIds.add(entry.backendNodeId)
+  })
+  tags.forEach((tag) => {
+    tag.targets.forEach((target) => {
+      backendNodeIds.add(target.backendNodeId)
+    })
+  })
+
+  return Array.from(backendNodeIds)
+    .map((backendNodeId) => {
+      const ledgerEntry = pageEditLedger[backendNodeId]
+      const matchingTargets = tags.flatMap((tag) => (
+        tag.targets
+          .filter((target) => target.backendNodeId === backendNodeId)
+          .map((target) => ({ target, createdAt: tag.createdAt }))
+      ))
+      const fallbackTarget = matchingTargets[0]?.target || null
+      const relatedTags = getTagTextsForTarget(tags, backendNodeId)
+      const fallbackUpdatedAt = matchingTargets.reduce((max, item) => Math.max(max, item.createdAt), 0)
+      const boxModel = ledgerEntry?.boxModel || {
+        width: fallbackTarget?.boxModel ? Math.round(fallbackTarget.boxModel.width) : null,
+        height: fallbackTarget?.boxModel ? Math.round(fallbackTarget.boxModel.height) : null,
+      }
+
+      return {
+        backendNodeId,
+        selector: ledgerEntry?.selector || fallbackTarget?.selector || `backendNode:${backendNodeId}`,
+        displayName: ledgerEntry?.displayName || fallbackTarget?.selector || `backendNode:${backendNodeId}`,
+        tagName: ledgerEntry?.tagName || 'element',
+        preset: ledgerEntry?.preset || 'container',
+        boxModel,
+        styleDiff: ledgerEntry?.styleDiff || {},
+        updatedAt: ledgerEntry?.updatedAt || fallbackUpdatedAt,
+        tags: relatedTags,
+      } satisfies PageExportElement
+    })
+    .filter((entry) => Object.keys(entry.styleDiff).length > 0 || entry.tags.length > 0)
+    .sort((left, right) => {
+      if (currentElement) {
+        if (left.backendNodeId === currentElement.backendNodeId) return -1
+        if (right.backendNodeId === currentElement.backendNodeId) return 1
+      }
+      return right.updatedAt - left.updatedAt
+    })
+}
+
+function buildExportSummaryMeta(
+  elements: PageExportElement[],
+  tags: ElementTag[],
+): ExportPromptSummaryMeta {
+  return {
+    elementCount: elements.length,
+    modifiedCount: elements.filter((entry) => Object.keys(entry.styleDiff).length > 0).length,
+    tagCount: tags.length,
+    taggedElementCount: elements.filter((entry) => entry.tags.length > 0).length,
+  }
+}
+
+function buildPageExportPrompt(args: {
+  currentElement: InspectedElement | null
+  elements: PageExportElement[]
+  summaryMeta: ExportPromptSummaryMeta
+  mode: InspectorMode
+  projectSession: ProjectLaunchStatus
+  pageTitle: string
+  pageUrl: string
+  targetUrl: string
+}) {
+  const {
+    currentElement,
+    elements,
+    summaryMeta,
+    mode,
+    projectSession,
+    pageTitle,
+    pageUrl,
+    targetUrl,
+  } = args
+  const exportedAt = new Date().toISOString()
+  const currentSelection = currentElement
+    ? {
+        backendNodeId: currentElement.backendNodeId,
+        selector: buildElementSelector(currentElement),
+      }
+    : null
+  const payload = {
+    source: 'visual-inspector',
+    signalGuide: {
+      objectIdentity: '对象身份。每个元素都通过 selector、preset、tagName 和 backendNodeId 标识，AI 应先定位对象，再执行后续修改。',
+      styleChanges: '结构化微调。来自可视化编辑器记录的最终属性变化，通常是宽高、间距、颜色、对齐等具体最终值。',
+      intentTags: '标签意图。来自用户直接写给 AI 的自然语言说明，用来表达结构、语义、视觉目标或无法只靠数值描述的要求。',
+      mergeRule: '当 styleChanges 和 intentTags 同时存在时，先满足 styleChanges 的最终值，再用 intentTags 补充实现方式和更高层目标。',
+    },
+    page: {
+      title: pageTitle || projectSession.projectName || '未命名页面',
+      url: pageUrl || targetUrl || '未知',
+      mode,
+      projectName: projectSession.projectName || '未命名项目',
+      exportedAt,
+      currentSelection,
+    },
+    elements: elements.map((entry) => ({
+      backendNodeId: entry.backendNodeId,
+      selector: entry.selector,
+      displayName: entry.displayName,
+      tagName: entry.tagName,
+      preset: entry.preset,
+      boxModel: entry.boxModel,
+      styleChanges: entry.styleDiff,
+      intentTags: entry.tags,
+    })),
+  }
+
   const lines = [
-    `我通过 Visual Inspector 微调了 ${selector} 这个元素。`,
+    '这是 Visual Inspector 导出的页面级微调任务。请直接修改源码，让页面达到下面描述的最终状态。',
+    '',
+    '页面信息：',
+    `- 项目名称：${payload.page.projectName}`,
+    `- 运行模式：${mode === 'builtin' ? 'builtin（网页调试）' : 'external（桌面调试）'}`,
+    `- 页面标题：${payload.page.title}`,
+    `- 页面地址：${payload.page.url}`,
+    `- 导出时间：${exportedAt}`,
+    `- 当前选中元素：${currentSelection ? `${currentSelection.selector} (backendNodeId: ${currentSelection.backendNodeId})` : '未选中'}`,
+    '',
+    '执行要求：',
+    '- 只修改与下列元素相关的代码、样式或文案。',
+    '- 以最终状态为准，不要保留中间调试步骤。',
+    '- 尽量保留现有 DOM 结构、组件拆分、类名和命名风格。',
+    '- 如果某元素同时存在结构化微调和标签意图，请优先满足结构化微调里的最终值，再让实现结果符合标签意图。',
+    '- 不要输出解释，直接实施修改。',
+    '',
+    '信号说明：',
+    '- 对象身份：每个元素都通过 selector、preset、tagName 和 backendNodeId 标识。请先定位对象，再执行后续修改。',
+    '- 结构化微调（styleChanges）：这是 Inspector 记录到的具体最终变化，表示这个对象最后应该改成什么值。',
+    '- 标签意图（intentTags）：这是用户直接写给 AI 的自然语言要求，表示这个对象为什么要改、整体效果想达到什么状态。',
+    '- 执行时请把两者合并理解：结构化微调负责“改成什么数值”，标签意图负责“补充目标和约束”。',
+    '',
+    '修改摘要：',
+    `- 受影响元素：${summaryMeta.elementCount}`,
+    `- 直接样式变更元素：${summaryMeta.modifiedCount}`,
+    `- 含标签元素：${summaryMeta.taggedElementCount}`,
+    `- 标签组数：${summaryMeta.tagCount}`,
+    '',
+    '元素级最终状态：',
+    ...elements.flatMap((entry, index) => {
+      const itemLines = [`${index + 1}. ${entry.selector} (${entry.preset} / <${entry.tagName}>)`]
+      if (Object.keys(entry.styleDiff).length > 0) {
+        itemLines.push(`   - 结构化微调 styleChanges: ${JSON.stringify(entry.styleDiff)}`)
+      }
+      if (entry.tags.length > 0) {
+        itemLines.push(`   - 标签意图 intentTags: ${entry.tags.join('；')}`)
+      }
+      return itemLines
+    }),
+    '',
+    '下面附上结构化 JSON，便于程序化读取：',
+    '```json',
+    JSON.stringify(payload, null, 2),
+    '```',
   ]
-
-  if (Object.keys(styleDiff).length > 0) {
-    lines.push(
-      '请帮我把源码同步成下面这些最终样式：',
-      JSON.stringify(styleDiff, null, 2),
-    )
-  } else {
-    lines.push('当前没有记录到直接样式变更，请只根据下面的标签要求更新源码。')
-  }
-
-  if (tags.length > 0) {
-    lines.push(
-      '补充标签：',
-      ...tags.map((tag) => `- ${tag.targets.map((target) => target.selector).join('、')}: ${tag.text}`),
-    )
-  }
-
-  lines.push('要求：只修改对应元素相关的样式或内容，保持现有结构和命名风格。')
 
   return lines.join('\n')
 }
@@ -142,6 +345,7 @@ export default function App() {
   const autoConnectTokenRef = useRef<string | null>(null)
   const autoConnectAttemptsRef = useRef<Record<string, number>>({})
   const autoConnectInFlightRef = useRef<string | null>(null)
+  const pageIdentityRef = useRef('')
   const [mode, setMode] = useState<InspectorMode>('builtin')
   const [url, setUrl] = useState<string>(DEFAULT_URLS.builtin)
   const [connected, setConnected] = useState(false)
@@ -151,12 +355,15 @@ export default function App() {
   const [tags, setTags] = useState<ElementTag[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [pageTitle, setPageTitle] = useState('')
+  const [pageUrl, setPageUrl] = useState('')
   const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([])
   const [selectionRevision, setSelectionRevision] = useState(0)
   const [projectSession, setProjectSession] = useState<ProjectLaunchStatus>(EMPTY_PROJECT_SESSION)
   const [isWorkbenchVisible, setIsWorkbenchVisible] = useState(true)
   const [overlayNudgeTick, setOverlayNudgeTick] = useState(0)
-  const overlayNudgeRef = useRef<Record<string, string> | null>(null)
+  const [activeEditTick, setActiveEditTick] = useState(0)
+  const [pageEditLedger, setPageEditLedger] = useState<Record<number, PageEditLedgerEntry>>({})
+  const overlayNudgeChangeRef = useRef<OverlayNudgeChange | null>(null)
 
   const windowPreset = useAdaptiveWindowPreset(mode, connected)
   const sidebarMode = windowPreset === 'sidebar'
@@ -269,13 +476,19 @@ export default function App() {
     }
   }, [connected, flash, mode])
 
+  const updatePageEditLedger = useCallback((
+    updater: (current: Record<number, PageEditLedgerEntry>) => Record<number, PageEditLedgerEntry>,
+  ) => {
+    setPageEditLedger((current) => updater(current))
+  }, [])
+
   const syncCurrentElement = useCallback((selectedElement: InspectedElement) => {
     if (selectedBackendNodeRef.current !== selectedElement.backendNodeId) {
       selectedBackendNodeRef.current = selectedElement.backendNodeId
       setSelectionRevision((revision) => revision + 1)
     }
-    setElement(selectedElement)
-    setTags((current) => current.map((tag) => (
+
+    const nextTags = tagsRef.current.map((tag) => (
       tagHasTarget(tag, selectedElement.backendNodeId)
         ? {
             ...tag,
@@ -290,8 +503,34 @@ export default function App() {
             )),
           }
         : tag
-    )))
-  }, [])
+    ))
+    tagsRef.current = nextTags
+    setElement(selectedElement)
+    setTags(nextTags)
+    updatePageEditLedger((current) => {
+      const existingEntry = current[selectedElement.backendNodeId]
+      const relatedTags = getTagTextsForTarget(nextTags, selectedElement.backendNodeId)
+
+      if (!existingEntry && relatedTags.length === 0) {
+        return current
+      }
+
+      return {
+        ...current,
+        [selectedElement.backendNodeId]: {
+          ...(existingEntry || buildLedgerEntry(selectedElement)),
+          selector: buildElementSelector(selectedElement),
+          displayName: buildElementSelector(selectedElement),
+          tagName: selectedElement.tagName.toLowerCase(),
+          preset: getElementPresetForExport(selectedElement),
+          boxModel: {
+            width: selectedElement.boxModel ? Math.round(selectedElement.boxModel.width) : null,
+            height: selectedElement.boxModel ? Math.round(selectedElement.boxModel.height) : null,
+          },
+        },
+      }
+    })
+  }, [updatePageEditLedger])
 
   const handleUpsertTag = useCallback((targetElement: InspectedElement, text: string, tagId?: string) => {
     const trimmedText = text.trim()
@@ -308,6 +547,28 @@ export default function App() {
       const nextTags = latestTags.filter((tag) => tag.id !== existingTag.id)
       tagsRef.current = nextTags
       setTags(nextTags)
+      updatePageEditLedger((current) => {
+        const existingEntry = current[targetElement.backendNodeId]
+        const nextTagTexts = getTagTextsForTarget(nextTags, targetElement.backendNodeId)
+
+        if (!existingEntry) {
+          return current
+        }
+
+        if (Object.keys(existingEntry.styleDiff).length === 0 && nextTagTexts.length === 0) {
+          const nextLedger = { ...current }
+          delete nextLedger[targetElement.backendNodeId]
+          return nextLedger
+        }
+
+        return {
+          ...current,
+          [targetElement.backendNodeId]: {
+            ...buildLedgerEntry(targetElement, existingEntry.styleDiff, existingEntry.updatedAt),
+            updatedAt: Date.now(),
+          },
+        }
+      })
       void syncExternalOverlayRuntime({
         tool: activeToolRef.current,
         tags: nextTags,
@@ -319,6 +580,7 @@ export default function App() {
     const nextTag = existingTag
       ? {
           ...existingTag,
+          createdAt: Date.now(),
           text: trimmedText,
           targets: tagHasTarget(existingTag, targetElement.backendNodeId)
             ? existingTag.targets
@@ -335,28 +597,125 @@ export default function App() {
         ))
     tagsRef.current = nextTags
     setTags(nextTags)
+    updatePageEditLedger((current) => {
+      const existingEntry = current[targetElement.backendNodeId]
+      return {
+        ...current,
+        [targetElement.backendNodeId]: {
+          ...(existingEntry || buildLedgerEntry(targetElement)),
+          styleDiff: existingEntry?.styleDiff || {},
+          updatedAt: Date.now(),
+        },
+      }
+    })
     void syncExternalOverlayRuntime({
       tool: activeToolRef.current,
       tags: nextTags,
     })
-  }, [syncExternalOverlayRuntime])
+  }, [syncExternalOverlayRuntime, updatePageEditLedger])
 
   const handleDeleteTag = useCallback((tagId: string) => {
+    const removedTag = tagsRef.current.find((tag) => tag.id === tagId) || null
     const nextTags = tagsRef.current.filter((tag) => tag.id !== tagId)
     tagsRef.current = nextTags
     setTags(nextTags)
+    updatePageEditLedger((current) => {
+      if (!removedTag) return current
+
+      const nextLedger = { ...current }
+      removedTag.targets.forEach((target) => {
+        const existingEntry = nextLedger[target.backendNodeId]
+        if (!existingEntry) return
+        const nextTagTexts = getTagTextsForTarget(nextTags, target.backendNodeId)
+        if (Object.keys(existingEntry.styleDiff).length === 0 && nextTagTexts.length === 0) {
+          delete nextLedger[target.backendNodeId]
+          return
+        }
+
+        nextLedger[target.backendNodeId] = {
+          ...existingEntry,
+          updatedAt: Date.now(),
+        }
+      })
+      return nextLedger
+    })
     void syncExternalOverlayRuntime({
       tool: activeToolRef.current,
       tags: nextTags,
     })
     flash('标签已删除')
-  }, [flash, syncExternalOverlayRuntime])
+  }, [flash, syncExternalOverlayRuntime, updatePageEditLedger])
 
   const resetInspectorState = useCallback(() => {
     selectedBackendNodeRef.current = null
+    overlayNudgeChangeRef.current = null
+    tagsRef.current = []
+    setActiveEditProperty(null)
+    setActiveEditTick(0)
     setElement(null)
     setTags([])
+    setPageEditLedger({})
   }, [])
+
+  const handleElementStyleDiffChange = useCallback((
+    targetElement: InspectedElement,
+    styleDiff: Record<string, string>,
+  ) => {
+    updatePageEditLedger((current) => {
+      const existingEntry = current[targetElement.backendNodeId]
+      const nextTagTexts = getTagTextsForTarget(tagsRef.current, targetElement.backendNodeId)
+      const hasStyleDiff = Object.keys(styleDiff).length > 0
+
+      if (!hasStyleDiff && nextTagTexts.length === 0) {
+        if (!existingEntry) return current
+        const nextLedger = { ...current }
+        delete nextLedger[targetElement.backendNodeId]
+        return nextLedger
+      }
+
+      if (
+        existingEntry
+        && areStyleDiffsEqual(existingEntry.styleDiff, styleDiff)
+        && existingEntry.selector === buildElementSelector(targetElement)
+        && existingEntry.tagName === targetElement.tagName.toLowerCase()
+        && existingEntry.boxModel.width === (targetElement.boxModel ? Math.round(targetElement.boxModel.width) : null)
+        && existingEntry.boxModel.height === (targetElement.boxModel ? Math.round(targetElement.boxModel.height) : null)
+      ) {
+        return current
+      }
+
+      return {
+        ...current,
+        [targetElement.backendNodeId]: buildLedgerEntry(targetElement, styleDiff, Date.now()),
+      }
+    })
+  }, [updatePageEditLedger])
+
+  const pageExportElements = useMemo(
+    () => buildPageExportElements(pageEditLedger, tags, element),
+    [element, pageEditLedger, tags],
+  )
+  const exportSummaryMeta = useMemo(
+    () => buildExportSummaryMeta(pageExportElements, tags),
+    [pageExportElements, tags],
+  )
+  const canExportPrompt = exportSummaryMeta.elementCount > 0
+  const exportPromptPreview = useMemo(() => {
+    if (!canExportPrompt) {
+      return EMPTY_EXPORT_PROMPT_PREVIEW
+    }
+
+    return buildPageExportPrompt({
+      currentElement: element,
+      elements: pageExportElements,
+      summaryMeta: exportSummaryMeta,
+      mode,
+      projectSession,
+      pageTitle,
+      pageUrl,
+      targetUrl: url,
+    })
+  }, [canExportPrompt, element, exportSummaryMeta, mode, pageExportElements, pageTitle, pageUrl, projectSession, url])
 
   const connectToTarget = useCallback(async (
     nextMode: InspectorMode,
@@ -366,6 +725,9 @@ export default function App() {
     if (!rawTarget.trim()) return false
 
     if (options?.reset !== false) {
+      pageIdentityRef.current = ''
+      setPageTitle('')
+      setPageUrl('')
       resetInspectorState()
     }
 
@@ -438,6 +800,9 @@ export default function App() {
   const applyAutoConnectedState = useCallback((nextMode: InspectorMode, target: string, message?: string) => {
     const token = `${nextMode}:${target}`
     const alreadyApplied = autoConnectTokenRef.current === token
+    pageIdentityRef.current = ''
+    setPageTitle('')
+    setPageUrl('')
     resetInspectorState()
     setConnected(true)
     setMode(nextMode)
@@ -488,8 +853,8 @@ export default function App() {
   useEffect(() => {
     window.electronAPI.onElementSelected((selectedElement, meta) => {
       // 浮动按钮的 nudge：DOM 已改，只需让属性面板记录变化
-      if (meta?.nudge && meta?.styles) {
-        overlayNudgeRef.current = meta.styles
+      if (meta?.nudge && meta?.nudgeChange) {
+        overlayNudgeChangeRef.current = meta.nudgeChange
         setOverlayNudgeTick((t) => t + 1)
         // 同时更新 element 状态（不重置 baseline）
         setElement(selectedElement)
@@ -503,10 +868,21 @@ export default function App() {
 
     window.electronAPI.onPropertyActivated((property) => {
       setActiveEditProperty(property)
+      setActiveEditTick((tick) => tick + 1)
     })
 
     window.electronAPI.onBrowserViewLoaded((info) => {
-      setPageTitle(info.title || info.url)
+      const nextTitle = info.title || info.url
+      const nextUrl = info.url || ''
+      const nextIdentity = `${nextUrl}::${nextTitle}`
+
+      if (pageIdentityRef.current && pageIdentityRef.current !== nextIdentity) {
+        resetInspectorState()
+      }
+
+      pageIdentityRef.current = nextIdentity
+      setPageTitle(nextTitle)
+      setPageUrl(nextUrl)
     })
 
     window.electronAPI.onLaunchStatus((info) => {
@@ -648,6 +1024,9 @@ export default function App() {
   }, [flash, mode])
 
   const handleLoadStaticHtml = useCallback(async (filePath: string) => {
+    pageIdentityRef.current = ''
+    setPageTitle('')
+    setPageUrl('')
     resetInspectorState()
     try {
       const fileUrl = `file://${filePath}`
@@ -673,6 +1052,9 @@ export default function App() {
   }, [flash, resetInspectorState])
 
   const handleConnectRunning = useCallback(async (endpoint: string) => {
+    pageIdentityRef.current = ''
+    setPageTitle('')
+    setPageUrl('')
     resetInspectorState()
     try {
       const cdpUrl = await window.electronAPI.discoverCDPUrl(endpoint)
@@ -711,20 +1093,21 @@ export default function App() {
     setConnected(false)
     setActiveTool('select')
     setActiveEditProperty(null)
+    pageIdentityRef.current = ''
     setPageTitle('')
+    setPageUrl('')
     setIsWorkbenchVisible(true)
     resetInspectorState()
   }, [resetInspectorState])
 
-  const handleCopyAIPrompt = async (styleDiff: Record<string, string>) => {
-    if (!element) return
-    if (Object.keys(styleDiff).length === 0 && tags.length === 0) {
+  const handleCopyExportPrompt = useCallback(async () => {
+    if (!canExportPrompt) {
       flash('当前还没有可导出的微调改动')
       return
     }
 
-    await copyText(buildStyleDiffPrompt(element, styleDiff, tags), '微调 Prompt 已复制')
-  }
+    await copyText(exportPromptPreview, '页面级修改提示词已复制')
+  }, [canExportPrompt, copyText, exportPromptPreview, flash])
 
   const relevantApps = getRelevantApps(discoveredApps, mode)
   const currentTargetLabel = mode === 'builtin'
@@ -825,15 +1208,20 @@ export default function App() {
                 activeTool={activeTool}
                 tags={tags}
                 activeEditProperty={activeEditProperty}
+                activeEditTick={activeEditTick}
                 selectionRevision={selectionRevision}
-                overlayNudgeStyles={overlayNudgeRef.current}
+                overlayNudgeChange={overlayNudgeChangeRef.current}
                 overlayNudgeTick={overlayNudgeTick}
                 onElementChange={syncCurrentElement}
+                onStyleDiffChange={handleElementStyleDiffChange}
                 onToolChange={setActiveTool}
                 onActiveEditPropertyChange={setActiveEditProperty}
                 onUpsertTag={handleUpsertTag}
                 onDeleteTag={handleDeleteTag}
-                onCopyAIPrompt={(styleDiff) => void handleCopyAIPrompt(styleDiff)}
+                exportPromptPreview={exportPromptPreview}
+                exportSummaryMeta={exportSummaryMeta}
+                canExportPrompt={canExportPrompt}
+                onCopyExportPrompt={() => handleCopyExportPrompt()}
               />
             )}
           </aside>

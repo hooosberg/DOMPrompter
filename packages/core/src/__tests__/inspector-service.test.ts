@@ -98,6 +98,21 @@ function createMockTransport() {
       if (method === 'CSS.getMatchedStylesForNode') {
         return { matchedCSSRules: [] }
       }
+      // 模拟 inline style 读写
+      if (method === 'CSS.getInlineStylesForNode') {
+        return {
+          inlineStyle: {
+            styleSheetId: 'mock-style-sheet',
+            range: {
+              startLine: 0,
+              startColumn: 0,
+              endLine: 0,
+              endColumn: 0,
+            },
+            cssText: 'width: 200px;',
+          }
+        }
+      }
       // 模拟 DOM.querySelectorAll (for getDescendantRects)
       if (method === 'DOM.querySelectorAll') {
         return { nodeIds: [] }
@@ -242,6 +257,46 @@ describe('InspectorService', () => {
 
       await new Promise(r => setTimeout(r, 50))
       expect(callback).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('style-nudge 事件（浮动按钮历史同步）', () => {
+    it('应携带 before/after 样式历史并回传给 renderer', async () => {
+      const selectedCallback = vi.fn()
+      service.onElementSelected(selectedCallback)
+
+      mock.emitBindingCall({
+        type: 'style-nudge',
+        token: 'vi-test-nudge-1',
+        keys: ['margin-left'],
+        beforeStyles: { 'margin-left': '0px' },
+        afterStyles: { 'margin-left': '8px' },
+      })
+
+      await vi.waitFor(() => {
+        expect(selectedCallback).toHaveBeenCalled()
+      })
+
+      expect(mock.sentCommands).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            method: 'CSS.setStyleTexts',
+          }),
+        ]),
+      )
+
+      expect(selectedCallback).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.objectContaining({
+          nudge: true,
+          styles: { 'margin-left': '8px' },
+          nudgeChange: {
+            keys: ['margin-left'],
+            beforeStyles: { 'margin-left': '0px' },
+            afterStyles: { 'margin-left': '8px' },
+          },
+        }),
+      )
     })
   })
 

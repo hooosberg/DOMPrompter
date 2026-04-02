@@ -33,7 +33,7 @@ export interface DescendantRectReference {
 type EventCallback = (params: any) => void
 const ELEMENT_PICKER_BINDING = '__viInspectorHostSelect__'
 const ELEMENT_PICKER_STATE = '__visualInspectorPicker'
-const ELEMENT_PICKER_RUNTIME_VERSION = '2026-04-02-tag-browse-runtime-v4'
+const ELEMENT_PICKER_RUNTIME_VERSION = '2026-04-03-overlay-layout-planner-v6'
 function mergeInlineStyleText(currentText: string, patch: Record<string, string>): string {
   const styleMap = new Map<string, string>()
 
@@ -112,6 +112,54 @@ function buildElementPickerScript(bindingName: string): string {
       };
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const rectsIntersect = (left, right, gap = 4) => !(
+        left.x + left.width + gap <= right.x
+        || right.x + right.width + gap <= left.x
+        || left.y + left.height + gap <= right.y
+        || right.y + right.height + gap <= left.y
+      );
+      const getViewportBounds = () => {
+        const viewportWidth = Math.max(win.innerWidth || 0, doc.documentElement.clientWidth || 0, 1);
+        const viewportHeight = Math.max(win.innerHeight || 0, doc.documentElement.clientHeight || 0, 1);
+        return {
+          left: 8,
+          top: 8,
+          right: Math.max(8, viewportWidth - 8),
+          bottom: Math.max(8, viewportHeight - 8),
+        };
+      };
+      const clampRectToBounds = (rect, bounds) => {
+        const width = Math.max(1, rect.width || 0);
+        const height = Math.max(1, rect.height || 0);
+        const maxX = Math.max(bounds.left, bounds.right - width);
+        const maxY = Math.max(bounds.top, bounds.bottom - height);
+        return {
+          x: clamp(rect.x, bounds.left, maxX),
+          y: clamp(rect.y, bounds.top, maxY),
+          width,
+          height,
+        };
+      };
+      const findAvailableRect = (candidates, occupied, bounds, options = {}) => {
+        const gap = options.gap ?? 4;
+        const allowOverlapFallback = Boolean(options.allowOverlapFallback);
+        let fallback = null;
+        for (const candidate of candidates) {
+          const clampedRect = clampRectToBounds(candidate, bounds);
+          if (!fallback) fallback = clampedRect;
+          const hasCollision = occupied.some((item) => rectsIntersect(item, clampedRect, gap));
+          if (!hasCollision) {
+            return clampedRect;
+          }
+        }
+        return allowOverlapFallback ? fallback : null;
+      };
+      const hasGapValue = (styles) => {
+        const gap = String(styles.gap || styles.getPropertyValue?.('gap') || '').trim();
+        const rowGap = String(styles.rowGap || styles.getPropertyValue?.('row-gap') || '').trim();
+        const columnGap = String(styles.columnGap || styles.getPropertyValue?.('column-gap') || '').trim();
+        return [gap, rowGap, columnGap].some((value) => value && value !== 'normal' && value !== '0px');
+      };
 
       const isOverlayElement = (node) => (
         node instanceof Element
@@ -257,6 +305,95 @@ function buildElementPickerScript(bindingName: string): string {
         };
       };
 
+      const getVisibleChildren = (target) => (
+        Array.from(target.children || [])
+          .filter((child) => child instanceof Element)
+          .filter((child) => {
+            const rect = child.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+          })
+      );
+
+      const buildCapabilityProfile = (target, metrics) => {
+        const styles = metrics.styles;
+        const display = styles.display || 'block';
+        const position = styles.position || 'static';
+        const childCount = getVisibleChildren(target).length;
+        const hasNestedMarkup = childCount > 0;
+        const isLayoutContainer = ['flex', 'inline-flex', 'grid', 'inline-grid'].includes(display);
+        const tagName = target.tagName.toLowerCase();
+        const isTextLike = ['p', 'span', 'label', 'button', 'input', 'textarea', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName);
+        const hasExplicitPadding = [styles.paddingTop, styles.paddingRight, styles.paddingBottom, styles.paddingLeft]
+          .some((value) => value && value !== '0px');
+        const hasExplicitMargin = [styles.marginTop, styles.marginRight, styles.marginBottom, styles.marginLeft]
+          .some((value) => value && value !== '0px');
+        const preset = tagName === 'img'
+          ? 'image'
+          : (isLayoutContainer || hasNestedMarkup)
+            ? 'container'
+            : (target.textContent && isTextLike)
+              ? 'text'
+              : 'container';
+        const supportsGapShortcut = preset === 'container' && childCount > 1;
+        const density = metrics.borderRect.width >= 180 && metrics.borderRect.height >= 120
+          ? 'roomy'
+          : (metrics.borderRect.width >= 88 && metrics.borderRect.height >= 56 ? 'compact' : 'tight');
+        const supportsPosition = position !== 'static' || Boolean(styles.top) || Boolean(styles.left) || Boolean(styles.transform);
+
+        return {
+          preset,
+          density,
+          childCount,
+          supportsSize: true,
+          supportsPadding: preset === 'container' || tagName === 'img' || hasExplicitPadding || ['button', 'input', 'textarea'].includes(tagName),
+          supportsMargin: preset === 'container' || hasExplicitMargin || supportsPosition || (preset === 'text' && display !== 'inline'),
+          supportsGap: isLayoutContainer && childCount > 1,
+          supportsGapShortcut,
+          supportsLayout: preset === 'container' || isLayoutContainer,
+          supportsTypography: isTextLike || Boolean(target.textContent),
+          supportsMedia: tagName === 'img',
+          supportsPosition,
+          supportsPositionSection: preset === 'container' || supportsPosition,
+        };
+      };
+
+      const buildShortcutConfigs = (profile, styles) => {
+        const configs = [];
+        if (profile.preset === 'container') {
+          configs.push({ id: 'labels', label: '标签', property: 'labels' });
+          if (profile.supportsGapShortcut || hasGapValue(styles)) {
+            configs.push({ id: 'gap', label: '间距', property: 'gap' });
+          }
+          if (profile.supportsPositionSection) {
+            configs.push({ id: 'position', label: '定位', property: 'position' });
+          }
+          return configs.slice(0, 3);
+        }
+        if (profile.preset === 'container' && profile.supportsGap) {
+          configs.push({ id: 'gap', label: '间距', property: 'gap' });
+        }
+        if (profile.supportsLayout) {
+          configs.push({ id: 'layout', label: '对齐', property: 'layout' });
+        }
+        if (profile.preset === 'text' && profile.supportsTypography) {
+          configs.push({ id: 'typography', label: '字号', property: 'typography' });
+        }
+        if (profile.supportsMedia) {
+          configs.push({ id: 'image', label: '填充', property: 'image' });
+          configs.push({ id: 'radius', label: '圆角', property: 'border' });
+        }
+        if (profile.supportsPosition) {
+          configs.push({ id: 'position', label: '定位', property: 'position' });
+        }
+        if (profile.density === 'tight') {
+          if (profile.supportsPadding) configs.push({ id: 'padding', label: '内距', property: 'padding' });
+          if (profile.supportsMargin) configs.push({ id: 'margin', label: '外距', property: 'margin' });
+        }
+
+        const maxCount = profile.density === 'roomy' ? 4 : (profile.density === 'compact' ? 3 : 2);
+        return configs.slice(0, maxCount);
+      };
+
       const makeGuideBand = (borderColor, fillColor, zIndex) => {
         const node = doc.createElement('div');
         node.style.cssText = [
@@ -369,12 +506,15 @@ function buildElementPickerScript(bindingName: string): string {
         'box-shadow:0 10px 30px rgba(13,24,40,0.2)',
         'color:#f5f1ff',
         'font:600 11px/1.2 -apple-system, BlinkMacSystemFont, sans-serif',
-        'white-space:nowrap'
+        'white-space:nowrap',
+        'overflow:hidden',
+        'text-overflow:ellipsis',
+        'max-width:320px'
       ].join(';');
 
       // ─── 浮动动作按钮（属性面板的遥控器）───
-      // 每个按钮点击等价于属性面板的「增加」按钮，通过 useStyleBinding 记录变化
-      var ACTION_BUTTON_DEFS = [
+      // 直接调值按钮会发 style-nudge；语义 chip 只激活对应面板分区。
+      var DIRECT_ACTION_BUTTON_DEFS = [
         { id: 'width',         label: 'W',  cssProperty: 'width',          group: 'size' },
         { id: 'height',        label: 'H',  cssProperty: 'height',         group: 'size' },
         { id: 'padding-top',   label: '↑',  cssProperty: 'padding-top',    group: 'padding' },
@@ -387,7 +527,7 @@ function buildElementPickerScript(bindingName: string): string {
         { id: 'margin-left',   label: '←',  cssProperty: 'margin-left',    group: 'margin' },
       ];
 
-      const makeActionButton = (config) => {
+      const makeDirectActionButton = (config) => {
         const isSize = config.group === 'size';
         const isMargin = config.group === 'margin';
         const bgColor = isSize ? 'rgba(59,130,246,0.88)' : isMargin ? 'rgba(251,146,60,0.88)' : 'rgba(16,185,129,0.88)';
@@ -413,6 +553,7 @@ function buildElementPickerScript(bindingName: string): string {
           'transition:transform 100ms ease,background 100ms ease',
           'box-shadow:0 1px 4px rgba(0,0,0,0.2)',
         ].join(';');
+        btn.__viConfig = config;
         btn.textContent = config.label;
         btn.addEventListener('mouseenter', () => {
           btn.style.background = bgHover;
@@ -434,7 +575,8 @@ function buildElementPickerScript(bindingName: string): string {
           // ① 直接改 DOM — 用户立即看到效果
           var STEP = 8;
           var cs = win.getComputedStyle(target);
-          var cur = parseFloat(cs.getPropertyValue(config.cssProperty)) || 0;
+          var currentValue = String(cs.getPropertyValue(config.cssProperty) || '').trim();
+          var cur = parseFloat(currentValue) || 0;
           var next = Math.max(0, Math.round(cur + STEP));
           var nextVal = next + 'px';
           target.style.setProperty(config.cssProperty, nextVal);
@@ -449,15 +591,169 @@ function buildElementPickerScript(bindingName: string): string {
             win[binding](JSON.stringify({
               type: 'style-nudge',
               token: token,
-              styles: { [config.cssProperty]: nextVal },
+              keys: [config.cssProperty],
+              beforeStyles: { [config.cssProperty]: currentValue || '0px' },
+              afterStyles: { [config.cssProperty]: nextVal },
             }));
           }
         }, true);
         return btn;
       };
 
-      const actionButtons = ACTION_BUTTON_DEFS.map((config) => makeActionButton(config));
+      const shortcutRail = doc.createElement('div');
+      shortcutRail.style.cssText = [
+        'position:absolute',
+        'left:0',
+        'top:-58px',
+        'display:none',
+        'align-items:center',
+        'gap:6px',
+        'pointer-events:none',
+      ].join(';');
+      shortcutRail.dataset.viOverlayRoot = 'true';
+
+      const makeShortcutButton = () => {
+        const btn = doc.createElement('div');
+        btn.dataset.viAction = 'shortcut';
+        btn.dataset.viOverlayRoot = 'true';
+        btn.style.cssText = [
+          'display:none',
+          'min-width:40px',
+          'height:24px',
+          'padding:0 8px',
+          'border-radius:999px',
+          'background:rgba(15,23,42,0.92)',
+          'border:1px solid rgba(148,163,184,0.26)',
+          'box-shadow:0 8px 24px rgba(15,23,42,0.18)',
+          'color:#f8fafc',
+          'font:600 10px/24px -apple-system,BlinkMacSystemFont,sans-serif',
+          'text-align:center',
+          'pointer-events:auto',
+          'cursor:pointer',
+          'user-select:none',
+          'white-space:nowrap',
+        ].join(';');
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+          var target = state.current;
+          var property = btn.__viProperty;
+          if (!target || !(target instanceof Element) || !property) return;
+          state.emitPayload(target, { type: 'activate-property', property: property });
+        }, true);
+        shortcutRail.appendChild(btn);
+        return btn;
+      };
+
+      const actionButtons = DIRECT_ACTION_BUTTON_DEFS.map((config) => makeDirectActionButton(config));
+      const shortcutButtons = Array.from({ length: 6 }, () => makeShortcutButton());
+      const getActionPriority = (config, activeProperty) => {
+        if (config.group === 'size') return 100;
+        if (activeProperty === 'padding' && config.group === 'padding') return 80;
+        if (activeProperty === 'margin' && config.group === 'margin') return 70;
+        if (config.group === 'padding') return 50;
+        if (config.group === 'margin') return 40;
+        return 10;
+      };
+      const buildActionCandidates = (config, profile, width, height) => {
+        const size = config.group === 'size' ? 20 : 16;
+        const roomy = profile.density === 'roomy';
+        const paddingInside = roomy;
+        const topPrimaryY = paddingInside ? 4 : -22;
+        const topSecondaryY = paddingInside ? -22 : 4;
+        const rightPrimaryX = paddingInside ? width - 20 : width + 6;
+        const rightSecondaryX = paddingInside ? width + 6 : width - 20;
+        const bottomPrimaryY = paddingInside ? height - 20 : height + 6;
+        const bottomSecondaryY = paddingInside ? height + 6 : height - 20;
+        const leftPrimaryX = paddingInside ? 4 : -22;
+        const leftSecondaryX = paddingInside ? -22 : 4;
+        const marginOuter = roomy ? 24 : 44;
+        const marginSideX = roomy ? 6 : 28;
+        const centerX = width / 2 - size / 2;
+        const centerY = height / 2 - size / 2;
+        switch (config.id) {
+          case 'width':
+            return [
+              { x: width + 6, y: height / 2 - 10, width: 20, height: 20 },
+              { x: width - 20, y: height / 2 - 10, width: 20, height: 20 },
+              { x: width + 6, y: 6, width: 20, height: 20 },
+              { x: width + 6, y: Math.max(6, height - 26), width: 20, height: 20 },
+            ];
+          case 'height':
+            return [
+              { x: width / 2 - 10, y: height + 6, width: 20, height: 20 },
+              { x: width / 2 - 10, y: height - 20, width: 20, height: 20 },
+              { x: 6, y: height + 6, width: 20, height: 20 },
+              { x: Math.max(6, width - 26), y: height + 6, width: 20, height: 20 },
+            ];
+          case 'padding-top':
+            return [
+              { x: centerX, y: topPrimaryY, width: size, height: size },
+              { x: width / 2 - 30, y: topPrimaryY, width: size, height: size },
+              { x: width / 2 + 14, y: topPrimaryY, width: size, height: size },
+              { x: centerX, y: topSecondaryY, width: size, height: size },
+            ];
+          case 'padding-right':
+            return [
+              { x: rightPrimaryX, y: centerY, width: size, height: size },
+              { x: rightPrimaryX, y: height / 2 - 30, width: size, height: size },
+              { x: rightPrimaryX, y: height / 2 + 14, width: size, height: size },
+              { x: rightSecondaryX, y: centerY, width: size, height: size },
+            ];
+          case 'padding-bottom':
+            return [
+              { x: width / 2 - 30, y: bottomPrimaryY, width: size, height: size },
+              { x: width / 2 + 14, y: bottomPrimaryY, width: size, height: size },
+              { x: centerX, y: bottomSecondaryY, width: size, height: size },
+              { x: 6, y: bottomPrimaryY, width: size, height: size },
+              { x: Math.max(6, width - 22), y: bottomPrimaryY, width: size, height: size },
+            ];
+          case 'padding-left':
+            return [
+              { x: leftPrimaryX, y: centerY, width: size, height: size },
+              { x: leftPrimaryX, y: height / 2 - 30, width: size, height: size },
+              { x: leftPrimaryX, y: height / 2 + 14, width: size, height: size },
+              { x: leftSecondaryX, y: centerY, width: size, height: size },
+            ];
+          case 'margin-top':
+            return [
+              { x: width / 2 + 20, y: -marginOuter, width: size, height: size },
+              { x: width / 2 - 36, y: -marginOuter, width: size, height: size },
+              { x: width - 22, y: -marginOuter, width: size, height: size },
+              { x: 6, y: -marginOuter, width: size, height: size },
+            ];
+          case 'margin-right':
+            return [
+              { x: width + marginSideX, y: height / 2 + 16, width: size, height: size },
+              { x: width + marginSideX, y: height / 2 - 30, width: size, height: size },
+              { x: width - 16, y: height / 2 + 16, width: size, height: size },
+              { x: width - 16, y: height / 2 - 30, width: size, height: size },
+            ];
+          case 'margin-bottom':
+            return [
+              { x: width / 2 + 16, y: height + marginSideX, width: size, height: size },
+              { x: width / 2 - 36, y: height + marginSideX, width: size, height: size },
+              { x: width / 2 + 16, y: height - 16, width: size, height: size },
+              { x: width / 2 - 36, y: height - 16, width: size, height: size },
+            ];
+          case 'margin-left':
+            return [
+              { x: -marginOuter, y: height / 2 - 8, width: size, height: size },
+              { x: -marginOuter, y: height / 2 + 16, width: size, height: size },
+              { x: 4, y: height / 2 - 8, width: size, height: size },
+              { x: 4, y: height / 2 + 16, width: size, height: size },
+            ];
+          default:
+            return [
+              { x: centerX, y: centerY, width: size, height: size },
+            ];
+        }
+      };
       for (const btn of actionButtons) overlay.appendChild(btn);
+      overlay.appendChild(shortcutRail);
       overlay.appendChild(label);
       marginBands.forEach((node) => doc.documentElement.appendChild(node));
       paddingBands.forEach((node) => doc.documentElement.appendChild(node));
@@ -495,45 +791,212 @@ function buildElementPickerScript(bindingName: string): string {
         tagBadgeNodes: [],
         childRects: [],
         actionButtons,
+        shortcutRail,
+        shortcutButtons,
         current: null,
         tagPreviewTarget: null,
         hoverStack: [],
         selectionCycle: null,
         selections: {},
-        updateActionButtons(width, height) {
-          // 容器太小时只显示 W/H，不显示 padding/margin 避免覆盖内容
-          var showInner = width > 80 && height > 80;
-          var showOuter = width > 50 && height > 50;
-          // 按钮顺序: W, H, pt, pr, pb, pl, mt, mr, mb, ml
-          var positions = [
-            // W: 右边中间外侧
-            { x: width + 6, y: height / 2 - 10, show: true },
-            // H: 底部中间外侧
-            { x: width / 2 - 10, y: height + 6, show: true },
-            // padding-top: 上内侧中间
-            { x: width / 2 - 8, y: 4, show: showInner },
-            // padding-right: 右内侧中间
-            { x: width - 20, y: height / 2 - 8, show: showInner },
-            // padding-bottom: 下内侧中间
-            { x: width / 2 - 8, y: height - 20, show: showInner },
-            // padding-left: 左内侧中间
-            { x: 4, y: height / 2 - 8, show: showInner },
-            // margin-top: 上外侧中间 (避开 label 向右偏移)
-            { x: width / 2 + 20, y: -22, show: showOuter },
-            // margin-right: 右外侧（W 按钮下方）
-            { x: width + 6, y: height / 2 + 16, show: showOuter },
-            // margin-bottom: 下外侧（H 按钮右侧）
-            { x: width / 2 + 16, y: height + 6, show: showOuter },
-            // margin-left: 左外侧中间
-            { x: -22, y: height / 2 - 8, show: showOuter },
-          ];
-          this.actionButtons.forEach(function(btn, i) {
-            var pos = positions[i];
-            if (pos) {
-              btn.style.left = pos.x + 'px';
-              btn.style.top = pos.y + 'px';
-              btn.__viShow = pos.show;
+        measureFloatingNode(node, displayValue) {
+          var prevDisplay = node.style.display;
+          var prevVisibility = node.style.visibility;
+          var prevLeft = node.style.left;
+          var prevTop = node.style.top;
+          node.style.visibility = 'hidden';
+          node.style.display = displayValue;
+          node.style.left = '-9999px';
+          node.style.top = '-9999px';
+          var rect = node.getBoundingClientRect();
+          node.style.display = prevDisplay;
+          node.style.visibility = prevVisibility;
+          node.style.left = prevLeft;
+          node.style.top = prevTop;
+          return {
+            width: Math.max(1, rect.width || node.offsetWidth || 1),
+            height: Math.max(1, rect.height || node.offsetHeight || 1),
+          };
+        },
+        placeOverlayNode(node, absoluteRect, anchorRect, displayValue) {
+          node.style.left = (absoluteRect.x - anchorRect.x) + 'px';
+          node.style.top = (absoluteRect.y - anchorRect.y) + 'px';
+          if (displayValue) {
+            node.style.display = displayValue;
+          }
+        },
+        configureShortcutRail(profile, styles) {
+          var configs = buildShortcutConfigs(profile, styles);
+          if (!configs.length) {
+            this.shortcutRail.__viHasVisible = false;
+            this.shortcutRail.style.display = 'none';
+            this.shortcutButtons.forEach(function(btn) {
+              btn.style.display = 'none';
+              btn.__viProperty = null;
+            });
+            return {
+              configs: [],
+              size: { width: 0, height: 0 },
+            };
+          }
+
+          this.shortcutRail.__viHasVisible = true;
+          this.shortcutButtons.forEach(function(btn, index) {
+            var config = configs[index];
+            if (!config) {
+              btn.style.display = 'none';
+              btn.__viProperty = null;
+              return;
             }
+            btn.style.display = 'inline-flex';
+            btn.textContent = config.label;
+            btn.__viProperty = config.property;
+          });
+
+          return {
+            configs: configs,
+            size: this.measureFloatingNode(this.shortcutRail, 'flex'),
+          };
+        },
+        layoutInteractiveChrome(profile, metrics) {
+          var borderRect = metrics.borderRect;
+          var bounds = getViewportBounds();
+          var occupied = [];
+          var labelMaxWidth = Math.max(96, Math.min(borderRect.width + 140, bounds.right - bounds.left - 16));
+          this.label.style.maxWidth = labelMaxWidth + 'px';
+          var labelSize = this.measureFloatingNode(this.label, 'block');
+          var shortcutState = this.configureShortcutRail(profile, metrics.styles);
+          var headerHeight = Math.max(labelSize.height, shortcutState.size.height || 0, 24);
+          var headerTop = Math.max(bounds.top, borderRect.y - headerHeight - 6);
+          var labelRect = clampRectToBounds({
+            x: borderRect.x - 2,
+            y: headerTop,
+            width: labelSize.width,
+            height: labelSize.height,
+          }, bounds);
+          var railRect = null;
+
+          if (shortcutState.configs.length) {
+            var topRailRect = clampRectToBounds({
+              x: borderRect.x + borderRect.width - shortcutState.size.width,
+              y: headerTop,
+              width: shortcutState.size.width,
+              height: shortcutState.size.height,
+            }, bounds);
+            var availableTopWidth = topRailRect.x - 8 - labelRect.x;
+            if (availableTopWidth > 72 && labelRect.width > availableTopWidth) {
+              this.label.style.maxWidth = availableTopWidth + 'px';
+              labelSize = this.measureFloatingNode(this.label, 'block');
+              labelRect = clampRectToBounds({
+                x: borderRect.x - 2,
+                y: headerTop,
+                width: labelSize.width,
+                height: labelSize.height,
+              }, bounds);
+            }
+
+            if (!rectsIntersect(labelRect, topRailRect, 8)) {
+              railRect = topRailRect;
+            } else {
+              railRect = findAvailableRect([
+                {
+                  x: borderRect.x + borderRect.width - shortcutState.size.width - 6,
+                  y: borderRect.y + 6,
+                  width: shortcutState.size.width,
+                  height: shortcutState.size.height,
+                },
+                {
+                  x: borderRect.x + borderRect.width - shortcutState.size.width - 6,
+                  y: labelRect.y + labelRect.height + 6,
+                  width: shortcutState.size.width,
+                  height: shortcutState.size.height,
+                },
+                {
+                  x: borderRect.x + 6,
+                  y: borderRect.y + 6,
+                  width: shortcutState.size.width,
+                  height: shortcutState.size.height,
+                },
+              ], [labelRect], bounds, { gap: 6, allowOverlapFallback: true });
+
+              if (railRect && rectsIntersect(labelRect, railRect, 6)) {
+                var availableInsideWidth = railRect.x - 8 - labelRect.x;
+                if (availableInsideWidth > 72) {
+                  this.label.style.maxWidth = availableInsideWidth + 'px';
+                  labelSize = this.measureFloatingNode(this.label, 'block');
+                  labelRect = clampRectToBounds({
+                    x: borderRect.x - 2,
+                    y: headerTop,
+                    width: labelSize.width,
+                    height: labelSize.height,
+                  }, bounds);
+                }
+              }
+
+              if (railRect && rectsIntersect(labelRect, railRect, 6)) {
+                railRect = clampRectToBounds({
+                  x: borderRect.x + borderRect.width - shortcutState.size.width - 6,
+                  y: Math.max(borderRect.y + 6, labelRect.y + labelRect.height + 6),
+                  width: shortcutState.size.width,
+                  height: shortcutState.size.height,
+                }, bounds);
+              }
+            }
+          }
+
+          this.placeOverlayNode(this.label, labelRect, borderRect, 'block');
+          occupied.push(labelRect);
+
+          if (railRect && shortcutState.configs.length) {
+            this.shortcutRail.__viHasVisible = true;
+            this.placeOverlayNode(this.shortcutRail, railRect, borderRect, 'flex');
+            occupied.push(railRect);
+          } else {
+            this.shortcutRail.__viHasVisible = false;
+            this.shortcutRail.style.display = 'none';
+          }
+
+          var showPadding = profile.supportsPadding && (profile.density !== 'tight' || this.activeProperty === 'padding');
+          var showMargin = profile.supportsMargin && (profile.density !== 'tight' || this.activeProperty === 'margin');
+          var activeProperty = this.activeProperty;
+          var plannedButtons = this.actionButtons.map(function(btn, index) {
+            var config = DIRECT_ACTION_BUTTON_DEFS[index];
+            var visible = config.group === 'size'
+              ? true
+              : (config.group === 'padding' ? showPadding : showMargin);
+            return { btn: btn, config: config, visible: visible };
+          }).sort(function(left, right) {
+            return getActionPriority(right.config, activeProperty) - getActionPriority(left.config, activeProperty);
+          });
+
+          plannedButtons.forEach(function(item) {
+            if (!item.visible) {
+              item.btn.__viShow = false;
+              return;
+            }
+
+            var candidates = buildActionCandidates(item.config, profile, borderRect.width, borderRect.height)
+              .map(function(localRect) {
+                return {
+                  x: borderRect.x + localRect.x,
+                  y: borderRect.y + localRect.y,
+                  width: localRect.width,
+                  height: localRect.height,
+                };
+              });
+            var placedRect = findAvailableRect(candidates, occupied, bounds, {
+              gap: item.config.group === 'size' ? 6 : 4,
+              allowOverlapFallback: item.config.group === 'size',
+            });
+
+            if (!placedRect) {
+              item.btn.__viShow = false;
+              return;
+            }
+
+            item.btn.style.left = (placedRect.x - borderRect.x) + 'px';
+            item.btn.style.top = (placedRect.y - borderRect.y) + 'px';
+            item.btn.__viShow = true;
+            occupied.push(placedRect);
           });
         },
         setActionButtonsVisible(visible) {
@@ -541,6 +1004,7 @@ function buildElementPickerScript(bindingName: string): string {
             var btn = this.actionButtons[i];
             btn.style.display = (visible && btn.__viShow !== false) ? 'block' : 'none';
           }
+          this.shortcutRail.style.display = (visible && this.shortcutRail.__viHasVisible !== false) ? 'flex' : 'none';
         },
         shouldShowLockedOverlay() {
           return true;
@@ -562,6 +1026,7 @@ function buildElementPickerScript(bindingName: string): string {
           this.hideBadges();
           this.skeletonNodes.forEach((node) => { node.style.display = 'none'; });
           this.setActionButtonsVisible(false);
+          this.shortcutRail.style.display = 'none';
           return true;
         },
         setTagPreview(target) {
@@ -895,6 +1360,7 @@ function buildElementPickerScript(bindingName: string): string {
           if (!(target instanceof Element)) return this.hide();
           if (selected) this.tagPreviewTarget = null;
           const metrics = measure(target);
+          const profile = buildCapabilityProfile(target, metrics);
           const { borderRect } = metrics;
           if (!borderRect.width && !borderRect.height) return this.hide();
           this.current = target;
@@ -907,7 +1373,7 @@ function buildElementPickerScript(bindingName: string): string {
           this.overlay.style.background = 'transparent';
           this.label.textContent = buildSelector(target) + '  ' + Math.round(borderRect.width) + ' × ' + Math.round(borderRect.height);
           this.label.style.display = showSelectionProxy ? 'block' : 'none';
-          this.updateActionButtons(borderRect.width, borderRect.height);
+          this.layoutInteractiveChrome(profile, metrics);
           this.setActionButtonsVisible(selected && showSelectionProxy);
           this.renderActiveAssist(metrics, selected);
           this.updateSkeletons(target, selected, this.activeProperty === 'gap');
@@ -927,6 +1393,7 @@ function buildElementPickerScript(bindingName: string): string {
           this.hideBadges();
           this.skeletonNodes.forEach((node) => { node.style.display = 'none'; });
           this.setActionButtonsVisible(false);
+          this.shortcutRail.style.display = 'none';
           this.renderTags();
         },
         move(event) {

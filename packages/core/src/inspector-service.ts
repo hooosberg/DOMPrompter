@@ -50,6 +50,11 @@ export interface InspectorSelectionMeta {
     nudge?: boolean
     /** nudge 时携带的样式变化 */
     styles?: Record<string, string>
+    nudgeChange?: {
+        keys: string[]
+        beforeStyles: Record<string, string>
+        afterStyles: Record<string, string>
+    }
 }
 
 export interface ExternalOverlayState {
@@ -129,6 +134,9 @@ export class InspectorService {
                     property?: string
                     cssProperty?: string
                     styles?: Record<string, string>
+                    keys?: string[]
+                    beforeStyles?: Record<string, string>
+                    afterStyles?: Record<string, string>
                     shiftKey?: boolean
                 }
 
@@ -151,18 +159,26 @@ export class InspectorService {
                 }
 
                 // 浮动按钮已直接改了 DOM，通知属性面板同步记录变化
-                if (payload.type === 'style-nudge' && payload.styles) {
+                if (payload.type === 'style-nudge' && payload.afterStyles) {
                     if (!payload.token) return
                     const selectedNode = await this.helper.getSelectedNodeReferenceFromToken(payload.token)
                     if (!selectedNode.nodeId || !selectedNode.backendNodeId) return
 
                     // 通过 CDP 正式写入样式（确保与 DOM inline style 一致）
-                    await this.helper.setStyleProperties(selectedNode.nodeId, payload.styles)
+                    await this.helper.setStyleProperties(selectedNode.nodeId, payload.afterStyles)
                     // 获取更新后的完整元素信息
                     const element = await this.getElementDetails(selectedNode.backendNodeId)
                     if (element && this.onElementSelectedCallback) {
                         // 通知 React 同步属性面板（不重置 baseline）
-                        this.onElementSelectedCallback(element, { nudge: true, styles: payload.styles })
+                        this.onElementSelectedCallback(element, {
+                            nudge: true,
+                            styles: payload.afterStyles,
+                            nudgeChange: {
+                                keys: payload.keys || Object.keys(payload.afterStyles),
+                                beforeStyles: payload.beforeStyles || {},
+                                afterStyles: payload.afterStyles,
+                            },
+                        })
                     }
                     return
                 }
