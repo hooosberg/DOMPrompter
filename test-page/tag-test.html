@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>标签徽章测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; padding: 40px; }
+    .box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; width: 300px; height: 150px; margin-bottom: 20px; }
+    .box h3 { font-size: 15px; margin-bottom: 8px; }
+    .box p { font-size: 12px; color: #94a3b8; }
+    #log { position: fixed; bottom: 0; left: 0; right: 0; height: 150px; background: rgba(15,23,42,0.97); border-top: 1px solid #334155; padding: 12px; overflow-y: auto; font: 12px/1.6 monospace; }
+  </style>
+</head>
+<body>
+  <h2 style="margin-bottom: 16px;">标签徽章独立测试</h2>
+
+  <div class="box" id="box-a">
+    <h3>容器 A</h3>
+    <p>标签徽章应出现在右上角，hover 显示橙色框，click 选中此容器</p>
+  </div>
+
+  <div class="box" id="box-b">
+    <h3>容器 B</h3>
+    <p>第二个标签目标</p>
+  </div>
+
+  <div id="log"><b>事件日志:</b><br></div>
+
+  <script>
+  function log(msg) {
+    document.getElementById('log').innerHTML += msg + '<br>';
+    document.getElementById('log').scrollTop = 99999;
+  }
+
+  // ── 模拟完整的 tagBadgeLayer + overlay + document click handler ──
+  var doc = document, win = window;
+
+  var isOverlayElement = function(node) {
+    return node instanceof Element && Boolean(node.closest('[data-vi-overlay-root="true"]'));
+  };
+
+  var paintRect = function(node, rect, visible) {
+    if (!visible || !rect) { node.style.display = 'none'; return; }
+    node.style.display = 'block';
+    node.style.left = rect.x + 'px';
+    node.style.top = rect.y + 'px';
+    node.style.width = rect.width + 'px';
+    node.style.height = rect.height + 'px';
+  };
+
+  // Overlay (蓝框)
+  var overlay = doc.createElement('div');
+  overlay.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483646;border:1.5px solid #0d99ff;border-radius:4px;display:none';
+  overlay.dataset.viOverlayRoot = 'true';
+  doc.documentElement.appendChild(overlay);
+
+  // Tag badge layer (最顶层)
+  var tagBadgeLayer = doc.createElement('div');
+  tagBadgeLayer.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647';
+  tagBadgeLayer.dataset.viOverlayRoot = 'true';
+  doc.documentElement.appendChild(tagBadgeLayer);
+
+  // ── 模拟 document click handler (和真实 picker 一样) ──
+  doc.addEventListener('click', function(event) {
+    var target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    log('[doc-click] target=' + target.tagName + (target.id ? '#' + target.id : '') + ' viOverlay=' + isOverlayElement(target) + ' inTagLayer=' + tagBadgeLayer.contains(target));
+    if (target.dataset && target.dataset.viAction) { log('[doc-click] → return (viAction)'); return; }
+    if (tagBadgeLayer.contains(target)) { log('[doc-click] → return (tagBadgeLayer)'); return; }
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    log('[doc-click] → stopImmediatePropagation called');
+  }, true);
+
+  // ── 创建标签徽章 ──
+  var tags = [
+    { text: '标签A', selector: '#box-a' },
+    { text: '标签B', selector: '#box-b' },
+  ];
+
+  tags.forEach(function(tag) {
+    var el = doc.querySelector(tag.selector);
+    if (!el) { log('ERROR: selector ' + tag.selector + ' 找不到元素'); return; }
+
+    var rect = el.getBoundingClientRect();
+    var badge = doc.createElement('div');
+    badge.dataset.viOverlayRoot = 'true';
+    badge.style.cssText = 'position:fixed;display:inline-flex;align-items:center;gap:3px;padding:2px 7px 2px 5px;border-radius:5px;background:rgba(255,196,48,0.88);color:#fff;font:600 10px/1.3 -apple-system,sans-serif;pointer-events:auto;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.15);opacity:0.82;z-index:2147483647';
+    badge.style.transform = 'translate(' + (rect.x + rect.width - 74) + 'px,' + (rect.y + 4) + 'px)';
+    badge.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;pointer-events:none"><path d="M1.5 2.5A1 1 0 0 1 2.5 1.5h3.086a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 0 1.414L7.621 10.707a1 1 0 0 1-1.414 0L1.793 6.293A1 1 0 0 1 1.5 5.586V2.5Z" stroke="#fff" stroke-width="1.2"/><circle cx="4" cy="4" r=".8" fill="#fff"/></svg><span style="color:#fff;pointer-events:none">' + tag.text + '</span>';
+
+    // 直接用闭包 + onclick
+    (function(b, targetEl) {
+      b.onmouseenter = function() {
+        log('[badge-hover] ' + tag.text + ' → 显示橙色框');
+        b.style.opacity = '1';
+        var r = targetEl.getBoundingClientRect();
+        paintRect(overlay, { x: r.x, y: r.y, width: r.width, height: r.height }, true);
+        overlay.style.borderColor = 'rgba(255,196,48,0.8)';
+        overlay.style.borderStyle = 'dashed';
+      };
+      b.onmouseleave = function() {
+        log('[badge-leave] ' + tag.text);
+        b.style.opacity = '0.82';
+        overlay.style.display = 'none';
+      };
+      b.onclick = function(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        log('[badge-click] ★ ' + tag.text + ' → 选中 ' + targetEl.id);
+        paintRect(overlay, targetEl.getBoundingClientRect(), true);
+        overlay.style.borderColor = '#0d99ff';
+        overlay.style.borderStyle = 'solid';
+      };
+    })(badge, el);
+
+    tagBadgeLayer.appendChild(badge);
+    log('[init] 标签 "' + tag.text + '" 已创建，target=' + tag.selector + ', element=' + (el ? 'found' : 'null'));
+  });
+
+  log('[init] 完成。点击橙色标签徽章测试。');
+  </script>
+</body>
+</html>

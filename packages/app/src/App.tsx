@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { OverlayInspector } from './components/overlay/OverlayInspector'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
 import { useAdaptiveWindowPreset } from './hooks/useAdaptiveWindowPreset'
-import type { ActiveEditProperty, BoxModelRect, CanvasTool, DiscoveredApp, ElementNote, ElementNoteTarget, InspectorMode, InspectedElement, ProjectLaunchStatus } from './types'
+import type { ActiveEditProperty, CanvasTool, DiscoveredApp, ElementTag, ElementTagTarget, InspectorMode, InspectedElement, ProjectLaunchStatus } from './types'
 import './App.css'
 
 const DEFAULT_WORKBENCH_WIDTH = 320
@@ -68,7 +67,7 @@ function buildElementSelector(element: InspectedElement) {
   return element.tagName.toLowerCase()
 }
 
-function buildNoteTarget(element: InspectedElement): ElementNoteTarget {
+function buildTagTarget(element: InspectedElement): ElementTagTarget {
   return {
     backendNodeId: element.backendNodeId,
     selector: buildElementSelector(element),
@@ -76,22 +75,14 @@ function buildNoteTarget(element: InspectedElement): ElementNoteTarget {
   }
 }
 
-function getPrimaryNoteTarget(note: ElementNote): ElementNoteTarget | null {
-  return note.targets[0] || null
-}
-
-function noteHasTarget(note: ElementNote, backendNodeId: number) {
-  return note.targets.some((target) => target.backendNodeId === backendNodeId)
-}
-
-function targetListHasTarget(targets: ElementNoteTarget[], backendNodeId: number) {
-  return targets.some((target) => target.backendNodeId === backendNodeId)
+function tagHasTarget(tag: ElementTag, backendNodeId: number) {
+  return tag.targets.some((target) => target.backendNodeId === backendNodeId)
 }
 
 function buildStyleDiffPrompt(
   element: InspectedElement,
   styleDiff: Record<string, string>,
-  notes: ElementNote[],
+  tags: ElementTag[],
 ) {
   const selector = buildElementSelector(element)
   const lines = [
@@ -104,13 +95,13 @@ function buildStyleDiffPrompt(
       JSON.stringify(styleDiff, null, 2),
     )
   } else {
-    lines.push('当前没有记录到直接样式变更，请只根据下面的便签要求更新源码。')
+    lines.push('当前没有记录到直接样式变更，请只根据下面的标签要求更新源码。')
   }
 
-  if (notes.length > 0) {
+  if (tags.length > 0) {
     lines.push(
-      '补充便签：',
-      ...notes.map((note) => `- ${note.targets.map((target) => target.selector).join('、')}: ${note.text}`),
+      '补充标签：',
+      ...tags.map((tag) => `- ${tag.targets.map((target) => target.selector).join('、')}: ${tag.text}`),
     )
   }
 
@@ -119,15 +110,11 @@ function buildStyleDiffPrompt(
   return lines.join('\n')
 }
 
-function buildNoteFromElement(element: InspectedElement, text: string): ElementNote {
-  const target = buildNoteTarget(element)
+function buildTagFromElement(element: InspectedElement, text: string): ElementTag {
   return {
     id: `${element.backendNodeId}-${Date.now()}`,
-    targets: [target],
+    targets: [buildTagTarget(element)],
     text,
-    boxModel: target.boxModel,
-    offsetX: 0,
-    offsetY: 0,
     createdAt: Date.now(),
   }
 }
@@ -146,18 +133,11 @@ function parseNumeric(value: string): number | null {
 
 export default function App() {
   const builtinCanvasRef = useRef<HTMLDivElement | null>(null)
-  const builtinPreviewRef = useRef<HTMLDivElement | null>(null)
-  const builtinPreviewImageRef = useRef<HTMLImageElement | null>(null)
   const workbenchRef = useRef<HTMLElement | null>(null)
   const selectedBackendNodeRef = useRef<number | null>(null)
   const activeToolRef = useRef<CanvasTool>('select')
-  const notesRef = useRef<ElementNote[]>([])
-  const activeNoteIdRef = useRef<string | null>(null)
-  const draftNoteTargetsRef = useRef<ElementNoteTarget[]>([])
-  const draftNoteTextRef = useRef('')
+  const tagsRef = useRef<ElementTag[]>([])
   const activeEditPropertyRef = useRef<ActiveEditProperty | null>(null)
-  const elementRef = useRef<InspectedElement | null>(null)
-  const previewRefreshTimerRef = useRef<number | null>(null)
   const projectSessionRef = useRef<ProjectLaunchStatus>(EMPTY_PROJECT_SESSION)
   const autoConnectTokenRef = useRef<string | null>(null)
   const autoConnectAttemptsRef = useRef<Record<string, number>>({})
@@ -168,19 +148,15 @@ export default function App() {
   const [activeTool, setActiveTool] = useState<CanvasTool>('select')
   const [activeEditProperty, setActiveEditProperty] = useState<ActiveEditProperty | null>(null)
   const [element, setElement] = useState<InspectedElement | null>(null)
-  const [notes, setNotes] = useState<ElementNote[]>([])
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
-  const [draftNoteTargets, setDraftNoteTargets] = useState<ElementNoteTarget[]>([])
-  const [draftNoteText, setDraftNoteText] = useState('')
+  const [tags, setTags] = useState<ElementTag[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [pageTitle, setPageTitle] = useState('')
   const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([])
-  const [previewImage, setPreviewImage] = useState<string | null>(null)
-  const [previewViewport, setPreviewViewport] = useState<BoxModelRect>({ x: 0, y: 0, width: 0, height: 0 })
-  const [previewLoading, setPreviewLoading] = useState(false)
   const [selectionRevision, setSelectionRevision] = useState(0)
   const [projectSession, setProjectSession] = useState<ProjectLaunchStatus>(EMPTY_PROJECT_SESSION)
   const [isWorkbenchVisible, setIsWorkbenchVisible] = useState(true)
+  const [overlayNudgeTick, setOverlayNudgeTick] = useState(0)
+  const overlayNudgeRef = useRef<Record<string, string> | null>(null)
 
   const windowPreset = useAdaptiveWindowPreset(mode, connected)
   const sidebarMode = windowPreset === 'sidebar'
@@ -193,28 +169,12 @@ export default function App() {
   }, [activeTool])
 
   useEffect(() => {
-    notesRef.current = notes
-  }, [notes])
-
-  useEffect(() => {
-    activeNoteIdRef.current = activeNoteId
-  }, [activeNoteId])
-
-  useEffect(() => {
-    draftNoteTargetsRef.current = draftNoteTargets
-  }, [draftNoteTargets])
-
-  useEffect(() => {
-    draftNoteTextRef.current = draftNoteText
-  }, [draftNoteText])
+    tagsRef.current = tags
+  }, [tags])
 
   useEffect(() => {
     activeEditPropertyRef.current = activeEditProperty
   }, [activeEditProperty])
-
-  useEffect(() => {
-    elementRef.current = element
-  }, [element])
 
   useEffect(() => {
     projectSessionRef.current = projectSession
@@ -265,28 +225,22 @@ export default function App() {
 
   const syncExternalOverlayRuntime = useCallback(async (overrides?: {
     tool?: CanvasTool
-    activeNoteId?: string | null
-    draftNoteTargets?: ElementNoteTarget[]
-    draftNoteText?: string
-    notes?: ElementNote[]
+    tags?: ElementTag[]
     activeEditProperty?: ActiveEditProperty | null
   }) => {
-    if (!connected || mode !== 'external') return
+    if (!connected) return
 
     const tool = overrides?.tool ?? activeToolRef.current
-    if (tool === 'browse') return
 
     await window.electronAPI.setExternalOverlayState({
       tool,
-      activeNoteId: overrides?.activeNoteId ?? activeNoteIdRef.current,
-      draftNoteTargets: overrides?.draftNoteTargets ?? draftNoteTargetsRef.current,
-      draftNoteText: overrides?.draftNoteText ?? draftNoteTextRef.current,
-      notes: overrides?.notes ?? notesRef.current,
+      tags: overrides?.tags ?? tagsRef.current,
     })
+    if (tool === 'browse') return
     await window.electronAPI.setActiveEditProperty(
       overrides?.activeEditProperty ?? activeEditPropertyRef.current,
     )
-  }, [connected, mode])
+  }, [connected])
 
   const flash = useCallback((message: string) => {
     setToast(message)
@@ -315,39 +269,17 @@ export default function App() {
     }
   }, [connected, flash, mode])
 
-  const refreshPreview = useCallback(async () => {
-    setPreviewLoading(true)
-    try {
-      const preview = await window.electronAPI.capturePreview()
-      if (preview) {
-        setPreviewImage(preview.dataUrl)
-        setPreviewViewport(preview.viewport)
-      } else {
-        setPreviewImage(null)
-        setPreviewViewport({ x: 0, y: 0, width: 0, height: 0 })
-      }
-    } catch (error) {
-      console.error(error)
-      setPreviewImage(null)
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [])
-
   const syncCurrentElement = useCallback((selectedElement: InspectedElement) => {
     if (selectedBackendNodeRef.current !== selectedElement.backendNodeId) {
       selectedBackendNodeRef.current = selectedElement.backendNodeId
       setSelectionRevision((revision) => revision + 1)
     }
     setElement(selectedElement)
-    setNotes((current) => current.map((note) => (
-      noteHasTarget(note, selectedElement.backendNodeId)
+    setTags((current) => current.map((tag) => (
+      tagHasTarget(tag, selectedElement.backendNodeId)
         ? {
-            ...note,
-            boxModel: getPrimaryNoteTarget(note)?.backendNodeId === selectedElement.backendNodeId
-              ? selectedElement.boxModel
-              : note.boxModel,
-            targets: note.targets.map((target) => (
+            ...tag,
+            targets: tag.targets.map((target) => (
               target.backendNodeId === selectedElement.backendNodeId
                 ? {
                     ...target,
@@ -357,320 +289,73 @@ export default function App() {
                 : target
             )),
           }
-        : note
-    )))
-    setDraftNoteTargets((current) => current.map((target) => (
-      target.backendNodeId === selectedElement.backendNodeId
-        ? {
-            ...target,
-            selector: buildElementSelector(selectedElement),
-            boxModel: selectedElement.boxModel,
-          }
-        : target
+        : tag
     )))
   }, [])
 
-  const refreshSelectedElement = useCallback(async (backendNodeId: number | null) => {
-    if (!backendNodeId) return
-
-    try {
-      const refreshedElement = await window.electronAPI.inspectElementByBackendId({ backendNodeId })
-      if (refreshedElement) {
-        syncCurrentElement(refreshedElement)
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [syncCurrentElement])
-
-  const handleOpenNoteComposer = useCallback((targetElement: InspectedElement, options?: { append?: boolean }) => {
-    const previousSelectedBackendId = selectedBackendNodeRef.current
-    const latestNotes = notesRef.current
-    const latestActiveNoteId = activeNoteIdRef.current
-    const latestDraftTargets = draftNoteTargetsRef.current
-    const nextTarget = buildNoteTarget(targetElement)
-    syncCurrentElement(targetElement)
-    setActiveTool('note')
-    if (options?.append) {
-      const selectedNote = latestActiveNoteId
-        ? latestNotes.find((note) => note.id === latestActiveNoteId) || null
-        : null
-      const appendNote = selectedNote
-
-      if (appendNote) {
-        activeNoteIdRef.current = appendNote.id
-        draftNoteTargetsRef.current = []
-        setDraftNoteTargets([])
-        setActiveNoteId(appendNote.id)
-        setDraftNoteText('')
-      }
-
-      if (appendNote) {
-        const targetExists = noteHasTarget(appendNote, targetElement.backendNodeId)
-        const canRemove = appendNote.targets.length > 1
-        const nextNotes = latestNotes.map((note) => {
-          if (note.id !== appendNote.id) return note
-
-          if (targetExists) {
-            return canRemove
-              ? {
-                  ...note,
-                  targets: note.targets.filter((target) => target.backendNodeId !== targetElement.backendNodeId),
-                }
-              : note
-          }
-
-          return {
-            ...note,
-            targets: [...note.targets, nextTarget],
-          }
-        })
-
-        notesRef.current = nextNotes
-        setNotes(nextNotes)
-        void syncExternalOverlayRuntime({
-          tool: 'note',
-          activeNoteId: appendNote.id,
-          draftNoteTargets: [],
-          draftNoteText: '',
-          notes: nextNotes,
-        })
-        flash(
-          targetExists
-            ? (canRemove
-                ? `已将 ${buildElementSelector(targetElement)} 移出当前标签卡`
-                : '当前标签卡至少保留 1 个对象')
-            : `已将 ${buildElementSelector(targetElement)} 加入当前标签卡`,
-        )
-        return
-      }
-
-      const baseDraftTargets = latestDraftTargets.length > 0
-        ? latestDraftTargets
-        : (previousSelectedBackendId && previousSelectedBackendId !== targetElement.backendNodeId && element
-            ? [buildNoteTarget(element)]
-            : [])
-      const mergedDraftTargets = targetListHasTarget(baseDraftTargets, targetElement.backendNodeId)
-        ? (baseDraftTargets.length > 1
-            ? baseDraftTargets.filter((target) => target.backendNodeId !== targetElement.backendNodeId)
-            : baseDraftTargets)
-        : [...baseDraftTargets, nextTarget]
-
-      draftNoteTargetsRef.current = mergedDraftTargets
-      activeNoteIdRef.current = null
-      draftNoteTextRef.current = ''
-      setActiveNoteId(null)
-      setDraftNoteTargets(mergedDraftTargets)
-      setDraftNoteText('')
-      void syncExternalOverlayRuntime({
-        tool: 'note',
-        activeNoteId: null,
-        draftNoteTargets: mergedDraftTargets,
-        draftNoteText: '',
-        notes: latestNotes,
-      })
-      flash(
-        targetListHasTarget(baseDraftTargets, targetElement.backendNodeId)
-          ? (baseDraftTargets.length > 1
-              ? `已将 ${buildElementSelector(targetElement)} 移出当前草稿`
-              : '当前草稿至少保留 1 个对象')
-          : `已暂存 ${mergedDraftTargets.length} 个对象，开始输入后会生成一张多选标签卡`,
-      )
-      return
-    }
-
-    draftNoteTargetsRef.current = [nextTarget]
-    setDraftNoteTargets([nextTarget])
-    activeNoteIdRef.current = null
-    setActiveNoteId(null)
-    draftNoteTextRef.current = ''
-    setDraftNoteText('')
-    void syncExternalOverlayRuntime({
-      tool: 'note',
-      activeNoteId: null,
-      draftNoteTargets: [nextTarget],
-      draftNoteText: '',
-      notes: latestNotes,
-    })
-    flash(
-      options?.append
-        ? '先选中或创建一张标签卡，再按 Shift 点其它对象加入同一张卡'
-        : `已选中 ${buildElementSelector(targetElement)}，在右侧输入便签内容`,
-    )
-  }, [element, flash, syncCurrentElement, syncExternalOverlayRuntime])
-
-  const handleActivateNote = useCallback(async (targetNote: ElementNote, preferredBackendNodeId?: number | null) => {
-    setActiveTool('note')
-    draftNoteTargetsRef.current = []
-    setDraftNoteTargets([])
-    activeNoteIdRef.current = targetNote.id
-    setActiveNoteId(targetNote.id)
-    draftNoteTextRef.current = ''
-    setDraftNoteText('')
-    void syncExternalOverlayRuntime({
-      tool: 'note',
-      activeNoteId: targetNote.id,
-      draftNoteTargets: [],
-      draftNoteText: '',
-      notes: notesRef.current,
-    })
-    const target = targetNote.targets.find((item) => item.backendNodeId === preferredBackendNodeId)
-      || getPrimaryNoteTarget(targetNote)
-    if (!target) {
-      return
-    }
-
-    try {
-      const refreshedElement = await window.electronAPI.inspectElementByBackendId({ backendNodeId: target.backendNodeId })
-      if (refreshedElement) {
-        syncCurrentElement(refreshedElement)
-        if (mode === 'builtin') {
-          void refreshPreview()
-        }
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [mode, refreshPreview, syncCurrentElement, syncExternalOverlayRuntime])
-
-  const handleUpsertNote = useCallback((targetElement: InspectedElement, text: string) => {
+  const handleUpsertTag = useCallback((targetElement: InspectedElement, text: string, tagId?: string) => {
     const trimmedText = text.trim()
-    const latestNotes = notesRef.current
-    const latestActiveNoteId = activeNoteIdRef.current
-    const latestDraftTargets = draftNoteTargetsRef.current
-    const activeNote = latestActiveNoteId
-      ? latestNotes.find((note) => note.id === latestActiveNoteId) || null
-      : null
-    const existingNote = activeNote
+    const latestTags = tagsRef.current
+    const existingTag = tagId
+      ? latestTags.find((tag) => tag.id === tagId) || null
+      : latestTags.find((tag) => tagHasTarget(tag, targetElement.backendNodeId)) || null
 
     if (!trimmedText) {
-      if (!existingNote) {
+      if (!existingTag) {
         return
       }
 
-      const nextNotes = latestNotes.filter((note) => note.id !== existingNote.id)
-      notesRef.current = nextNotes
-      setNotes(nextNotes)
-      draftNoteTargetsRef.current = []
-      setDraftNoteTargets([])
-      if (activeNoteIdRef.current === existingNote.id) {
-        activeNoteIdRef.current = null
-      }
-      setActiveNoteId((current) => (current === existingNote.id ? null : current))
-      draftNoteTextRef.current = ''
-      setDraftNoteText('')
+      const nextTags = latestTags.filter((tag) => tag.id !== existingTag.id)
+      tagsRef.current = nextTags
+      setTags(nextTags)
       void syncExternalOverlayRuntime({
-        tool: 'note',
-        activeNoteId: null,
-        draftNoteTargets: [],
-        draftNoteText: '',
-        notes: nextNotes,
+        tool: activeToolRef.current,
+        tags: nextTags,
       })
       return
     }
 
-    const noteTemplateTargets = latestDraftTargets.length > 0
-      ? latestDraftTargets
-      : [buildNoteTarget(targetElement)]
-    const noteTemplate = {
-      ...buildNoteFromElement(targetElement, trimmedText),
-      targets: noteTemplateTargets,
-      boxModel: noteTemplateTargets[0]?.boxModel || targetElement.boxModel,
-    }
-    const nextNote = existingNote
+    const nextTarget = buildTagTarget(targetElement)
+    const nextTag = existingTag
       ? {
-          ...existingNote,
+          ...existingTag,
           text: trimmedText,
-          boxModel: existingNote.boxModel || noteTemplate.boxModel,
-          targets: noteHasTarget(existingNote, targetElement.backendNodeId)
-            ? existingNote.targets
-            : [...existingNote.targets, buildNoteTarget(targetElement)],
+          targets: tagHasTarget(existingTag, targetElement.backendNodeId)
+            ? existingTag.targets
+            : [...existingTag.targets, nextTarget],
         }
-      : noteTemplate
+      : buildTagFromElement(targetElement, trimmedText)
 
-    const nextNotes = !existingNote
-      ? [...latestNotes, nextNote]
-      : latestNotes.map((note) => (
-          note.id === existingNote.id
-            ? nextNote
-            : note
+    const nextTags = !existingTag
+      ? [...latestTags, nextTag]
+      : latestTags.map((tag) => (
+          tag.id === existingTag.id
+            ? nextTag
+            : tag
         ))
-    notesRef.current = nextNotes
-    setNotes(nextNotes)
-    draftNoteTargetsRef.current = []
-    setDraftNoteTargets([])
-    activeNoteIdRef.current = nextNote.id
-    setActiveNoteId(nextNote.id)
-    draftNoteTextRef.current = ''
-    setDraftNoteText('')
+    tagsRef.current = nextTags
+    setTags(nextTags)
     void syncExternalOverlayRuntime({
-      tool: 'note',
-      activeNoteId: nextNote.id,
-      draftNoteTargets: [],
-      draftNoteText: '',
-      notes: nextNotes,
+      tool: activeToolRef.current,
+      tags: nextTags,
     })
   }, [syncExternalOverlayRuntime])
 
-  const handleFinalizeDraftNote = useCallback((text: string) => {
-    const targetElement = elementRef.current
-    const draftTargets = draftNoteTargetsRef.current
-    const trimmedText = text.trim()
-
-    if (!targetElement || draftTargets.length === 0) {
-      setDraftNoteText('')
-      return
-    }
-
-    if (!trimmedText) {
-      setDraftNoteText('')
-      return
-    }
-
-    handleUpsertNote(targetElement, trimmedText)
-  }, [handleUpsertNote])
-
-  const handleDeleteNote = useCallback((noteId: string) => {
-    const nextNotes = notesRef.current.filter((note) => note.id !== noteId)
-    notesRef.current = nextNotes
-    setNotes(nextNotes)
-    if (activeNoteIdRef.current === noteId) {
-      activeNoteIdRef.current = null
-    }
-    setActiveNoteId((current) => (current === noteId ? null : current))
+  const handleDeleteTag = useCallback((tagId: string) => {
+    const nextTags = tagsRef.current.filter((tag) => tag.id !== tagId)
+    tagsRef.current = nextTags
+    setTags(nextTags)
     void syncExternalOverlayRuntime({
       tool: activeToolRef.current,
-      activeNoteId: activeNoteIdRef.current === noteId ? null : activeNoteIdRef.current,
-      notes: nextNotes,
+      tags: nextTags,
     })
-    flash('便签已删除')
+    flash('标签已删除')
   }, [flash, syncExternalOverlayRuntime])
-
-  const handleMoveNote = useCallback((noteId: string, deltaX: number, deltaY: number) => {
-    const nextNotes = notesRef.current.map((note) => (
-      note.id === noteId
-        ? {
-            ...note,
-            offsetX: note.offsetX + deltaX,
-            offsetY: note.offsetY + deltaY,
-          }
-        : note
-    ))
-    notesRef.current = nextNotes
-    setNotes(nextNotes)
-    void syncExternalOverlayRuntime({
-      tool: activeToolRef.current,
-      notes: nextNotes,
-    })
-  }, [syncExternalOverlayRuntime])
 
   const resetInspectorState = useCallback(() => {
     selectedBackendNodeRef.current = null
     setElement(null)
-    setNotes([])
-    setActiveNoteId(null)
-    setDraftNoteTargets([])
-    setDraftNoteText('')
+    setTags([])
   }, [])
 
   const connectToTarget = useCallback(async (
@@ -711,10 +396,7 @@ export default function App() {
         setConnected(true)
         setMode('builtin')
         setUrl(nextUrl)
-        await window.electronAPI.setBuiltinViewInteractive(activeToolRef.current !== 'note')
-        if (activeToolRef.current === 'note') {
-          await refreshPreview()
-        }
+        await window.electronAPI.setBuiltinViewInteractive(true)
         if (!options?.silentSuccess) {
           flash('已连接内置浏览器')
         }
@@ -751,7 +433,7 @@ export default function App() {
       return false
     } finally {
     }
-  }, [flash, refreshPreview, resetInspectorState])
+  }, [flash, resetInspectorState])
 
   const applyAutoConnectedState = useCallback((nextMode: InspectorMode, target: string, message?: string) => {
     const token = `${nextMode}:${target}`
@@ -805,31 +487,22 @@ export default function App() {
 
   useEffect(() => {
     window.electronAPI.onElementSelected((selectedElement, meta) => {
-      if (activeToolRef.current === 'note') {
-        handleOpenNoteComposer(selectedElement, { append: Boolean(meta?.append) })
+      // 浮动按钮的 nudge：DOM 已改，只需让属性面板记录变化
+      if (meta?.nudge && meta?.styles) {
+        overlayNudgeRef.current = meta.styles
+        setOverlayNudgeTick((t) => t + 1)
+        // 同时更新 element 状态（不重置 baseline）
+        setElement(selectedElement)
         return
       }
-
+      if (activeToolRef.current === 'browse') {
+        setActiveTool('select')
+      }
       syncCurrentElement(selectedElement)
     })
 
-    window.electronAPI.onOverlayAction((action) => {
-      if (action.type === 'note-select') {
-        const targetNote = notesRef.current.find((note) => note.id === action.noteId)
-        if (targetNote) {
-          void handleActivateNote(targetNote)
-        }
-        return
-      }
-
-      if (action.type === 'note-delete') {
-        handleDeleteNote(action.noteId)
-        return
-      }
-
-      if (action.type === 'note-move') {
-        handleMoveNote(action.noteId, action.deltaX || 0, action.deltaY || 0)
-      }
+    window.electronAPI.onPropertyActivated((property) => {
+      setActiveEditProperty(property)
     })
 
     window.electronAPI.onBrowserViewLoaded((info) => {
@@ -901,57 +574,20 @@ export default function App() {
 
     void refreshLocalApps()
     return () => window.electronAPI.removeAllListeners()
-  }, [applyAutoConnectedState, connected, flash, handleActivateNote, handleDeleteNote, handleMoveNote, handleOpenNoteComposer, mode, refreshLocalApps, refreshPreview, syncCurrentElement, triggerAutoConnect])
+  }, [applyAutoConnectedState, connected, flash, mode, refreshLocalApps, syncCurrentElement, triggerAutoConnect])
 
   useEffect(() => {
-    if (!connected || mode !== 'builtin') return
-
-    const useLiveBrowserView = activeTool !== 'note'
+    if (!connected) return
 
     void (async () => {
-      await window.electronAPI.setBuiltinViewInteractive(useLiveBrowserView)
-
-      if (activeTool === 'browse') {
-        await window.electronAPI.stopInspect()
-        return
-      }
-
-      if (activeTool === 'select') {
-        await window.electronAPI.startInspect()
-        return
-      }
-
-      await window.electronAPI.stopInspect()
-      await new Promise((resolve) => window.setTimeout(resolve, 60))
-      await refreshPreview()
-      await refreshSelectedElement(selectedBackendNodeRef.current)
-    })()
-  }, [activeTool, connected, mode, refreshPreview, refreshSelectedElement])
-
-  useEffect(() => {
-    if (!connected || mode !== 'external') return
-
-    const syncExternalOverlay = async () => {
-      await window.electronAPI.setExternalOverlayState({
-        tool: activeToolRef.current,
-        activeNoteId: activeNoteIdRef.current,
-        draftNoteTargets: draftNoteTargetsRef.current,
-        draftNoteText: draftNoteTextRef.current,
-        notes: notesRef.current,
-      })
-      await window.electronAPI.setActiveEditProperty(activeEditPropertyRef.current)
-    }
-
-    void (async () => {
-      if (activeTool === 'browse') {
-        await window.electronAPI.stopInspect()
-        return
+      if (mode === 'builtin') {
+        await window.electronAPI.setBuiltinViewInteractive(true)
       }
 
       await window.electronAPI.startInspect()
-      await syncExternalOverlay()
+      await syncExternalOverlayRuntime({ tool: activeToolRef.current })
     })()
-  }, [activeTool, connected, mode])
+  }, [activeTool, connected, mode, syncExternalOverlayRuntime])
 
   useEffect(() => {
     if (!connected || activeTool === 'browse') return
@@ -960,60 +596,13 @@ export default function App() {
   }, [activeEditProperty, activeTool, connected])
 
   useEffect(() => {
-    if (!connected || mode !== 'external') return
+    if (!connected) return
 
     void window.electronAPI.setExternalOverlayState({
       tool: activeTool,
-      activeNoteId,
-      draftNoteTargets,
-      draftNoteText,
-      notes,
+      tags,
     })
-  }, [activeNoteId, activeTool, connected, draftNoteTargets, draftNoteText, mode, notes])
-
-  useEffect(() => {
-    const shouldTrackPreview = connected && mode === 'builtin' && activeTool === 'note'
-    if (!shouldTrackPreview) {
-      if (previewRefreshTimerRef.current) {
-        window.clearTimeout(previewRefreshTimerRef.current)
-        previewRefreshTimerRef.current = null
-      }
-      return
-    }
-
-      const schedulePreviewRefresh = () => {
-        if (previewRefreshTimerRef.current) {
-          window.clearTimeout(previewRefreshTimerRef.current)
-        }
-        previewRefreshTimerRef.current = window.setTimeout(() => {
-          previewRefreshTimerRef.current = null
-          void (async () => {
-            await refreshPreview()
-            await refreshSelectedElement(selectedBackendNodeRef.current)
-          })()
-        }, 140)
-      }
-
-    const observer = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(() => schedulePreviewRefresh())
-      : null
-
-    const targets = [
-      builtinPreviewRef.current,
-    ].filter((target): target is HTMLDivElement => Boolean(target))
-
-    targets.forEach((target) => observer?.observe(target))
-    window.addEventListener('resize', schedulePreviewRefresh)
-
-    return () => {
-      if (previewRefreshTimerRef.current) {
-        window.clearTimeout(previewRefreshTimerRef.current)
-        previewRefreshTimerRef.current = null
-      }
-      observer?.disconnect()
-      window.removeEventListener('resize', schedulePreviewRefresh)
-    }
-  }, [activeTool, connected, mode, refreshPreview])
+  }, [activeTool, connected, tags])
 
   const handleSelectProject = useCallback(async () => {
     try {
@@ -1123,47 +712,19 @@ export default function App() {
     setActiveTool('select')
     setActiveEditProperty(null)
     setPageTitle('')
-    setPreviewImage(null)
-    setPreviewViewport({ x: 0, y: 0, width: 0, height: 0 })
-    setPreviewLoading(false)
     setIsWorkbenchVisible(true)
     resetInspectorState()
   }, [resetInspectorState])
 
   const handleCopyAIPrompt = async (styleDiff: Record<string, string>) => {
     if (!element) return
-    if (Object.keys(styleDiff).length === 0 && notes.length === 0) {
+    if (Object.keys(styleDiff).length === 0 && tags.length === 0) {
       flash('当前还没有可导出的微调改动')
       return
     }
 
-    await copyText(buildStyleDiffPrompt(element, styleDiff, notes), '微调 Prompt 已复制')
+    await copyText(buildStyleDiffPrompt(element, styleDiff, tags), '微调 Prompt 已复制')
   }
-
-  const handleResolveElementAtPoint = useCallback(async (x: number, y: number) => {
-    try {
-      return await window.electronAPI.inspectElementAtPoint({ x, y })
-    } catch (error) {
-      console.error(error)
-      return null
-    }
-  }, [])
-
-  const handleResolveElementStackAtPoint = useCallback(async (x: number, y: number) => {
-    try {
-      return await window.electronAPI.inspectElementStackAtPoint({ x, y })
-    } catch (error) {
-      console.error(error)
-      return []
-    }
-  }, [])
-
-  const handleSelectElement = useCallback((selectedElement: InspectedElement) => {
-    syncCurrentElement(selectedElement)
-    if (mode === 'builtin' && activeToolRef.current === 'note') {
-      void refreshPreview()
-    }
-  }, [mode, refreshPreview, syncCurrentElement])
 
   const relevantApps = getRelevantApps(discoveredApps, mode)
   const currentTargetLabel = mode === 'builtin'
@@ -1221,54 +782,13 @@ export default function App() {
                 launchBusy={sessionLaunchBusy}
               />
             ) : mode === 'builtin' ? (
-              activeTool !== 'note' ? (
-                <div className="canvas-browserview" ref={builtinCanvasRef}>
-                  <div className="canvas-hud">
-                    <span className="canvas-hud-chip">Live Canvas</span>
-                    <span className="canvas-hud-title">{currentTargetLabel}</span>
-                  </div>
-                  <span className="loading">{pageTitle || '页面加载中…'}</span>
+              <div className="canvas-browserview" ref={builtinCanvasRef}>
+                <div className="canvas-hud">
+                  <span className="canvas-hud-chip">Live Canvas</span>
+                  <span className="canvas-hud-title">{currentTargetLabel}</span>
                 </div>
-              ) : (
-                <div className="builtin-preview-stage" ref={builtinPreviewRef}>
-                  {previewImage ? (
-                    <img
-                      ref={builtinPreviewImageRef}
-                      className="builtin-preview-image"
-                      src={previewImage}
-                      alt={currentTargetLabel}
-                    />
-                  ) : (
-                    <div className="builtin-preview-placeholder">
-                      {previewLoading ? '预览同步中…' : '等待页面预览…'}
-                    </div>
-                  )}
-                  <div className="canvas-hud">
-                    <span className="canvas-hud-chip">Mirror Canvas</span>
-                    <span className="canvas-hud-title">{currentTargetLabel}</span>
-                  </div>
-                  <OverlayInspector
-                    activeTool={activeTool}
-                    activeEditProperty={activeEditProperty}
-                    element={element}
-                    notes={notes}
-                    activeNoteId={activeNoteId}
-                    draftNoteTargets={draftNoteTargets}
-                    containerRef={builtinPreviewRef}
-                    imageRef={builtinPreviewImageRef}
-                    viewportOffset={previewViewport}
-                    showToolbar={false}
-                    onToolChange={setActiveTool}
-                    onResolveElementAtPoint={handleResolveElementAtPoint}
-                    onResolveElementStackAtPoint={handleResolveElementStackAtPoint}
-                    onOpenNoteComposer={handleOpenNoteComposer}
-                    onSelectNote={handleActivateNote}
-                    onDeleteNote={handleDeleteNote}
-                    onMoveNote={handleMoveNote}
-                    onSelectElement={handleSelectElement}
-                  />
-                </div>
-              )
+                <span className="loading">{pageTitle || '页面加载中…'}</span>
+              </div>
             ) : (
               <div className="workspace-hero">
                 <div className="workspace-card workspace-card-external">
@@ -1303,25 +823,16 @@ export default function App() {
                 element={element}
                 compact={workbenchCompact}
                 activeTool={activeTool}
-                notes={notes}
-                activeNoteId={activeNoteId}
-                draftNoteTargets={draftNoteTargets}
-                draftNoteText={draftNoteText}
+                tags={tags}
                 activeEditProperty={activeEditProperty}
                 selectionRevision={selectionRevision}
-                onElementChange={(nextElement) => {
-                  syncCurrentElement(nextElement)
-                  if (mode === 'builtin' && activeTool === 'note') {
-                    void refreshPreview()
-                  }
-                }}
+                overlayNudgeStyles={overlayNudgeRef.current}
+                overlayNudgeTick={overlayNudgeTick}
+                onElementChange={syncCurrentElement}
                 onToolChange={setActiveTool}
                 onActiveEditPropertyChange={setActiveEditProperty}
-                onUpsertNote={handleUpsertNote}
-                onDraftNoteTextChange={setDraftNoteText}
-                onFinalizeDraftNote={handleFinalizeDraftNote}
-                onActivateNote={handleActivateNote}
-                onDeleteNote={handleDeleteNote}
+                onUpsertTag={handleUpsertTag}
+                onDeleteTag={handleDeleteTag}
                 onCopyAIPrompt={(styleDiff) => void handleCopyAIPrompt(styleDiff)}
               />
             )}

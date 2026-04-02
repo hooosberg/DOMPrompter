@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Inspector - Overlay 通信测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 40px;
+      min-height: 100vh;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 32px; }
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 900px;
+    }
+
+    .box-a {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      width: 350px;
+      height: 180px;
+    }
+    .box-a h3 { font-size: 15px; margin-bottom: 8px; color: #38bdf8; }
+    .box-a p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+    .box-b {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .box-b .item {
+      background: #334155;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      flex: 1;
+      text-align: center;
+    }
+
+    /* 事件日志面板 */
+    #log-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      background: rgba(15,23,42,0.97);
+      border-top: 1px solid #334155;
+      padding: 12px 20px;
+      overflow-y: auto;
+      font: 12px/1.6 'SF Mono', Menlo, monospace;
+      z-index: 99999;
+    }
+    #log-panel .log-title {
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    #log-panel .log-title button {
+      background: #334155;
+      border: none;
+      color: #94a3b8;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .log-entry { color: #e2e8f0; border-bottom: 1px solid #1e293b; padding: 2px 0; }
+    .log-entry .log-type { color: #38bdf8; font-weight: 600; }
+    .log-entry .log-prop { color: #34d399; }
+    .log-entry .log-value { color: #fbbf24; }
+    .log-entry .log-error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h1>Overlay 通信测试</h1>
+  <p class="subtitle">点击容器选中 → 蓝框出现 → 点击浮动按钮 → 观察 CSS 变化和日志</p>
+
+  <div class="test-grid">
+    <div class="box-a" id="box-size">
+      <h3>A. 尺寸测试 (350×180)</h3>
+      <p>选中后点击 W/H 按钮，宽度/高度每次 +8px</p>
+    </div>
+
+    <div class="box-b" id="box-flex">
+      <div class="item">Item 1</div>
+      <div class="item">Item 2</div>
+      <div class="item">Item 3</div>
+    </div>
+  </div>
+
+  <div id="log-panel">
+    <div class="log-title">
+      <span>事件日志</span>
+      <button onclick="document.querySelectorAll('.log-entry').forEach(e=>e.remove())">清空</button>
+    </div>
+  </div>
+
+  <script>
+  // ── 日志工具 ──
+  function log(type, msg, extra) {
+    const panel = document.getElementById('log-panel');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = '<span class="log-type">[' + type + ']</span> ' + msg
+      + (extra ? ' <span class="log-value">' + extra + '</span>' : '');
+    panel.appendChild(entry);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  // ── 模拟 CDP Binding ──
+  // 在真实环境中，这个函数由 CDP Runtime.addBinding 注入
+  // 这里我们直接模拟：收到 increment-property 就修改目标元素的 CSS
+  const STEP = 8;
+  let selectedTarget = null;
+
+  window.__visualInspectorSelectMock = function(payloadStr) {
+    const payload = JSON.parse(payloadStr);
+    log('binding', '收到 payload: type=<span class="log-prop">' + payload.type + '</span>',
+        payload.cssProperty ? 'cssProperty=' + payload.cssProperty : (payload.shiftKey !== undefined ? '' : ''));
+
+    if (payload.type === 'select') {
+      // 选择元素 - 在真实环境中会通过 InspectorService → IPC → React
+      const el = window.__visualInspectorPickerMock?.selections?.[payload.token];
+      if (el) {
+        selectedTarget = el;
+        log('select', '选中元素: <span class="log-prop">' + el.tagName + '#' + el.id + '</span>',
+            el.offsetWidth + '×' + el.offsetHeight);
+      }
+    }
+
+    if (payload.type === 'increment-property' && payload.cssProperty) {
+      // ★ 核心测试: 模拟属性面板的增量操作
+      if (!selectedTarget) {
+        log('error', '没有选中元素，无法增量', '');
+        return;
+      }
+      const prop = payload.cssProperty;
+      const cs = window.getComputedStyle(selectedTarget);
+      const current = parseFloat(cs.getPropertyValue(prop)) || 0;
+      const next = Math.max(0, current + STEP);
+      selectedTarget.style.setProperty(prop, next + 'px');
+      log('increment', '<span class="log-prop">' + prop + '</span>: '
+        + current + 'px → <span class="log-value">' + next + 'px</span>',
+        '(step=' + STEP + ')');
+
+      // 更新 overlay 显示
+      const picker = window.__visualInspectorPickerMock;
+      if (picker && picker.current) {
+        picker.update(picker.current, true);
+      }
+    }
+  };
+
+  // ── 注入 picker 脚本 ──
+  // 等 DOM 就绪后，手动调用 buildElementPickerScript 生成的代码
+  // 这里直接 eval picker 脚本（开发环境测试用）
+  log('init', '正在注入 picker 脚本...');
+
+  // 从编译后的 core 包中提取 picker 脚本内容太复杂
+  // 改为直接内联一个最小化的 picker 来验证按钮通信
+  (function() {
+    const binding = '__visualInspectorSelectMock';
+    const doc = document;
+    const win = window;
+
+    const isOverlayElement = (node) => (
+      node instanceof Element && Boolean(node.closest('[data-vi-overlay-root="true"]'))
+    );
+
+    const isSelectableCandidate = (node) => {
+      if (!(node instanceof Element)) return false;
+      if (node === doc.documentElement || node === doc.body) return false;
+      if (isOverlayElement(node)) return false;
+      const rect = node.getBoundingClientRect();
+      return rect.width > 1 && rect.height > 1;
+    };
+
+    const buildElementStack = (target) => {
+      if (!(target instanceof Element)) return [];
+      const stack = [];
+      let current = target;
+      while (current instanceof Element && current !== doc.documentElement && current !== doc.body) {
+        if (isSelectableCandidate(current)) stack.push(current);
+        current = current.parentElement;
+      }
+      return stack;
+    };
+
+    const buildSelector = (target) => {
+      return target.tagName.toLowerCase()
+        + (target.id ? '#' + target.id : '')
+        + (target.classList?.length ? '.' + target.classList[0] : '');
+    };
+
+    // Overlay
+    const overlay = doc.createElement('div');
+    overlay.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:2147483646;border:1.5px solid #0d99ff;border-radius:4px;background:transparent;display:none';
+    overlay.dataset.viOverlayRoot = 'true';
+
+    const label = doc.createElement('div');
+    label.style.cssText = 'position:absolute;left:-2px;top:-28px;padding:4px 8px;border-radius:6px;background:rgba(13,24,40,0.92);border:1px solid rgba(13,153,255,0.28);color:#f5f1ff;font:600 11px/1.2 -apple-system,sans-serif;white-space:nowrap';
+
+    // ── 浮动动作按钮 ──
+    const ACTION_BUTTON_DEFS = [
+      { id: 'width',         label: 'W',  cssProperty: 'width',          group: 'size' },
+      { id: 'height',        label: 'H',  cssProperty: 'height',         group: 'size' },
+      { id: 'padding-top',   label: '↑',  cssProperty: 'padding-top',    group: 'padding' },
+      { id: 'padding-right', label: '→',  cssProperty: 'padding-right',  group: 'padding' },
+      { id: 'padding-bottom',label: '↓',  cssProperty: 'padding-bottom', group: 'padding' },
+      { id: 'padding-left',  label: '←',  cssProperty: 'padding-left',   group: 'padding' },
+      { id: 'margin-top',    label: '↑',  cssProperty: 'margin-top',     group: 'margin' },
+      { id: 'margin-right',  label: '→',  cssProperty: 'margin-right',   group: 'margin' },
+      { id: 'margin-bottom', label: '↓',  cssProperty: 'margin-bottom',  group: 'margin' },
+      { id: 'margin-left',   label: '←',  cssProperty: 'margin-left',    group: 'margin' },
+    ];
+
+    const actionButtons = ACTION_BUTTON_DEFS.map(function(config) {
+      const isSize = config.group === 'size';
+      const isMargin = config.group === 'margin';
+      const bgColor = isSize ? 'rgba(59,130,246,0.88)' : isMargin ? 'rgba(251,146,60,0.88)' : 'rgba(16,185,129,0.88)';
+      const bgHover = isSize ? 'rgba(59,130,246,1)' : isMargin ? 'rgba(251,146,60,1)' : 'rgba(16,185,129,1)';
+      const sz = isSize ? 20 : 16;
+      const btn = doc.createElement('div');
+      btn.dataset.viAction = config.id;
+      btn.dataset.viOverlayRoot = 'true';
+      btn.style.cssText = 'position:absolute;display:none;width:' + sz + 'px;height:' + sz + 'px;border-radius:' + (isSize ? '4px' : '50%')
+        + ';background:' + bgColor + ';color:#fff;font:700 ' + (isSize ? 10 : 8) + 'px/1 -apple-system,sans-serif'
+        + ';pointer-events:auto;cursor:pointer;user-select:none;text-align:center;line-height:' + sz + 'px'
+        + ';transition:transform 100ms ease,background 100ms ease;box-shadow:0 1px 4px rgba(0,0,0,0.2)';
+      btn.textContent = config.label;
+      btn.addEventListener('mouseenter', function() {
+        btn.style.background = bgHover;
+        btn.style.transform = 'scale(1.15)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.background = bgColor;
+        btn.style.transform = 'scale(1)';
+      });
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+        var token = 'vi-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        log('button-click', '按钮 <span class="log-prop">' + config.id + '</span> 被点击');
+        if (typeof win[binding] === 'function') {
+          win[binding](JSON.stringify({
+            type: 'increment-property',
+            cssProperty: config.cssProperty,
+            token: token,
+          }));
+        } else {
+          log('error', 'binding 函数不存在: <span class="log-error">win["' + binding + '"]</span>');
+        }
+      }, true);
+      return btn;
+    });
+
+    actionButtons.forEach(function(btn) { overlay.appendChild(btn); });
+    overlay.appendChild(label);
+
+    // Tag badge layer
+    const tagBadgeLayer = doc.createElement('div');
+    tagBadgeLayer.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647';
+    tagBadgeLayer.dataset.viOverlayRoot = 'true';
+
+    doc.documentElement.appendChild(overlay);
+    doc.documentElement.appendChild(tagBadgeLayer);
+
+    function paintRect(node, rect, visible) {
+      if (!visible || !rect || rect.width <= 0 || rect.height <= 0) {
+        node.style.display = 'none';
+        return;
+      }
+      node.style.display = 'block';
+      node.style.left = rect.x + 'px';
+      node.style.top = rect.y + 'px';
+      node.style.width = rect.width + 'px';
+      node.style.height = rect.height + 'px';
+    }
+
+    const state = {
+      active: true,
+      locked: false,
+      current: null,
+      selections: {},
+      actionButtons: actionButtons,
+      tagBadgeLayer: tagBadgeLayer,
+      overlay: overlay,
+
+      updateActionButtons: function(w, h) {
+        var showInner = w > 80 && h > 80;
+        var showOuter = w > 50 && h > 50;
+        var positions = [
+          { x: w + 6, y: h / 2 - 10, show: true },
+          { x: w / 2 - 10, y: h + 6, show: true },
+          { x: w / 2 - 8, y: 4, show: showInner },
+          { x: w - 20, y: h / 2 - 8, show: showInner },
+          { x: w / 2 - 8, y: h - 20, show: showInner },
+          { x: 4, y: h / 2 - 8, show: showInner },
+          { x: w / 2 + 20, y: -22, show: showOuter },
+          { x: w + 6, y: h / 2 + 16, show: showOuter },
+          { x: w / 2 + 16, y: h + 6, show: showOuter },
+          { x: -22, y: h / 2 - 8, show: showOuter },
+        ];
+        this.actionButtons.forEach(function(btn, i) {
+          if (positions[i]) {
+            btn.style.left = positions[i].x + 'px';
+            btn.style.top = positions[i].y + 'px';
+            btn.__viShow = positions[i].show;
+          }
+        });
+      },
+      setActionButtonsVisible: function(visible) {
+        this.actionButtons.forEach(function(btn) {
+          btn.style.display = (visible && btn.__viShow !== false) ? 'block' : 'none';
+        });
+      },
+
+      update: function(target, selected) {
+        if (!(target instanceof Element)) return this.hide();
+        var rect = target.getBoundingClientRect();
+        if (!rect.width && !rect.height) return this.hide();
+        this.current = target;
+        this.locked = selected;
+        paintRect(overlay, rect, true);
+        overlay.style.borderColor = '#0d99ff';
+        overlay.style.borderStyle = 'solid';
+        label.textContent = buildSelector(target) + '  ' + Math.round(rect.width) + ' × ' + Math.round(rect.height);
+        label.style.display = 'block';
+        this.updateActionButtons(rect.width, rect.height);
+        this.setActionButtonsVisible(selected);
+      },
+      hide: function() {
+        this.current = null;
+        this.locked = false;
+        overlay.style.display = 'none';
+        this.setActionButtonsVisible(false);
+      },
+      emitPayload: function(target, payload) {
+        var token = 'vi-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        this.selections[token] = target;
+        if (typeof win[binding] === 'function') {
+          win[binding](JSON.stringify(Object.assign({}, payload, { token: token })));
+        }
+      },
+    };
+
+    // 事件
+    doc.addEventListener('mousemove', function(event) {
+      if (state.locked) return;
+      var target = event.target;
+      if (!(target instanceof Element)) return;
+      if (isOverlayElement(target)) return;
+      var stack = buildElementStack(target);
+      if (stack.length > 0) {
+        state.update(stack[0], false);
+      }
+    }, true);
+
+    doc.addEventListener('click', function(event) {
+      var target = event.target;
+      if (!(target instanceof Element)) return;
+      // 让 action buttons 和 tag badges 自行处理
+      if (target.dataset && target.dataset.viAction) return;
+      if (tagBadgeLayer.contains(target)) return;
+      if (isOverlayElement(target)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      var stack = buildElementStack(target);
+      if (stack.length === 0) return;
+      var el = stack[0];
+      state.update(el, true);
+      state.emitPayload(el, { type: 'select', shiftKey: false });
+    }, true);
+
+    // RAF loop to track selected element position
+    function tick() {
+      if (state.current && state.locked) {
+        state.update(state.current, true);
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    win.__visualInspectorPickerMock = state;
+    log('init', 'Picker 已注入，<span class="log-value">点击任意容器试试</span>');
+  })();
+  </script>
+</body>
+</html>

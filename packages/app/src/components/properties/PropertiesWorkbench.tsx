@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BASE_PROPERTY_SECTIONS, IMAGE_SECTION, TYPOGRAPHY_SECTION } from '../../config/propertySections'
 import { useStyleBinding } from '../../hooks/useStyleBinding'
-import type { ActiveEditProperty, CanvasTool, ElementNote, ElementNoteTarget, InspectedElement, PropertyFieldConfig, PropertySectionConfig } from '../../types'
+import type { ActiveEditProperty, CanvasTool, ElementTag, ElementTagTarget, InspectedElement, PropertyFieldConfig, PropertySectionConfig } from '../../types'
 import { FieldControl } from './FieldControl'
 
 const SNAPSHOT_SECTIONS = [
@@ -13,7 +13,6 @@ const SNAPSHOT_SECTIONS = [
 
 const TOOL_ITEMS: Array<{ tool: Exclude<CanvasTool, 'browse'>; icon: string; label: string }> = [
   { tool: 'select', icon: '↖', label: '选择' },
-  { tool: 'note', icon: '✎', label: '便签' },
 ]
 
 interface RecommendedAction {
@@ -286,21 +285,21 @@ function getElementDisplayName(element: InspectedElement) {
   return tagName
 }
 
-function getPrimaryNoteTarget(note: ElementNote): ElementNoteTarget | null {
-  return note.targets[0] || null
+function getPrimaryTagTarget(tag: ElementTag): ElementTagTarget | null {
+  return tag.targets[0] || null
 }
 
-function noteHasTarget(note: ElementNote, backendNodeId: number) {
-  return note.targets.some((target) => target.backendNodeId === backendNodeId)
+function tagHasTarget(tag: ElementTag, backendNodeId: number) {
+  return tag.targets.some((target) => target.backendNodeId === backendNodeId)
 }
 
-function getNoteDisplayName(note: ElementNote) {
-  const primaryTarget = getPrimaryNoteTarget(note)
+function getTagDisplayName(tag: ElementTag) {
+  const primaryTarget = getPrimaryTagTarget(tag)
   if (!primaryTarget) {
-    return '未命名便签'
+    return '未命名标签'
   }
 
-  return note.targets
+  return tag.targets
     .slice(0, 3)
     .map((target) => target.selector)
     .join(' · ')
@@ -315,13 +314,6 @@ function supportsImageEditing(element: InspectedElement) {
 }
 
 function getDefaultHelperText(activeTool: CanvasTool) {
-  if (activeTool === 'note') {
-    return {
-      title: '便签模式',
-      description: '点击任意元素会给它添加一张便签，导出给 AI 时会连同元素选择器和备注一起带走。',
-    }
-  }
-
   if (activeTool === 'browse') {
     return {
       title: '真实交互',
@@ -1043,136 +1035,116 @@ function AttributeEditor({
   )
 }
 
-function NoteEditor({
-  value,
-  targets,
-  isOpen,
-  deletable = true,
-  onCommit,
-  onFinalize,
-  onOpen,
-  onDelete,
-  className = '',
-  placeholder = '输入给 AI 的备注，例如：图标换成更轻的线性风格，颜色偏暖一点。',
+function LabelSection({
+  element,
+  tags,
+  onUpsertTag,
+  onDeleteTag,
 }: {
-  value: string
-  targets: ElementNoteTarget[]
-  isOpen: boolean
-  deletable?: boolean
-  onCommit: (value: string) => void
-  onFinalize?: (value: string) => void
-  onOpen: () => void
-  onDelete: () => void
-  className?: string
-  placeholder?: string
+  element: InspectedElement
+  tags: ElementTag[]
+  onUpsertTag: (element: InspectedElement, text: string, tagId?: string) => void
+  onDeleteTag: (tagId: string) => void
 }) {
-  const [draftValue, setDraftValue] = useState(value)
-  const [isFocused, setIsFocused] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    if (!isFocused) {
-      setDraftValue(value)
+  const elementTags = tags.filter((tag) =>
+    tag.targets.some((target) => target.backendNodeId === element.backendNodeId),
+  )
+
+  const hasTag = elementTags.length > 0
+
+  const handleConfirmAdd = (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed) {
+      onUpsertTag(element, trimmed)
     }
-  }, [isFocused, value])
+  }
 
   return (
-    <section
-      className={`note-mode-panel ${isOpen ? 'open' : 'collapsed'} ${className}`.trim()}
-      onClick={onOpen}
-    >
-      <div className="note-mode-header">
-        <div className="note-mode-target-list">
-          {targets.map((target, index) => (
-            <span
-              key={`${target.backendNodeId}-${index}`}
-              className={`note-mode-target-chip ${isOpen ? 'active' : ''}`}
-            >
-              {target.selector}
-            </span>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="note-delete-button"
-          onClick={(event) => {
-            event.stopPropagation()
-            onDelete()
-          }}
-          disabled={!deletable}
-          title="删除便签"
-        >
-          🗑
-        </button>
+    <div className="label-section">
+      <div className="label-section-header">
+        <span className="label-section-icon">🏷</span>
+        <span className="label-section-title">标签</span>
       </div>
-
-      {isOpen ? (
-        <textarea
-          className="note-mode-textarea"
-          autoFocus
-          value={draftValue}
-          placeholder={placeholder}
-          onClick={(event) => event.stopPropagation()}
-          onFocus={() => setIsFocused(true)}
-          onChange={(event) => {
-            const nextValue = event.target.value
-            setDraftValue(nextValue)
-            onCommit(nextValue)
-          }}
-          onBlur={() => {
-            setIsFocused(false)
-            if (onFinalize) {
-              onFinalize(draftValue)
-              return
-            }
-            onCommit(draftValue)
-          }}
-        />
-      ) : (
-        <div className={`note-mode-preview ${value.trim() ? '' : 'empty'}`}>
-          {value.trim() || '点击展开，开始输入这个元素的标签备注。'}
+      <div className="label-section-desc">为当前容器添加修改意见，导出时 AI 将据此生成对应的样式调整建议。</div>
+      {elementTags.map((tag) => (
+        <div key={tag.id} className="label-item">
+          <input
+            type="text"
+            className="label-input"
+            defaultValue={tag.text}
+            placeholder="输入修改意见…"
+            onBlur={(e) => {
+              const val = e.target.value.trim()
+              if (val) {
+                onUpsertTag(element, val, tag.id)
+              } else {
+                onDeleteTag(tag.id)
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+            }}
+          />
+          <button
+            type="button"
+            className="label-delete-btn"
+            onClick={() => onDeleteTag(tag.id)}
+            title="删除标签"
+          >×</button>
+        </div>
+      ))}
+      {!hasTag && (
+        <div className="label-item">
+          <input
+            ref={inputRef}
+            type="text"
+            className="label-input"
+            placeholder="输入修改意见，回车确认…"
+            onBlur={(e) => handleConfirmAdd(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleConfirmAdd((e.target as HTMLInputElement).value)
+                ;(e.target as HTMLInputElement).value = ''
+              }
+            }}
+          />
         </div>
       )}
-    </section>
+    </div>
   )
 }
 
 export function PropertiesWorkbench({
   element,
   activeTool,
-  notes,
-  activeNoteId,
-  draftNoteTargets,
-  draftNoteText,
+  tags,
   activeEditProperty,
   compact,
   selectionRevision,
+  overlayNudgeStyles,
+  overlayNudgeTick,
   onElementChange,
   onToolChange,
   onActiveEditPropertyChange,
-  onUpsertNote,
-  onDraftNoteTextChange,
-  onFinalizeDraftNote,
-  onActivateNote,
-  onDeleteNote,
+  onUpsertTag,
+  onDeleteTag,
   onCopyAIPrompt,
 }: {
   element: InspectedElement
   activeTool: CanvasTool
-  notes: ElementNote[]
-  activeNoteId: string | null
-  draftNoteTargets: ElementNoteTarget[]
-  draftNoteText: string
+  tags: ElementTag[]
   activeEditProperty: ActiveEditProperty | null
   compact?: boolean
   selectionRevision: number
+  overlayNudgeStyles?: Record<string, string> | null
+  overlayNudgeTick?: number
   onElementChange: (element: InspectedElement) => void
   onToolChange: (tool: CanvasTool) => void
   onActiveEditPropertyChange: (property: ActiveEditProperty | null) => void
-  onUpsertNote: (element: InspectedElement, text: string) => void
-  onDraftNoteTextChange: (text: string) => void
-  onFinalizeDraftNote: (text: string) => void
-  onActivateNote: (note: ElementNote, preferredBackendNodeId?: number | null) => void
-  onDeleteNote: (noteId: string) => void
+  onUpsertTag: (element: InspectedElement, text: string, tagId?: string) => void
+  onDeleteTag: (tagId: string) => void
   onCopyAIPrompt: (styleDiff: Record<string, string>) => void
 }) {
   const {
@@ -1203,6 +1175,15 @@ export function PropertiesWorkbench({
   const [quickSpacingSide, setQuickSpacingSide] = useState<SpacingSide>('all')
   const preset = useMemo(() => getElementPreset(element, draftStyles), [element, draftStyles])
   const elementDisplayName = useMemo(() => getElementDisplayName(element), [element])
+
+  // 浮动按钮已直接改了 DOM，这里同步记录到 useStyleBinding（有 undo/redo + styleDiff）
+  useEffect(() => {
+    if (!overlayNudgeTick || !overlayNudgeStyles) return
+    const keys = Object.keys(overlayNudgeStyles)
+    if (keys.length === 0) return
+    updateStyles(overlayNudgeStyles, `overlay-nudge:${keys.join(',')}`)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlayNudgeTick])
 
   const sections = useMemo<PropertySectionConfig[]>(() => {
     const nextSections = BASE_PROPERTY_SECTIONS
@@ -1245,23 +1226,12 @@ export function PropertiesWorkbench({
   }
 
   const diffCount = Object.keys(styleDiff).length
-  const canExport = diffCount > 0 || notes.length > 0
+  const canExport = diffCount > 0 || tags.length > 0
   const textPreview = useMemo(() => element.textContentPreview || '', [element.textContentPreview])
-  const currentElementNotes = useMemo(
-    () => notes.filter((note) => noteHasTarget(note, element.backendNodeId)),
-    [element.backendNodeId, notes],
+  const currentElementTags = useMemo(
+    () => tags.filter((tag) => tagHasTarget(tag, element.backendNodeId)),
+    [element.backendNodeId, tags],
   )
-  const selectedNote = useMemo(
-    () => notes.find((note) => note.id === activeNoteId) || null,
-    [activeNoteId, notes],
-  )
-  const editorTargets = selectedNote?.targets || draftNoteTargets
-  const orderedNotes = useMemo(() => (
-    [...notes].sort((left, right) => {
-      return right.createdAt - left.createdAt
-    })
-  ), [notes])
-  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(true)
   const metricSummary = useMemo(() => {
     const width = element.boxModel ? `${Math.round(element.boxModel.width)}px` : (draftStyles.width || 'auto')
     const height = element.boxModel ? `${Math.round(element.boxModel.height)}px` : (draftStyles.height || 'auto')
@@ -1317,12 +1287,6 @@ export function PropertiesWorkbench({
     const timer = window.setTimeout(() => setCopiedPrompt(false), 1400)
     return () => window.clearTimeout(timer)
   }, [copiedPrompt])
-
-  useEffect(() => {
-    if (activeTool === 'note') {
-      setIsNoteEditorOpen(true)
-    }
-  }, [activeTool, activeNoteId, element.backendNodeId])
 
   const handleCopyElementName = async () => {
     try {
@@ -1487,65 +1451,6 @@ export function PropertiesWorkbench({
     return nextCards.slice(0, compact ? 4 : 6)
   }, [compact, draftStyles, element, preset, quickStep, updateStyles])
 
-  const noteModeOnlyContent = (
-      <div
-        className="note-management-page"
-        onPointerDown={(event) => {
-          if (event.target === event.currentTarget) {
-            setIsNoteEditorOpen(false)
-        }
-      }}
-    >
-      <div className="note-management-toolbar">
-        <div className="note-management-kicker">标签管理</div>
-        <div className="note-management-count">{orderedNotes.length} 张标签</div>
-      </div>
-
-      <div className="note-management-hint">
-        普通点击元素会新建一张标签卡；按住 Shift 再点击其它元素，可以把多个对象加入同一张标签卡。
-      </div>
-
-      {!selectedNote && editorTargets.length > 0 && (
-        <NoteEditor
-          value={draftNoteText}
-          targets={editorTargets}
-          isOpen={isNoteEditorOpen}
-          deletable={false}
-          className="draft"
-          placeholder="开始输入后会创建一张新标签卡。"
-          onOpen={() => setIsNoteEditorOpen(true)}
-          onCommit={onDraftNoteTextChange}
-          onFinalize={onFinalizeDraftNote}
-          onDelete={() => {}}
-        />
-      )}
-
-      <div className="note-management-list">
-        {orderedNotes.length > 0 ? (
-          orderedNotes.map((note) => (
-            <NoteEditor
-              key={note.id}
-              value={note.text}
-              targets={note.targets}
-              isOpen={isNoteEditorOpen && selectedNote?.id === note.id}
-              className={`note-mode-list-item ${selectedNote?.id === note.id ? 'active' : ''}`}
-              onOpen={() => {
-                onActivateNote(note)
-                setIsNoteEditorOpen(true)
-              }}
-              onCommit={(value) => onUpsertNote(element, value)}
-              onDelete={() => onDeleteNote(note.id)}
-            />
-          ))
-        ) : (
-          <div className="note-mode-list-empty">
-            当前还没有便签。先点一个元素创建标签卡，再继续记录你的结构、视觉和交互修改意见。
-          </div>
-        )}
-      </div>
-    </div>
-  )
-
   return (
     <>
       <div className="workbench-sticky-header">
@@ -1558,14 +1463,10 @@ export function PropertiesWorkbench({
               onClick={() => {
                 if (item.tool === 'select') {
                   onToolChange(activeTool === 'select' ? 'browse' : 'select')
-                  return
                 }
-                onToolChange(activeTool === 'note' ? 'browse' : 'note')
               }}
               aria-label={item.label}
-              title={item.tool === 'select'
-                ? (activeTool === 'select' ? '关闭元素选择，恢复真实点击' : '开启元素选择')
-                : (activeTool === 'note' ? '关闭便签模式' : '开启便签模式')}
+              title={activeTool === 'select' ? '关闭元素选择，恢复真实点击' : '开启元素选择'}
             >
               <span className="panel-tool-icon">{item.icon}</span>
             </button>
@@ -1619,118 +1520,122 @@ export function PropertiesWorkbench({
           </div>
         )}
 
-        {activeTool !== 'note' && (
-          <div className="element-header">
-            <div className="element-header-main">
-              <span className="element-header-kicker">{preset === 'container' ? '容器名称' : '元素名称'}</span>
-              <div className="element-header-actions">
-                <button
-                  type="button"
-                  className="element-selector-button"
-                  onClick={() => void handleCopyElementName()}
-                  title={`点击复制 ${elementDisplayName}`}
-                >
-                  <span className="element-selector-name">{elementDisplayName}</span>
-                  <span className="element-selector-copy">{copiedSelector ? '已复制' : '复制'}</span>
-                </button>
-                <button
-                  type="button"
-                  className="element-ai-copy-button"
-                  onClick={handleCopyPrompt}
-                  disabled={!canExport}
-                  title="复制当前微调和便签给 AI"
-                >
-                  {copiedPrompt ? '已复制' : '复制给 AI'}
-                </button>
-              </div>
-            </div>
-            <div className="element-meta">
-              <span className={`element-preset-badge ${preset}`}>{preset}</span>
-              <span className={`element-sync ${pendingField ? 'visible' : ''}`} title={pendingField || ''}>同步中</span>
-            </div>
-          </div>
-        )}
-      </div>
-      {activeTool === 'note' ? noteModeOnlyContent : (
-        <>
-          <div className="boxmodel-metrics">
-            {metricSummary.map((item) => (
-              <MetricBadge
-                key={item.label}
-                label={item.label}
-                value={item.value}
-                tone={item.tone}
-              />
-            ))}
-          </div>
-
-          <SectionBlock
-            title="快捷操作"
-            hint="先用语义化动作和方向卡把对象推到接近目标，再到后面的原始参数区做精修。"
-            compact={compact}
-          >
-            <div className="quick-actions-topbar">
-              <QuickStepSelector step={quickStep} onChange={setQuickStep} />
-            </div>
-
-            {recommendedActions.length > 0 && (
-              <div className="recommended-actions">
-                {recommendedActions.map((action) => (
-                  <button
-                    key={action.id}
-                    type="button"
-                    className="recommended-action-button"
-                    onClick={() => handleApplyRecommendedAction(action)}
-                    title={action.description}
-                  >
-                    <span className="recommended-action-title">{action.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {preset === 'container' && (
-              <div
-                onMouseEnter={() => activateQuickHelper('布局快捷卡', '先切块 / Flex / Grid，再用方向盘把内容推到上、下、左、右或居中。', 'layout')}
-                onMouseLeave={resetHelperState}
+        <div className="element-header">
+          <div className="element-header-main">
+            <span className="element-header-kicker">{preset === 'container' ? '容器名称' : '元素名称'}</span>
+            <div className="element-header-actions">
+              <button
+                type="button"
+                className="element-selector-button"
+                onClick={() => void handleCopyElementName()}
+                title={`点击复制 ${elementDisplayName}`}
               >
-                <QuickLayoutCard
-                  styles={draftStyles}
-                  onSetDisplay={handleQuickLayoutDisplay}
-                  onAlign={handleQuickLayoutAlign}
-                />
-              </div>
-            )}
+                <span className="element-selector-name">{elementDisplayName}</span>
+                <span className="element-selector-copy">{copiedSelector ? '已复制' : '复制'}</span>
+              </button>
+              <button
+                type="button"
+                className="element-ai-copy-button"
+                onClick={handleCopyPrompt}
+                disabled={!canExport}
+                title="复制当前微调和标签给 AI"
+              >
+                {copiedPrompt ? '已复制' : '复制给 AI'}
+              </button>
+            </div>
+          </div>
+          <div className="element-meta">
+            <span className={`element-preset-badge ${preset}`}>{preset}</span>
+            <span className={`element-sync ${pendingField ? 'visible' : ''}`} title={pendingField || ''}>同步中</span>
+          </div>
+        </div>
+      </div>
+      <>
+        {element && <LabelSection
+          element={element}
+          tags={tags}
+          onUpsertTag={onUpsertTag}
+          onDeleteTag={onDeleteTag}
+        />}
 
+        <div className="boxmodel-metrics">
+          {metricSummary.map((item) => (
+            <MetricBadge
+              key={item.label}
+              label={item.label}
+              value={item.value}
+              tone={item.tone}
+            />
+          ))}
+        </div>
+
+        <SectionBlock
+          title="快捷操作"
+          hint="先用语义化动作和方向卡把对象推到接近目标，再到后面的原始参数区做精修。"
+          compact={compact}
+        >
+          <div className="quick-actions-topbar">
+            <QuickStepSelector step={quickStep} onChange={setQuickStep} />
+          </div>
+
+          {recommendedActions.length > 0 && (
+            <div className="recommended-actions">
+              {recommendedActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  className="recommended-action-button"
+                  onClick={() => handleApplyRecommendedAction(action)}
+                  title={action.description}
+                >
+                  <span className="recommended-action-title">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {preset === 'container' && (
             <div
-              onMouseEnter={() => activateQuickHelper('边距快捷调节', '先选内边距或外边距，再点方向。中心表示四边一起调整。', quickSpacingTarget)}
+              onMouseEnter={() => activateQuickHelper('布局快捷卡', '先切块 / Flex / Grid，再用方向盘把内容推到上、下、左、右或居中。', 'layout')}
               onMouseLeave={resetHelperState}
             >
-              <QuickSpacingPad
-                step={quickStep}
-                target={quickSpacingTarget}
-                side={quickSpacingSide}
+              <QuickLayoutCard
                 styles={draftStyles}
-                onTargetChange={setQuickSpacingTarget}
-                onSideChange={setQuickSpacingSide}
-                onAdjust={handleQuickSpacingAdjust}
+                onSetDisplay={handleQuickLayoutDisplay}
+                onAlign={handleQuickLayoutAlign}
               />
             </div>
+          )}
 
-            {quickAdjustCards.length > 0 && (
-              <div className="quick-adjust-grid">
-                {quickAdjustCards.map((card) => (
-                  <div
-                    key={card.id}
-                    onMouseEnter={() => activateQuickHelper(card.title, card.description, card.focusKey)}
-                    onMouseLeave={resetHelperState}
-                  >
-                    <QuickAdjustCard {...card} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionBlock>
+          <div
+            onMouseEnter={() => activateQuickHelper('边距快捷调节', '先选内边距或外边距，再点方向。中心表示四边一起调整。', quickSpacingTarget)}
+            onMouseLeave={resetHelperState}
+          >
+            <QuickSpacingPad
+              step={quickStep}
+              target={quickSpacingTarget}
+              side={quickSpacingSide}
+              styles={draftStyles}
+              onTargetChange={setQuickSpacingTarget}
+              onSideChange={setQuickSpacingSide}
+              onAdjust={handleQuickSpacingAdjust}
+            />
+          </div>
+
+          {quickAdjustCards.length > 0 && (
+            <div className="quick-adjust-grid">
+              {quickAdjustCards.map((card) => (
+                <div
+                  key={card.id}
+                  onMouseEnter={() => activateQuickHelper(card.title, card.description, card.focusKey)}
+                  onMouseLeave={resetHelperState}
+                >
+                  <QuickAdjustCard {...card} />
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionBlock>
 
           {layoutInsight && (
             <div className="helper-callout layout-insight">
@@ -1743,17 +1648,17 @@ export function PropertiesWorkbench({
             <div className="text-preview-strip">{textPreview}</div>
           )}
 
-          {currentElementNotes.length > 0 && (
+          {currentElementTags.length > 0 && (
             <SectionBlock
-              title="便签"
-              hint="这些便签会跟当前微调一起导出给 AI。"
+              title="标签"
+              hint="这些标签会跟当前微调一起导出给 AI。"
               compact={compact}
             >
-              <div className="note-list">
-                {currentElementNotes.map((note) => (
-                  <div key={note.id} className="note-card">
-                    <div className="note-card-title">{getNoteDisplayName(note)}</div>
-                    <div className="note-card-body">{note.text}</div>
+              <div className="tag-list">
+                {currentElementTags.map((tag) => (
+                  <div key={tag.id} className="tag-card">
+                    <div className="tag-card-title">{getTagDisplayName(tag)}</div>
+                    <div className="tag-card-body">{tag.text}</div>
                   </div>
                 ))}
               </div>
@@ -1831,46 +1736,41 @@ export function PropertiesWorkbench({
               </div>
             </SectionBlock>
           )}
-        </>
+      </>
+
+      {SNAPSHOT_SECTIONS.map((section) => (
+        <SnapshotSection
+          key={section.title}
+          title={section.title}
+          keys={section.keys}
+          styles={draftStyles}
+        />
+      ))}
+
+      {Object.keys(element.cssVariables).length > 0 && (
+        <div className="style-section">
+          <div className="section-title">CSS 变量</div>
+          {Object.entries(element.cssVariables).map(([name, value]) => (
+            <div key={name} className="style-row">
+              <span className="var-name">{name}</span>
+              {isColorValue(value) ? (
+                <span className="var-value color-preview">
+                  <span className="color-swatch" style={{ background: value }} />
+                  {value}
+                </span>
+              ) : (
+                <span className="var-value">{value}</span>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
-      {activeTool !== 'note' && (
-        <>
-          {SNAPSHOT_SECTIONS.map((section) => (
-            <SnapshotSection
-              key={section.title}
-              title={section.title}
-              keys={section.keys}
-              styles={draftStyles}
-            />
-          ))}
-
-          {Object.keys(element.cssVariables).length > 0 && (
-            <div className="style-section">
-              <div className="section-title">CSS 变量</div>
-              {Object.entries(element.cssVariables).map(([name, value]) => (
-                <div key={name} className="style-row">
-                  <span className="var-name">{name}</span>
-                  {isColorValue(value) ? (
-                    <span className="var-value color-preview">
-                      <span className="color-swatch" style={{ background: value }} />
-                      {value}
-                    </span>
-                  ) : (
-                    <span className="var-value">{value}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {(activeEditProperty || activeTool !== 'select') && (
-            <div className={`helper-callout ${activeEditProperty ? 'active' : ''}`}>
-              <div className="helper-callout-title">{helperState.title}</div>
-              <div className="helper-callout-body">{helperState.description}</div>
-            </div>
-          )}
-        </>
+      {(activeEditProperty || activeTool !== 'select') && (
+        <div className={`helper-callout ${activeEditProperty ? 'active' : ''}`}>
+          <div className="helper-callout-title">{helperState.title}</div>
+          <div className="helper-callout-body">{helperState.description}</div>
+        </div>
       )}
     </>
   )

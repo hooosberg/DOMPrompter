@@ -1,7 +1,7 @@
 export type InspectorMode = 'builtin' | 'external'
 export type DebugMethod = 'web' | 'desktop' | 'static' | 'connect'
 export type WindowPreset = 'default' | 'sidebar'
-export type CanvasTool = 'select' | 'note' | 'browse'
+export type CanvasTool = 'select' | 'browse'
 export type ActiveEditProperty =
   | 'size'
   | 'padding'
@@ -51,39 +51,29 @@ export interface InspectedElement {
   descendants: ElementHierarchyNode[]
 }
 
-export interface ElementNoteTarget {
+export interface ElementTagTarget {
   backendNodeId: number
   selector: string
   boxModel: ElementBoxModel | null
 }
 
-export interface ElementNote {
+export interface ElementTag {
   id: string
-  targets: ElementNoteTarget[]
+  targets: ElementTagTarget[]
   text: string
-  boxModel: ElementBoxModel | null
-  offsetX: number
-  offsetY: number
   createdAt: number
 }
 
 export interface InspectorSelectionMeta {
   append?: boolean
-}
-
-export interface InspectorOverlayAction {
-  type: 'note-select' | 'note-delete' | 'note-move'
-  noteId: string
-  deltaX?: number
-  deltaY?: number
+  /** 浮动按钮直接修改 DOM 后的同步通知 */
+  nudge?: boolean
+  styles?: Record<string, string>
 }
 
 export interface ExternalOverlayState {
   tool: CanvasTool
-  activeNoteId: string | null
-  draftNoteTargets: ElementNoteTarget[]
-  draftNoteText: string
-  notes: ElementNote[]
+  tags: ElementTag[]
 }
 
 export interface PreviewCapture {
@@ -209,10 +199,11 @@ declare global {
       updateTextContent: (payload: { nodeId: number; backendNodeId: number; value: string }) => Promise<InspectedElement | null>
       updateElementAttribute: (payload: { nodeId: number; backendNodeId: number; name: string; value: string }) => Promise<InspectedElement | null>
       onElementSelected: (cb: (el: InspectedElement, meta?: InspectorSelectionMeta) => void) => void
-      onOverlayAction: (cb: (action: InspectorOverlayAction) => void) => void
       onBrowserViewLoaded: (cb: (info: { url: string; title: string }) => void) => void
       onLaunchStatus: (cb: (info: ProjectLaunchStatus) => void) => void
       onAutoConnected: (cb: (info: { mode: string; endpoint: string }) => void) => void
+      onPropertyActivated: (cb: (property: ActiveEditProperty) => void) => void
+      onPropertyIncrement: (cb: (cssProperty: string) => void) => void
       removeAllListeners: () => void
       generateAIPrompt: (el: InspectedElement) => Promise<string>
       generateCSS: (el: InspectedElement) => Promise<string>

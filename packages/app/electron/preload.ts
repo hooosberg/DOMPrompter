@@ -48,9 +48,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onElementSelected: (callback: (element: any, meta?: any) => void): void => {
     ipcRenderer.on('element-selected', (_event, element, meta) => callback(element, meta))
   },
-  onOverlayAction: (callback: (action: any) => void): void => {
-    ipcRenderer.on('overlay-action', (_event, action) => callback(action))
-  },
   onBrowserViewLoaded: (callback: (info: { url: string; title: string }) => void): void => {
     ipcRenderer.on('browser-view-loaded', (_event, info) => callback(info))
   },
@@ -60,12 +57,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAutoConnected: (callback: (info: { mode: string; endpoint: string }) => void): void => {
     ipcRenderer.on('auto-connected', (_event, info) => callback(info))
   },
+  onPropertyActivated: (callback: (property: string) => void): void => {
+    ipcRenderer.on('property-activated', (_event, property) => callback(property))
+  },
+  onPropertyIncrement: (callback: (cssProperty: string) => void): void => {
+    ipcRenderer.on('property-increment', (_event, cssProperty) => callback(cssProperty))
+  },
   removeAllListeners: (): void => {
     ipcRenderer.removeAllListeners('element-selected')
-    ipcRenderer.removeAllListeners('overlay-action')
     ipcRenderer.removeAllListeners('browser-view-loaded')
     ipcRenderer.removeAllListeners('launch-status')
     ipcRenderer.removeAllListeners('auto-connected')
+    ipcRenderer.removeAllListeners('property-activated')
+    ipcRenderer.removeAllListeners('property-increment')
   },
 
   // 代码生成

@@ -8,9 +8,14 @@ Visual Inspector is an Electron-based development tool for visually inspecting a
 
 ```
 visual-inspector/
+├── docs/
+│   ├── architecture.md
+│   ├── init-structure-analysis.md
+│   └── product-philosophy.md
 ├── packages/
 │   ├── core/           # CDP client, InspectorService, app discovery, code generation
 │   │   └── src/
+│   │       ├── __tests__/inspector-service.test.ts  # Binding and selection pipeline regression tests
 │   │       ├── cdp/connection.ts      # CDPClient, CDPHelper, ICDPTransport interface
 │   │       ├── inspector-service.ts   # DOM inspection, element selection, overlay, style editing
 │   │       ├── app-discovery.ts       # Local dev server and Electron app discovery
@@ -25,13 +30,13 @@ visual-inspector/
 │           ├── types.ts              # Shared TypeScript type definitions
 │           ├── components/
 │           │   ├── WelcomeScreen.tsx          # Project selection and launch entry point
-│           │   ├── overlay/OverlayInspector.tsx  # Canvas overlay for element selection & notes
 │           │   └── properties/
-│           │       ├── PropertiesWorkbench.tsx    # Right panel: CSS property editor
+│           │       ├── PropertiesWorkbench.tsx    # Right panel: CSS property editor + AI tag annotations
 │           │       └── FieldControl.tsx           # Individual property input widget
 │           └── hooks/
 │               ├── useAdaptiveWindowPreset.ts    # Auto-switch window size by mode
 │               └── useStyleBinding.ts            # Bind element styles to property controls
+├── test-page/          # Local runtime debugging pages for overlay/tag experiments
 ├── pnpm-workspace.yaml
 └── package.json
 ```
@@ -53,7 +58,7 @@ For inspecting web pages running in a local dev server.
 8. Passes to `InspectorService` for DOM inspection
 
 **UI Layout:**
-- Left: Live page preview (BrowserView) or mirror canvas with overlay
+- Left: Live page preview (BrowserView)
 - Right: Properties panel (320px)
 - Window: Normal size (1200x800)
 
@@ -114,8 +119,10 @@ Key capabilities:
 - `getElementStackAtPoint(x, y)` - Get element hierarchy at point
 - `updateElementStyle(nodeId, name, value)` - Live CSS editing
 - `capturePreview()` - Screenshot via CDP
+- `setActiveEditProperty(property)` - Push active property hint into injected runtime
 - `setExternalOverlayState(state)` - Sync overlay to external app
-- Events: `onElementSelected`, `onOverlayAction`
+- Binding intake: `select`, `style-nudge`, `activate-property`, `increment-property`
+- Events: `onElementSelected`, `onPropertyActivated`, `onPropertyIncrement`
 
 Returns `InspectedElement` with:
 - Tag name, classes, ID, attributes
@@ -162,20 +169,140 @@ All renderer ↔ main process communication goes through Electron IPC, exposed v
 - **Overlay sync:** `setActiveEditProperty`, `setExternalOverlayState`
 - **Window management:** `resizeWindowToSidebar`, `restoreWindowSize`
 - **Code generation:** `generateAIPrompt`, `generateCSS`, `generateCSSVariables`
-- **Events (main → renderer):** `element-selected`, `overlay-action`, `browser-view-loaded`, `launch-status`, `auto-connected`
+- **Events (main → renderer):** `element-selected`, `property-activated`, `property-increment`, `browser-view-loaded`, `launch-status`, `auto-connected`
 
 ## UI Architecture (Renderer)
 
 ### App.tsx - State Management
 
-Core state (25+ hooks):
+Core state:
 - `mode`: `'builtin' | 'external'` - Current debugging mode
 - `connected`: Whether inspector is active
 - `element`: Currently inspected `InspectedElement`
-- `activeTool`: `'select' | 'note' | 'browse'` - Current interaction mode
+- `activeTool`: `'select' | 'browse'` - Current interaction mode
 - `projectSession`: `ProjectLaunchStatus` - Launch lifecycle state
-- `notes`: `ElementNote[]` - User annotations on elements
-- `activeEditProperty`: Which CSS property is being highlighted
+- `tags`: `ElementTag[]` - Session-level tag annotations bound to elements
+- `activeEditProperty`: Which CSS property is currently highlighted
+- `selectionRevision`: Selection baseline version; increments only when backend node changes
+- `overlayNudgeRef` / `overlayNudgeTick`: Carry optimistic overlay mutations back into `useStyleBinding`
+
+Two renderer responsibilities matter for floating controls:
+- `syncExternalOverlayRuntime()` is the only renderer → runtime sync point. It pushes `{ tool, tags }` via `setExternalOverlayState()` and the current property hint via `setActiveEditProperty()`.
+- `onElementSelected()` is the only runtime → renderer state entry point. Normal `select` resets baseline through `syncCurrentElement()`. `style-nudge` updates the current element without resetting baseline, then `PropertiesWorkbench` records it into history.
+
+## Floating Control Framework
+
+The floating controls are not one feature. They are a coordinated runtime split across three layers with different responsibilities.
+
+### 1. Ownership Boundaries
+
+| Layer | File(s) | Owns | Must not own |
+|------|---------|------|--------------|
+| Page-local runtime | `packages/core/src/cdp/connection.ts` | Overlay DOM, hit-testing, hover previews, tag badge placement, optimistic DOM feedback | Persistent edit history, React state, undo/redo |
+| Core bridge | `packages/core/src/inspector-service.ts` | CDP binding intake, node resolution, canonical CDP writes, IPC fan-out | Overlay layout, React panel state |
+| Renderer/panel | `packages/app/src/App.tsx`, `packages/app/src/hooks/useStyleBinding.ts`, `packages/app/src/components/properties/PropertiesWorkbench.tsx` | Selection baseline, `styleDiff`, undo/redo, tag session data, active property state | Low-level overlay DOM or page hit-testing |
+
+This split is the main rule for future changes: if a control only changes hover/placement/hit area, it belongs in the page runtime. If it changes persistent edit semantics, it must flow back through `InspectorService` and `useStyleBinding`.
+
+### 2. Runtime Structure Inside the Target Page
+
+The injected picker script (`buildElementPickerScript`) creates a layered runtime:
+
+```text
+skeletonLayer
+  → overlay
+    → label
+    → actionButtons
+  → tagBadgeLayer
+```
+
+Current runtime responsibilities:
+- `overlay`: blue selection box plus label and action buttons
+- `actionButtons`: W/H + directional padding/margin nudgers, positioned relative to the current element
+- `tagBadgeLayer`: top-most tag badges rendered from session tag data
+- guide bands / badges / skeletons: visualization-only helpers for spacing, gap, and structure
+
+All injected nodes must be marked with `data-vi-overlay-root="true"` so `isOverlayElement()` can exclude them from element selection.
+
+### 3. Two Explicit Communication Directions
+
+#### Host → Runtime
+
+Renderer state is pushed into the target page only through:
+
+```ts
+setExternalOverlayState({ tool, tags })
+setActiveEditProperty(property)
+```
+
+This means tag rendering, browse/select mode, and property highlighting are controlled by host state, not by ad-hoc page globals.
+
+#### Runtime → Host
+
+The injected runtime talks back through one internal CDP binding:
+
+```ts
+__viInspectorHostSelect__
+```
+
+The binding contract currently supports:
+
+| Message type | Primary producer | Purpose |
+|-------------|------------------|---------|
+| `select` | direct page clicks, tag badges | select an element and refresh the panel baseline |
+| `style-nudge` | floating action buttons | optimistic DOM mutation + durable panel reconciliation |
+| `activate-property` | reserved shortcut path | focus/highlight a property group in the panel |
+| `increment-property` | reserved shortcut path | trigger panel-side increments without direct DOM mutation |
+
+The current overlay relies mainly on `select` and `style-nudge`. New controls should reuse these before inventing another message type.
+
+### 4. Selection vs Mutation Pipelines
+
+#### Selection pipeline
+
+```text
+container click / tag badge click
+→ injected runtime resolves target element
+→ tag badges dispatch an equivalent click onto the real target
+→ picker emits { type:'select' } only through the established selection path
+→ InspectorService resolves node details
+→ App.tsx syncCurrentElement()
+→ selectionRevision increments only when backend node changes
+→ useStyleBinding resets baseline
+```
+
+Important detail: tag badges do not maintain a second selection system. Hover preview is separate, but click is intentionally routed back into the normal container-click path.
+
+#### Mutation pipeline
+
+```text
+floating action button click
+→ injected runtime immediately mutates target.style
+→ overlay refreshes in page
+→ runtime emits { type:'style-nudge', styles }
+→ InspectorService formalizes the write via CDP
+→ onElementSelected(element, { nudge:true, styles })
+→ App.tsx stores overlayNudgeStyles without resetting selectionRevision
+→ PropertiesWorkbench useEffect calls updateStyles(...)
+→ useStyleBinding records undo/redo + styleDiff
+```
+
+This is the core contract behind floating nudgers: optimistic visual change in the page, durable history in the panel.
+
+### 5. Hit-Target Rules for Injected Controls
+
+Floating controls are deliberately implemented as single interactive shells:
+- The outer injected control node owns the click handler.
+- Decorative children such as tag badge icons and text use `pointer-events:none`.
+- If a control semantically means “do the same thing as clicking the target element”, prefer dispatching an equivalent page click instead of duplicating selection logic.
+
+This is especially important for tag badges. Their background, icon, and text must behave as one hit target, otherwise hover appears correct while click feels broken.
+
+### 6. Operational Rules When Changing the Injected Runtime
+
+- Any behavioral change to the injected picker script should bump `ELEMENT_PICKER_RUNTIME_VERSION`, so already-open targets discard stale runtime state.
+- Test pages must not reuse the real host binding name. Keep mock bindings separate from `__viInspectorHostSelect__`.
+- If you change control semantics, update both the runtime implementation and the panel-side reconciliation path together. Fixing only one side usually creates “looks right but does not persist” failures.
 
 ### WelcomeScreen
 

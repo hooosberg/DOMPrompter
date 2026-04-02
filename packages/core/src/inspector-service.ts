@@ -1,7 +1,7 @@
 import type { ICDPTransport } from './cdp/connection'
 import { CDPHelper } from './cdp/connection'
 
-const ELEMENT_PICKER_BINDING = '__visualInspectorSelect'
+const ELEMENT_PICKER_BINDING = '__viInspectorHostSelect__'
 
 /** 被选中元素的结构化信息 */
 export interface BoxModelRect {
@@ -46,25 +46,15 @@ export interface PreviewCapture {
 
 export interface InspectorSelectionMeta {
     append?: boolean
-}
-
-export interface InspectorOverlayAction {
-    type: 'note-select' | 'note-delete' | 'note-move'
-    noteId: string
-    deltaX?: number
-    deltaY?: number
+    /** 浮动按钮直接修改 DOM 后的同步通知，属性面板应记录变化但不重置 baseline */
+    nudge?: boolean
+    /** nudge 时携带的样式变化 */
+    styles?: Record<string, string>
 }
 
 export interface ExternalOverlayState {
-    tool: 'select' | 'note' | 'browse'
-    activeNoteId: string | null
-    draftNoteTargets: Array<{
-        backendNodeId: number
-        selector: string
-        boxModel: ElementBoxModel | null
-    }>
-    draftNoteText: string
-    notes: Array<{
+    tool: 'select' | 'browse'
+    tags: Array<{
         id: string
         targets: Array<{
             backendNodeId: number
@@ -72,9 +62,6 @@ export interface ExternalOverlayState {
             boxModel: ElementBoxModel | null
         }>
         text: string
-        boxModel: ElementBoxModel | null
-        offsetX: number
-        offsetY: number
         createdAt: number
     }>
 }
@@ -120,7 +107,8 @@ export class InspectorService {
     private transport: ICDPTransport
     private inspecting = false
     private onElementSelectedCallback?: (element: InspectedElement, meta?: InspectorSelectionMeta) => void
-    private onOverlayActionCallback?: (action: InspectorOverlayAction) => void
+    private onPropertyActivatedCallback?: (property: string) => void
+    private onPropertyIncrementCallback?: (cssProperty: string) => void
 
     constructor(transport: ICDPTransport) {
         this.transport = transport
@@ -131,45 +119,70 @@ export class InspectorService {
         await this.helper.enableDomains()
 
         this.transport.on('Runtime.bindingCalled', async (params: { name: string; payload: string }) => {
-            if (params.name !== ELEMENT_PICKER_BINDING || !this.inspecting) return
+            if (params.name !== ELEMENT_PICKER_BINDING) return
             try {
                 const payload = JSON.parse(params.payload || '{}') as {
-                    type?: 'select' | 'resize' | 'note-select' | 'note-delete' | 'note-move'
+                    type?: 'select' | 'activate-property' | 'increment-property' | 'style-nudge'
                     token?: string
+                    backendNodeId?: number
+                    nodeId?: number
+                    property?: string
+                    cssProperty?: string
                     styles?: Record<string, string>
-                    noteId?: string
-                    deltaX?: number
-                    deltaY?: number
                     shiftKey?: boolean
                 }
 
-                if (payload.type === 'note-select' || payload.type === 'note-delete' || payload.type === 'note-move') {
-                    if (payload.noteId && this.onOverlayActionCallback) {
-                        this.onOverlayActionCallback({
-                            type: payload.type,
-                            noteId: payload.noteId,
-                            deltaX: payload.deltaX,
-                            deltaY: payload.deltaY,
-                        })
+                // 浮动按钮点击 → 激活属性面板对应字段
+                if (payload.type === 'activate-property') {
+                    if (!payload.token) return
+                    if (payload.property && this.onPropertyActivatedCallback) {
+                        this.onPropertyActivatedCallback(payload.property)
                     }
                     return
                 }
 
-                if (!payload.token) return
-
-                const selectedNode = await this.helper.getSelectedNodeReferenceFromToken(payload.token)
-                if (!selectedNode.nodeId || !selectedNode.backendNodeId) {
+                // 浮动按钮点击 → 直接增加属性值（等价于属性面板的「增加」按钮）
+                if (payload.type === 'increment-property') {
+                    if (!payload.token) return
+                    if (payload.cssProperty && this.onPropertyIncrementCallback) {
+                        this.onPropertyIncrementCallback(payload.cssProperty)
+                    }
                     return
                 }
 
-                if (payload.type === 'resize' && payload.styles) {
+                // 浮动按钮已直接改了 DOM，通知属性面板同步记录变化
+                if (payload.type === 'style-nudge' && payload.styles) {
+                    if (!payload.token) return
+                    const selectedNode = await this.helper.getSelectedNodeReferenceFromToken(payload.token)
+                    if (!selectedNode.nodeId || !selectedNode.backendNodeId) return
+
+                    // 通过 CDP 正式写入样式（确保与 DOM inline style 一致）
                     await this.helper.setStyleProperties(selectedNode.nodeId, payload.styles)
-                    const resizedElement = await this.getElementDetails(selectedNode.backendNodeId)
-                    if (resizedElement && this.onElementSelectedCallback) {
-                        this.onElementSelectedCallback(resizedElement)
+                    // 获取更新后的完整元素信息
+                    const element = await this.getElementDetails(selectedNode.backendNodeId)
+                    if (element && this.onElementSelectedCallback) {
+                        // 通知 React 同步属性面板（不重置 baseline）
+                        this.onElementSelectedCallback(element, { nudge: true, styles: payload.styles })
                     }
                     return
                 }
+
+                // 只处理 select 类型（忽略其他未知类型）
+                if (payload.type && payload.type !== 'select') {
+                    return
+                }
+
+                let selectedNode = {
+                    nodeId: payload.nodeId || null,
+                    backendNodeId: payload.backendNodeId || null,
+                }
+                if (payload.token) {
+                    const tokenSelectedNode = await this.helper.getSelectedNodeReferenceFromToken(payload.token)
+                    if (tokenSelectedNode.nodeId || tokenSelectedNode.backendNodeId) {
+                        selectedNode = tokenSelectedNode
+                    }
+                }
+                if (!selectedNode.nodeId && !selectedNode.backendNodeId) return
 
                 let element: InspectedElement | null = null
 
@@ -211,8 +224,12 @@ export class InspectorService {
         this.onElementSelectedCallback = callback
     }
 
-    onOverlayAction(callback: (action: InspectorOverlayAction) => void): void {
-        this.onOverlayActionCallback = callback
+    onPropertyActivated(callback: (property: string) => void): void {
+        this.onPropertyActivatedCallback = callback
+    }
+
+    onPropertyIncrement(callback: (cssProperty: string) => void): void {
+        this.onPropertyIncrementCallback = callback
     }
 
     async startInspecting(preferNativeOverlay: boolean = false): Promise<void> {

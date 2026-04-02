@@ -374,9 +374,14 @@ async function connectExternalInspector(cdpUrl: string, maxRetries = 3) {
           mainWindow.webContents.send('element-selected', element, meta)
         }
       })
-      inspectorService.onOverlayAction((action) => {
+      inspectorService.onPropertyActivated((property: string) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('overlay-action', action)
+          mainWindow.webContents.send('property-activated', property)
+        }
+      })
+      inspectorService.onPropertyIncrement((cssProperty: string) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('property-increment', cssProperty)
         }
       })
       return // 成功，退出重试循环
@@ -687,12 +692,11 @@ ipcMain.handle('attach-debugger', async (): Promise<boolean> => {
         mainWindow.webContents.send('element-selected', element, meta)
       }
     })
-    inspectorService.onOverlayAction((action) => {
+    inspectorService.onPropertyActivated((property: string) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('overlay-action', action)
+        mainWindow.webContents.send('property-activated', property)
       }
     })
-
     await inspectorService.startInspecting()
 
     return true
@@ -1608,12 +1612,11 @@ ipcMain.handle('launch-electron-app', async (): Promise<{ success: boolean; erro
         mainWindow.webContents.send('element-selected', element, meta)
       }
     })
-    inspectorService.onOverlayAction((action) => {
+    inspectorService.onPropertyActivated((property: string) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('overlay-action', action)
+        mainWindow.webContents.send('property-activated', property)
       }
     })
-
     return { success: true }
   } catch (error: any) {
     console.error('Launch failed:', error)

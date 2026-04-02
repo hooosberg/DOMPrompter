@@ -31,8 +31,9 @@ export interface DescendantRectReference {
 }
 
 type EventCallback = (params: any) => void
-const ELEMENT_PICKER_BINDING = '__visualInspectorSelect'
+const ELEMENT_PICKER_BINDING = '__viInspectorHostSelect__'
 const ELEMENT_PICKER_STATE = '__visualInspectorPicker'
+const ELEMENT_PICKER_RUNTIME_VERSION = '2026-04-02-tag-browse-runtime-v4'
 function mergeInlineStyleText(currentText: string, patch: Record<string, string>): string {
   const styleMap = new Map<string, string>()
 
@@ -66,10 +67,24 @@ function buildElementPickerScript(bindingName: string): string {
   return `(() => {
     const binding = ${JSON.stringify(bindingName)};
     const stateKey = ${JSON.stringify(ELEMENT_PICKER_STATE)};
+    const runtimeVersion = ${JSON.stringify(ELEMENT_PICKER_RUNTIME_VERSION)};
     const doc = document;
     const win = window;
 
     if (!doc || !doc.documentElement) return false;
+
+    if (win[stateKey] && win[stateKey].runtimeVersion !== runtimeVersion) {
+      try {
+        win[stateKey].disable?.();
+      } catch (error) {
+        // ignore stale runtime cleanup failures
+      }
+      try {
+        delete win[stateKey];
+      } catch (error) {
+        win[stateKey] = null;
+      }
+    }
 
     if (!win[stateKey]) {
       const parsePx = (value) => {
@@ -126,23 +141,6 @@ function buildElementPickerScript(bindingName: string): string {
         return stack;
       };
 
-      const buildNoteTitle = (note) => {
-        const targets = Array.isArray(note?.targets) ? note.targets : [];
-        if (!targets.length) return 'UNTITLED';
-        return targets.slice(0, 3).map((target) => String(target.selector || 'untitled').toUpperCase()).join(' · ');
-      };
-
-      const estimateNoteSize = (note) => {
-        const title = buildNoteTitle(note);
-        const lines = String(note?.text || '').split(/\\n+/).filter(Boolean);
-        const longestLine = Math.max(title.length, ...lines.map((line) => line.length), 12);
-        const lineCount = Math.max(1, lines.reduce((count, line) => count + Math.max(1, Math.ceil(line.length / 20)), 0));
-        return {
-          width: Math.min(260, Math.max(176, longestLine * 7.2 + 34)),
-          height: Math.min(172, 58 + lineCount * 18),
-        };
-      };
-
       const normalizeBox = (box) => {
         if (!box) return null;
         return {
@@ -153,122 +151,55 @@ function buildElementPickerScript(bindingName: string): string {
         };
       };
 
-      const buildConnectorPath = (start, end) => {
-        const deltaX = end.x - start.x;
-        const handle = clamp(Math.abs(deltaX) * 0.42, 22, 88);
-        const direction = deltaX >= 0 ? 1 : -1;
-        return 'M ' + start.x.toFixed(2) + ' ' + start.y.toFixed(2)
-          + ' C ' + (start.x + handle * direction).toFixed(2) + ' ' + start.y.toFixed(2)
-          + ', ' + (end.x - handle * direction).toFixed(2) + ' ' + end.y.toFixed(2)
-          + ', ' + end.x.toFixed(2) + ' ' + end.y.toFixed(2);
+      const resolveTagElement = (target) => {
+        if (!target) return null;
+        const selector = String(target.selector || '');
+        const expectedBox = normalizeBox(target.boxModel);
+        if (!selector) return null;
+
+        let candidates = [];
+        try {
+          candidates = Array.from(doc.querySelectorAll(selector));
+        } catch (error) {
+          candidates = [];
+        }
+        candidates = candidates.filter((node) => !(node instanceof Element && isOverlayElement(node)));
+        if (!candidates.length) return null;
+        if (candidates.length === 1 || !expectedBox) return candidates[0];
+
+        let best = candidates[0];
+        let bestScore = Number.POSITIVE_INFINITY;
+        candidates.forEach((candidate) => {
+          if (!(candidate instanceof Element)) return;
+          const rect = candidate.getBoundingClientRect();
+          const score = Math.abs(rect.x - expectedBox.x)
+            + Math.abs(rect.y - expectedBox.y)
+            + Math.abs(rect.width - expectedBox.width)
+            + Math.abs(rect.height - expectedBox.height);
+          if (score < bestScore) {
+            best = candidate;
+            bestScore = score;
+          }
+        });
+        return best instanceof Element ? best : null;
       };
 
-      const makeNoteFrame = () => {
-        const node = doc.createElement('div');
-        node.style.cssText = [
-          'position:fixed',
-          'left:0',
-          'top:0',
-          'width:0',
-          'height:0',
-          'border-radius:18px',
-          'pointer-events:none',
-          'display:none',
-          'z-index:2147483644'
-        ].join(';');
-        return node;
-      };
-
-      const makeNoteCard = () => {
-        const node = doc.createElement('div');
-        node.style.cssText = [
-          'position:fixed',
-          'left:0',
-          'top:0',
-          'display:none',
-          'flex-direction:column',
-          'gap:6px',
-          'max-width:260px',
-          'padding:12px 13px 11px',
-          'border-radius:16px',
-          'background:linear-gradient(180deg,#ffd96a 0 24px,#fff3b8 24px 100%)',
-          'border:1px solid #c99619',
-          'box-shadow:0 22px 44px rgba(77,52,6,0.24),0 10px 18px rgba(15,23,42,0.14),inset 0 1px 0 rgba(255,255,255,0.68)',
-          'pointer-events:auto',
-          'cursor:pointer',
-          'opacity:1',
-          'isolation:isolate',
-          'z-index:2147483647',
-          'mix-blend-mode:normal',
-          'backdrop-filter:none',
-          '-webkit-backdrop-filter:none',
-          'transform-origin:top left',
-          'transition:opacity 160ms ease,box-shadow 160ms ease,border-color 160ms ease,transform 160ms ease'
-        ].join(';');
-
-        const title = doc.createElement('span');
-        title.style.cssText = [
-          'font-size:11px',
-          'text-transform:uppercase',
-          'letter-spacing:0.08em',
-          'color:#7b4d00',
-          'font-weight:700',
-          'text-shadow:0 1px 0 rgba(255,248,214,0.55)',
-          'padding-right:18px',
-          'display:block'
-        ].join(';');
-
-        const body = doc.createElement('span');
-        body.style.cssText = [
-          'font-size:12px',
-          'line-height:1.6',
-          'color:#3e2b07',
-          'word-break:break-word',
-          'text-shadow:0 1px 0 rgba(255,248,214,0.3)',
-          'display:block'
-        ].join(';');
-
-        const remove = doc.createElement('button');
-        remove.type = 'button';
-        remove.textContent = '×';
-        remove.style.cssText = [
-          'position:absolute',
-          'top:8px',
-          'right:8px',
-          'width:18px',
-          'height:18px',
-          'background:transparent',
-          'border:none',
-          'color:#7b4d00',
-          'font-size:14px',
-          'line-height:1',
-          'display:inline-flex',
-          'align-items:center',
-          'justify-content:center',
-          'cursor:pointer'
-        ].join(';');
-        remove.dataset.viNoteDelete = 'true';
-
-        const endpoints = doc.createElement('div');
-        endpoints.style.cssText = [
-          'position:absolute',
-          'left:0',
-          'top:0',
-          'width:100%',
-          'height:100%',
-          'pointer-events:none'
-        ].join(';');
-
-        node.appendChild(endpoints);
-        node.appendChild(remove);
-        node.appendChild(title);
-        node.appendChild(body);
-
-        node.__viTitle = title;
-        node.__viBody = body;
-        node.__viDelete = remove;
-        node.__viEndpoints = endpoints;
-        return node;
+      const dispatchEquivalentClick = (target) => {
+        if (!(target instanceof Element)) return;
+        const rect = target.getBoundingClientRect();
+        const clientX = rect.left + Math.max(1, rect.width / 2);
+        const clientY = rect.top + Math.max(1, rect.height / 2);
+        target.dispatchEvent(new win.MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          view: win,
+          clientX,
+          clientY,
+          button: 0,
+          buttons: 1,
+          detail: 1,
+        }));
       };
 
       const measure = (target) => {
@@ -398,36 +329,8 @@ function buildElementPickerScript(bindingName: string): string {
       ].join(';');
       skeletonLayer.dataset.viOverlayRoot = 'true';
 
-      const noteFrameLayer = doc.createElement('div');
-      noteFrameLayer.style.cssText = [
-        'position:fixed',
-        'left:0',
-        'top:0',
-        'width:100vw',
-        'height:100vh',
-        'pointer-events:none',
-        'z-index:2147483642'
-      ].join(';');
-      noteFrameLayer.dataset.viOverlayRoot = 'true';
-
-      const noteConnectorLayer = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      noteConnectorLayer.setAttribute('width', '100%');
-      noteConnectorLayer.setAttribute('height', '100%');
-      noteConnectorLayer.setAttribute('viewBox', '0 0 ' + win.innerWidth + ' ' + win.innerHeight);
-      noteConnectorLayer.setAttribute('data-vi-overlay-root', 'true');
-      noteConnectorLayer.style.cssText = [
-        'position:fixed',
-        'left:0',
-        'top:0',
-        'width:100vw',
-        'height:100vh',
-        'pointer-events:none',
-        'z-index:2147483645',
-        'overflow:visible'
-      ].join(';');
-
-      const noteCardLayer = doc.createElement('div');
-      noteCardLayer.style.cssText = [
+      const tagBadgeLayer = doc.createElement('div');
+      tagBadgeLayer.style.cssText = [
         'position:fixed',
         'left:0',
         'top:0',
@@ -436,7 +339,7 @@ function buildElementPickerScript(bindingName: string): string {
         'pointer-events:none',
         'z-index:2147483647'
       ].join(';');
-      noteCardLayer.dataset.viOverlayRoot = 'true';
+      tagBadgeLayer.dataset.viOverlayRoot = 'true';
 
       const overlay = doc.createElement('div');
       overlay.style.cssText = [
@@ -469,64 +372,116 @@ function buildElementPickerScript(bindingName: string): string {
         'white-space:nowrap'
       ].join(';');
 
-      const HANDLE_DIRS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-      const HANDLE_CURSORS = {
-        nw: 'nwse-resize',
-        n: 'ns-resize',
-        ne: 'nesw-resize',
-        e: 'ew-resize',
-        se: 'nwse-resize',
-        s: 'ns-resize',
-        sw: 'nesw-resize',
-        w: 'ew-resize',
-      };
+      // ─── 浮动动作按钮（属性面板的遥控器）───
+      // 每个按钮点击等价于属性面板的「增加」按钮，通过 useStyleBinding 记录变化
+      var ACTION_BUTTON_DEFS = [
+        { id: 'width',         label: 'W',  cssProperty: 'width',          group: 'size' },
+        { id: 'height',        label: 'H',  cssProperty: 'height',         group: 'size' },
+        { id: 'padding-top',   label: '↑',  cssProperty: 'padding-top',    group: 'padding' },
+        { id: 'padding-right', label: '→',  cssProperty: 'padding-right',  group: 'padding' },
+        { id: 'padding-bottom',label: '↓',  cssProperty: 'padding-bottom', group: 'padding' },
+        { id: 'padding-left',  label: '←',  cssProperty: 'padding-left',   group: 'padding' },
+        { id: 'margin-top',    label: '↑',  cssProperty: 'margin-top',     group: 'margin' },
+        { id: 'margin-right',  label: '→',  cssProperty: 'margin-right',   group: 'margin' },
+        { id: 'margin-bottom', label: '↓',  cssProperty: 'margin-bottom',  group: 'margin' },
+        { id: 'margin-left',   label: '←',  cssProperty: 'margin-left',    group: 'margin' },
+      ];
 
-      const makeHandle = (dir) => {
-        const handle = doc.createElement('div');
-        handle.dataset.viHandle = dir;
-        handle.style.cssText = [
+      const makeActionButton = (config) => {
+        const isSize = config.group === 'size';
+        const isMargin = config.group === 'margin';
+        const bgColor = isSize ? 'rgba(59,130,246,0.88)' : isMargin ? 'rgba(251,146,60,0.88)' : 'rgba(16,185,129,0.88)';
+        const bgHover = isSize ? 'rgba(59,130,246,1)' : isMargin ? 'rgba(251,146,60,1)' : 'rgba(16,185,129,1)';
+        const btn = doc.createElement('div');
+        btn.dataset.viAction = config.id;
+        btn.dataset.viOverlayRoot = 'true';
+        btn.style.cssText = [
           'position:absolute',
-          'width:8px',
-          'height:8px',
-          'border-radius:999px',
-          'background:#fff',
-          'border:1.5px solid #0d99ff',
-          'box-shadow:0 2px 6px rgba(13,24,40,0.1)',
+          'display:none',
+          'width:' + (isSize ? '20px' : '16px'),
+          'height:' + (isSize ? '20px' : '16px'),
+          'border-radius:' + (isSize ? '4px' : '50%'),
+          'background:' + bgColor,
+          'color:#fff',
+          'font:700 ' + (isSize ? '10px' : '8px') + '/1 -apple-system,BlinkMacSystemFont,sans-serif',
           'display:none',
           'pointer-events:auto',
-          'cursor:' + HANDLE_CURSORS[dir]
+          'cursor:pointer',
+          'user-select:none',
+          'text-align:center',
+          'line-height:' + (isSize ? '20px' : '16px'),
+          'transition:transform 100ms ease,background 100ms ease',
+          'box-shadow:0 1px 4px rgba(0,0,0,0.2)',
         ].join(';');
-        return handle;
+        btn.textContent = config.label;
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = bgHover;
+          btn.style.transform = 'scale(1.15)';
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = bgColor;
+          btn.style.transform = 'scale(1)';
+        });
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+          var target = state.current;
+          if (!target || !(target instanceof Element)) return;
+
+          // ① 直接改 DOM — 用户立即看到效果
+          var STEP = 8;
+          var cs = win.getComputedStyle(target);
+          var cur = parseFloat(cs.getPropertyValue(config.cssProperty)) || 0;
+          var next = Math.max(0, Math.round(cur + STEP));
+          var nextVal = next + 'px';
+          target.style.setProperty(config.cssProperty, nextVal);
+
+          // 更新 overlay 位置
+          state.update(target, true);
+
+          // ② 通知属性面板同步记录（有 undo/redo + styleDiff）
+          var token = 'vi-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          state.selections[token] = target;
+          if (typeof win[binding] === 'function') {
+            win[binding](JSON.stringify({
+              type: 'style-nudge',
+              token: token,
+              styles: { [config.cssProperty]: nextVal },
+            }));
+          }
+        }, true);
+        return btn;
       };
 
-      const handles = HANDLE_DIRS.map((dir) => makeHandle(dir));
-      for (const handle of handles) overlay.appendChild(handle);
+      const actionButtons = ACTION_BUTTON_DEFS.map((config) => makeActionButton(config));
+      for (const btn of actionButtons) overlay.appendChild(btn);
       overlay.appendChild(label);
       marginBands.forEach((node) => doc.documentElement.appendChild(node));
       paddingBands.forEach((node) => doc.documentElement.appendChild(node));
       Object.values(guideBadges).forEach((node) => doc.documentElement.appendChild(node));
       gapBadges.forEach((node) => doc.documentElement.appendChild(node));
       doc.documentElement.appendChild(typographyGuide);
-      doc.documentElement.appendChild(noteFrameLayer);
-      doc.documentElement.appendChild(noteConnectorLayer);
-      doc.documentElement.appendChild(noteCardLayer);
       doc.documentElement.appendChild(skeletonLayer);
       doc.documentElement.appendChild(overlay);
+      // tagBadgeLayer 必须在 overlay 之后，确保标签徽章在最顶层接收事件
+      doc.documentElement.appendChild(tagBadgeLayer);
 
       const state = {
+        runtimeVersion,
         active: false,
         locked: false,
         tool: 'select',
         activeProperty: null,
         overlayState: {
           tool: 'select',
-          activeNoteId: null,
-          draftNoteTargets: [],
-          draftNoteText: '',
-          notes: [],
+          tags: [],
         },
+        liveRectCache: {},
+        liveRectDirty: true,
         rafId: 0,
-        commitTimer: 0,
         overlay,
         label,
         marginBands,
@@ -535,273 +490,232 @@ function buildElementPickerScript(bindingName: string): string {
         gapBadges,
         typographyGuide,
         skeletonLayer,
-        noteFrameLayer,
-        noteConnectorLayer,
-        noteCardLayer,
+        tagBadgeLayer,
         skeletonNodes: [],
-        noteFrameNodes: [],
-        noteCardNodes: [],
+        tagBadgeNodes: [],
         childRects: [],
-        handles,
+        actionButtons,
         current: null,
+        tagPreviewTarget: null,
         hoverStack: [],
         selectionCycle: null,
         selections: {},
-        resizing: null,
-        noteDragging: null,
-        updateHandles(width, height) {
-          const positions = [
-            ['-5px', '-5px'],
-            [width / 2 - 4 + 'px', '-5px'],
-            [width - 3 + 'px', '-5px'],
-            [width - 3 + 'px', height / 2 - 4 + 'px'],
-            [width - 3 + 'px', height - 3 + 'px'],
-            [width / 2 - 4 + 'px', height - 3 + 'px'],
-            ['-5px', height - 3 + 'px'],
-            ['-5px', height / 2 - 4 + 'px']
+        updateActionButtons(width, height) {
+          // 容器太小时只显示 W/H，不显示 padding/margin 避免覆盖内容
+          var showInner = width > 80 && height > 80;
+          var showOuter = width > 50 && height > 50;
+          // 按钮顺序: W, H, pt, pr, pb, pl, mt, mr, mb, ml
+          var positions = [
+            // W: 右边中间外侧
+            { x: width + 6, y: height / 2 - 10, show: true },
+            // H: 底部中间外侧
+            { x: width / 2 - 10, y: height + 6, show: true },
+            // padding-top: 上内侧中间
+            { x: width / 2 - 8, y: 4, show: showInner },
+            // padding-right: 右内侧中间
+            { x: width - 20, y: height / 2 - 8, show: showInner },
+            // padding-bottom: 下内侧中间
+            { x: width / 2 - 8, y: height - 20, show: showInner },
+            // padding-left: 左内侧中间
+            { x: 4, y: height / 2 - 8, show: showInner },
+            // margin-top: 上外侧中间 (避开 label 向右偏移)
+            { x: width / 2 + 20, y: -22, show: showOuter },
+            // margin-right: 右外侧（W 按钮下方）
+            { x: width + 6, y: height / 2 + 16, show: showOuter },
+            // margin-bottom: 下外侧（H 按钮右侧）
+            { x: width / 2 + 16, y: height + 6, show: showOuter },
+            // margin-left: 左外侧中间
+            { x: -22, y: height / 2 - 8, show: showOuter },
           ];
-          this.handles.forEach((handle, index) => {
-            handle.style.left = positions[index][0];
-            handle.style.top = positions[index][1];
+          this.actionButtons.forEach(function(btn, i) {
+            var pos = positions[i];
+            if (pos) {
+              btn.style.left = pos.x + 'px';
+              btn.style.top = pos.y + 'px';
+              btn.__viShow = pos.show;
+            }
           });
         },
-        setHandlesVisible(visible) {
-          for (const handle of this.handles) {
-            handle.style.display = visible ? 'block' : 'none';
+        setActionButtonsVisible(visible) {
+          for (var i = 0; i < this.actionButtons.length; i++) {
+            var btn = this.actionButtons[i];
+            btn.style.display = (visible && btn.__viShow !== false) ? 'block' : 'none';
           }
-        },
-        setNoteFrameCount(count) {
-          while (this.noteFrameNodes.length < count) {
-            const node = makeNoteFrame();
-            this.noteFrameLayer.appendChild(node);
-            this.noteFrameNodes.push(node);
-          }
-        },
-        setNoteCardCount(count) {
-          while (this.noteCardNodes.length < count) {
-            const card = makeNoteCard();
-            card.addEventListener('click', (event) => {
-              event.stopPropagation();
-              const noteId = card.dataset.viNoteId;
-              if (!noteId) return;
-              if ((event.target instanceof Element) && event.target.closest('[data-vi-note-delete]')) {
-                if (typeof win[binding] === 'function') {
-                  win[binding](JSON.stringify({ type: 'note-delete', noteId }));
-                }
-                return;
-              }
-              if (typeof win[binding] === 'function') {
-                win[binding](JSON.stringify({ type: 'note-select', noteId }));
-              }
-            }, true);
-            card.addEventListener('pointerdown', (event) => {
-              if ((event.target instanceof Element) && event.target.closest('[data-vi-note-delete]')) return;
-              const noteId = card.dataset.viNoteId;
-              if (!noteId) return;
-              this.noteDragging = { noteId, startX: event.clientX, startY: event.clientY };
-              event.stopPropagation();
-            }, true);
-            this.noteCardLayer.appendChild(card);
-            this.noteCardNodes.push(card);
-          }
-        },
-        setNoteFrameStyle(node, active) {
-          node.style.border = '1.5px solid ' + (active ? 'rgba(255,196,48,0.82)' : 'rgba(255,196,48,0.34)');
-          node.style.background = active ? 'rgba(255,232,138,0.11)' : 'rgba(255,232,138,0.035)';
-          node.style.boxShadow = active
-            ? 'inset 0 0 0 1px rgba(255,245,199,0.24),0 0 0 1px rgba(255,196,48,0.22),0 8px 24px rgba(255,196,48,0.08)'
-            : 'none';
         },
         shouldShowLockedOverlay() {
-          if (this.tool !== 'note') return true;
-          const hasFrames = (this.overlayState.notes || []).length > 0 || (this.overlayState.draftNoteTargets || []).length > 0;
-          return !hasFrames;
+          return true;
+        },
+        renderTagPreview(target) {
+          if (!(target instanceof Element)) return false;
+          const metrics = measure(target);
+          const { borderRect } = metrics;
+          if (!borderRect.width && !borderRect.height) return false;
+          paintRect(this.overlay, borderRect, true);
+          this.overlay.style.borderColor = 'rgba(255,196,48,0.88)';
+          this.overlay.style.borderStyle = 'dashed';
+          this.overlay.style.borderWidth = '1.5px';
+          this.overlay.style.background = 'transparent';
+          this.label.style.display = 'none';
+          this.marginBands.forEach((node) => { node.style.display = 'none'; });
+          this.paddingBands.forEach((node) => { node.style.display = 'none'; });
+          this.typographyGuide.style.display = 'none';
+          this.hideBadges();
+          this.skeletonNodes.forEach((node) => { node.style.display = 'none'; });
+          this.setActionButtonsVisible(false);
+          return true;
+        },
+        setTagPreview(target) {
+          if (!(target instanceof Element)) return this.clearTagPreview(false);
+          this.tagPreviewTarget = target;
+          this.renderTagPreview(target);
+        },
+        clearTagPreview(restore = true) {
+          if (!this.tagPreviewTarget) return;
+          this.tagPreviewTarget = null;
+          if (!restore) return;
+          if (this.locked && this.current) {
+            this.update(this.current, true);
+          } else {
+            this.hide();
+          }
         },
         setTool(tool) {
           this.tool = tool || 'select';
           this.overlayState.tool = this.tool;
           if (this.tool === 'browse') {
             this.hide();
-            this.renderNotes();
+            this.renderTags();
             return;
           }
           this.sync();
-          this.renderNotes();
+          this.renderTags();
         },
         setOverlayState(payload) {
           this.overlayState = {
             tool: payload?.tool || this.tool || 'select',
-            activeNoteId: payload?.activeNoteId || null,
-            draftNoteTargets: Array.isArray(payload?.draftNoteTargets) ? payload.draftNoteTargets : [],
-            draftNoteText: String(payload?.draftNoteText || ''),
-            notes: Array.isArray(payload?.notes) ? payload.notes : [],
+            tags: Array.isArray(payload?.tags) ? payload.tags : [],
           };
           this.tool = this.overlayState.tool;
-          this.renderNotes();
+          this.liveRectDirty = true;
+          this.renderTags();
+          this.liveRectDirty = false;
           this.sync();
         },
-        renderNotes() {
-          const showNotes = this.tool === 'note';
-          this.noteConnectorLayer.setAttribute('viewBox', '0 0 ' + win.innerWidth + ' ' + win.innerHeight);
-          while (this.noteConnectorLayer.firstChild) {
-            this.noteConnectorLayer.removeChild(this.noteConnectorLayer.firstChild);
+        renderTags() {
+          var tags = this.overlayState.tags || [];
+
+          // 确保有足够的 badge 节点（创建时绑事件，和 action buttons 一样的机制）
+          while (this.tagBadgeNodes.length < tags.length) {
+            var badge = doc.createElement('div');
+            badge.style.cssText = 'position:fixed;top:0;left:0;display:none;align-items:center;gap:3px;padding:2px 7px 2px 5px;border-radius:5px;background:rgba(255,196,48,0.88);color:#fff;font:600 10px/1.3 -apple-system,BlinkMacSystemFont,sans-serif;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;pointer-events:auto;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.15);opacity:0.82;transition:opacity 160ms ease,box-shadow 160ms ease';
+            badge.dataset.viOverlayRoot = 'true';
+            badge.dataset.viAction = 'tag';
+
+            // hover：橙色虚线框（和 action buttons 的 mouseenter 一样的模式）
+            badge.addEventListener('mouseenter', function() {
+              this.style.opacity = '1';
+              this.style.boxShadow = '0 2px 8px rgba(255,196,48,0.35)';
+              var te = this.__viElement;
+              if (!te) return;
+              state.setTagPreview(te);
+            });
+            badge.addEventListener('mouseleave', function() {
+              this.style.opacity = '0.82';
+              this.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)';
+              state.clearTagPreview(true);
+            });
+            // click：等价于点击对应容器（和 action buttons 完全一样的 capture 机制）
+            badge.addEventListener('click', function(event) {
+              event.stopPropagation();
+              event.preventDefault();
+              if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+              var te = this.__viElement;
+              if (!te) return;
+              state.clearTagPreview(false);
+              try {
+                dispatchEquivalentClick(te);
+                return;
+              } catch (error) {
+                var stack = buildElementStack(te);
+                if (stack.length) {
+                  var rect = te.getBoundingClientRect();
+                  state.hoverStack = stack;
+                  state.selectionCycle = {
+                    point: {
+                      x: rect.left + rect.width / 2,
+                      y: rect.top + rect.height / 2,
+                    },
+                    stack: stack,
+                  };
+                }
+                state.update(te, true);
+                state.locked = true;
+                var backendNodeId = Number(this.__viBackendNodeId) || null;
+                if (backendNodeId && typeof win[binding] === 'function') {
+                  win[binding](JSON.stringify({
+                    type: 'select',
+                    shiftKey: false,
+                    backendNodeId: backendNodeId,
+                  }));
+                  return;
+                }
+                state.emitPayload(te, { type: 'select', shiftKey: false });
+              }
+            }, true);
+
+            this.tagBadgeLayer.appendChild(badge);
+            this.tagBadgeNodes.push(badge);
           }
 
-          if (!showNotes) {
-            this.noteFrameNodes.forEach((node) => { node.style.display = 'none'; });
-            this.noteCardNodes.forEach((node) => { node.style.display = 'none'; });
-            return;
+          // 渲染每个标签
+          for (var i = 0; i < tags.length; i++) {
+            var b = this.tagBadgeNodes[i];
+            var tag = tags[i];
+            var tgt = Array.isArray(tag.targets) ? tag.targets[0] : null;
+            // 通过 selector + boxModel 找到最贴近的真实 DOM 元素并直接存引用
+            var el = resolveTagElement(tgt);
+            b.__viElement = el;
+            b.__viBackendNodeId = tgt && typeof tgt.backendNodeId === 'number' ? tgt.backendNodeId : null;
+
+            // 获取元素位置
+            var r = null;
+            if (el) {
+              var rect = el.getBoundingClientRect();
+              if (rect.width > 0 && rect.height > 0) {
+                r = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+              }
+            }
+            if (!r) r = normalizeBox(tgt ? tgt.boxModel : null);
+            if (!r || !r.width || !r.height) {
+              b.style.display = 'none';
+              continue;
+            }
+
+            // 定位：容器右上角内侧，超出视口则自适应
+            var vw = win.innerWidth, vh = win.innerHeight;
+            var bw = 70, bh = 16, pad = 4;
+            var bx = r.x + r.width - bw - pad;
+            var by = r.y + pad;
+            if (bx < r.x + pad) bx = r.x + pad;
+            if (bx + bw > vw - pad) bx = vw - bw - pad;
+            if (bx < pad) bx = pad;
+            if (by + bh > vh - pad) by = vh - bh - pad;
+            if (by < pad) by = pad;
+
+            b.style.display = 'inline-flex';
+            b.style.transform = 'translate(' + bx + 'px,' + by + 'px)';
+            var txt = tag.text ? (tag.text.length > 5 ? tag.text.slice(0, 5) + '\u2026' : tag.text) : '';
+            b.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;pointer-events:none"><path d="M1.5 2.5A1 1 0 0 1 2.5 1.5h3.086a1 1 0 0 1 .707.293l4.414 4.414a1 1 0 0 1 0 1.414L7.621 10.707a1 1 0 0 1-1.414 0L1.793 6.293A1 1 0 0 1 1.5 5.586V2.5Z" stroke="#fff" stroke-width="1.2"/><circle cx="4" cy="4" r=".8" fill="#fff"/></svg>' + (txt ? '<span style="overflow:hidden;text-overflow:ellipsis;color:#fff;pointer-events:none">' + txt + '</span>' : '');
+
+            // 事件在 badge 创建时已绑定（while 循环），这里只更新 __viElement
           }
 
-          const persistedFrames = [];
-          (this.overlayState.notes || []).forEach((note) => {
-            (note.targets || []).forEach((target) => {
-              const box = normalizeBox(target.boxModel);
-              if (!box || !box.width || !box.height) return;
-              persistedFrames.push({
-                rect: box,
-                active: note.id === this.overlayState.activeNoteId,
-              });
-            });
-          });
-
-          const draftFrames = !this.overlayState.activeNoteId
-            ? (this.overlayState.draftNoteTargets || []).map((target) => {
-                const box = normalizeBox(target.boxModel);
-                if (!box || !box.width || !box.height) return null;
-                return { rect: box, active: true };
-              }).filter(Boolean)
-            : [];
-
-          const visibleFrames = persistedFrames.concat(draftFrames);
-          this.setNoteFrameCount(visibleFrames.length);
-          this.noteFrameNodes.forEach((node, index) => {
-            const frame = visibleFrames[index];
-            if (!frame) {
-              node.style.display = 'none';
-              return;
-            }
-            paintRect(node, frame.rect, true);
-            this.setNoteFrameStyle(node, frame.active);
-          });
-
-          const notes = [...(this.overlayState.notes || [])];
-          if (!this.overlayState.activeNoteId && (this.overlayState.draftNoteTargets || []).length > 0) {
-            notes.unshift({
-              id: '__draft__',
-              text: this.overlayState.draftNoteText || '',
-              targets: this.overlayState.draftNoteTargets,
-              offsetX: 0,
-              offsetY: 0,
-            });
+          // 隐藏多余的 badge
+          for (var j = tags.length; j < this.tagBadgeNodes.length; j++) {
+            this.tagBadgeNodes[j].style.display = 'none';
+            this.tagBadgeNodes[j].__viElement = null;
+            this.tagBadgeNodes[j].__viBackendNodeId = null;
           }
-          this.setNoteCardCount(notes.length);
-          this.noteCardNodes.forEach((node, index) => {
-            const note = notes[index];
-            if (!note) {
-              node.style.display = 'none';
-              return;
-            }
-
-            const isDraftNote = note.id === '__draft__';
-            const noteIsActive = isDraftNote ? !this.overlayState.activeNoteId : note.id === this.overlayState.activeNoteId;
-
-            const targetRects = (note.targets || [])
-              .map((target) => normalizeBox(target.boxModel))
-              .filter((box) => box && box.width > 0 && box.height > 0);
-
-            if (!targetRects.length) {
-              node.style.display = 'none';
-              return;
-            }
-
-            const primaryRect = targetRects[0];
-            const size = estimateNoteSize(note);
-            const rawX = primaryRect.x + primaryRect.width + 36 + (Number(note.offsetX) || 0);
-            const rawY = primaryRect.y - 18 + (Number(note.offsetY) || 0);
-            const chipX = clamp(rawX, 12, Math.max(12, win.innerWidth - size.width - 12));
-            const chipY = clamp(rawY, 12, Math.max(12, win.innerHeight - size.height - 12));
-            const endpointCount = targetRects.length;
-            const endpointGap = endpointCount <= 1
-              ? 0
-              : Math.max(18, Math.min(34, Math.max(0, size.height - 36) / Math.max(1, endpointCount - 1)));
-            const chipCenterX = chipX + size.width / 2;
-            const averageTargetCenterX = targetRects.reduce((sum, rect) => sum + rect.x + rect.width / 2, 0) / targetRects.length;
-            const endpointX = averageTargetCenterX <= chipCenterX ? 0 : size.width;
-            const endpoints = targetRects.map((_, targetIndex) => ({
-              x: endpointX,
-              y: clamp(18 + targetIndex * endpointGap, 18, size.height - 18),
-            }));
-
-            node.dataset.viNoteId = isDraftNote ? '' : note.id;
-            node.style.display = 'inline-flex';
-            node.style.left = chipX + 'px';
-            node.style.top = chipY + 'px';
-            node.style.width = size.width + 'px';
-            node.style.minHeight = size.height + 'px';
-            node.style.pointerEvents = isDraftNote ? 'none' : 'auto';
-            node.style.opacity = noteIsActive ? '1' : '0.56';
-            node.style.borderColor = noteIsActive ? '#9d6a0b' : '#c99619';
-            node.style.boxShadow = noteIsActive
-              ? '0 24px 52px rgba(77,52,6,0.28),0 10px 20px rgba(15,23,42,0.16),0 0 0 1px rgba(157,106,11,0.22)'
-              : '0 14px 28px rgba(77,52,6,0.14),0 6px 12px rgba(15,23,42,0.08),inset 0 1px 0 rgba(255,255,255,0.52)';
-            node.__viTitle.textContent = buildNoteTitle(note);
-            node.__viBody.textContent = String(note.text || (isDraftNote ? '开始输入后会创建一张标签卡。' : ''));
-            node.__viDelete.style.display = isDraftNote ? 'none' : 'inline-flex';
-
-            while (node.__viEndpoints.firstChild) {
-              node.__viEndpoints.removeChild(node.__viEndpoints.firstChild);
-            }
-
-            endpoints.forEach((endpoint) => {
-              const dot = doc.createElement('span');
-              dot.style.cssText = [
-                'position:absolute',
-                'left:0',
-                'top:0',
-                'width:12px',
-                'height:12px',
-                'border-radius:999px',
-                'background:#ffd86d',
-                'border:2px solid #9d6a0b',
-                'box-shadow:0 0 0 3px rgba(255,239,176,0.22),0 2px 6px rgba(77,52,6,0.16)',
-                'transform:translate(' + endpoint.x + 'px,' + endpoint.y + 'px) translate(-50%,-50%)'
-              ].join(';');
-              node.__viEndpoints.appendChild(dot);
-            });
-
-            targetRects.forEach((rect, targetIndex) => {
-              const targetCenterX = rect.x + rect.width / 2;
-              const anchorX = chipCenterX >= targetCenterX ? rect.x + rect.width : rect.x;
-              const anchor = {
-                x: anchorX,
-                y: rect.y + rect.height / 2,
-              };
-              const endpoint = {
-                x: chipX + endpoints[targetIndex].x,
-                y: chipY + endpoints[targetIndex].y,
-              };
-              const path = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
-              path.setAttribute('d', buildConnectorPath(anchor, endpoint));
-              path.setAttribute('fill', 'none');
-              path.setAttribute('stroke', '#b5760d');
-              path.setAttribute('stroke-width', '2.5');
-              path.setAttribute('stroke-linecap', 'round');
-              path.setAttribute('stroke-linejoin', 'round');
-              path.style.opacity = noteIsActive ? '0.98' : '0.34';
-              this.noteConnectorLayer.appendChild(path);
-
-              const circle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-              circle.setAttribute('cx', String(anchor.x));
-              circle.setAttribute('cy', String(anchor.y));
-              circle.setAttribute('r', '5');
-              circle.setAttribute('fill', '#ffd86d');
-              circle.setAttribute('stroke', '#9d6a0b');
-              circle.setAttribute('stroke-width', '1.5');
-              circle.style.opacity = noteIsActive ? '0.98' : '0.34';
-              this.noteConnectorLayer.appendChild(circle);
-            });
-          });
         },
         setBadgeTheme(badge, theme) {
           if (theme === 'margin') {
@@ -977,14 +891,9 @@ function buildElementPickerScript(bindingName: string): string {
             win[binding](JSON.stringify({ ...payload, token }));
           }
         },
-        scheduleResizeCommit(target, styles) {
-          win.clearTimeout(this.commitTimer);
-          this.commitTimer = win.setTimeout(() => {
-            this.emitPayload(target, { type: 'resize', styles });
-          }, 50);
-        },
         update(target, selected = false) {
           if (!(target instanceof Element)) return this.hide();
+          if (selected) this.tagPreviewTarget = null;
           const metrics = measure(target);
           const { borderRect } = metrics;
           if (!borderRect.width && !borderRect.height) return this.hide();
@@ -998,18 +907,18 @@ function buildElementPickerScript(bindingName: string): string {
           this.overlay.style.background = 'transparent';
           this.label.textContent = buildSelector(target) + '  ' + Math.round(borderRect.width) + ' × ' + Math.round(borderRect.height);
           this.label.style.display = showSelectionProxy ? 'block' : 'none';
-          this.updateHandles(borderRect.width, borderRect.height);
-          this.setHandlesVisible(selected && showSelectionProxy);
+          this.updateActionButtons(borderRect.width, borderRect.height);
+          this.setActionButtonsVisible(selected && showSelectionProxy);
           this.renderActiveAssist(metrics, selected);
           this.updateSkeletons(target, selected, this.activeProperty === 'gap');
-          this.renderNotes();
+          this.renderTags();
         },
         hide() {
+          this.tagPreviewTarget = null;
           this.current = null;
           this.locked = false;
           this.hoverStack = [];
           this.selectionCycle = null;
-          this.resizing = null;
           this.overlay.style.display = 'none';
           this.label.style.display = 'none';
           this.marginBands.forEach((node) => { node.style.display = 'none'; });
@@ -1017,14 +926,15 @@ function buildElementPickerScript(bindingName: string): string {
           this.typographyGuide.style.display = 'none';
           this.hideBadges();
           this.skeletonNodes.forEach((node) => { node.style.display = 'none'; });
-          this.setHandlesVisible(false);
-          this.renderNotes();
+          this.setActionButtonsVisible(false);
+          this.renderTags();
         },
         move(event) {
           if (!this.active) return;
+          if (this.tool === 'browse') return;
           if (this.locked) return;
           const target = event.target instanceof Element ? event.target : null;
-          if (!target || target === this.overlay || this.overlay.contains(target) || this.noteCardLayer.contains(target)) return;
+          if (!target || target === this.overlay || this.overlay.contains(target) || this.tagBadgeLayer.contains(target)) return;
           const stack = buildElementStack(target);
           if (!stack.length) {
             this.hoverStack = [];
@@ -1045,9 +955,15 @@ function buildElementPickerScript(bindingName: string): string {
         },
         click(event) {
           if (!this.active) return;
+          if (this.tool === 'browse') return;
           const target = event.target instanceof Element ? event.target : null;
           if (!target) return;
-          if (target.dataset?.viHandle || this.noteCardLayer.contains(target)) return;
+          // data-vi-action 的元素（action buttons 和 tag badges）自己处理 click
+          if (target.dataset?.viAction) return;
+          // 点到了 badge 子元素（svg/span）时，badge 自己的 capture handler 会处理
+          if (this.tagBadgeLayer.contains(target)) {
+            return;
+          }
           event.preventDefault();
           event.stopPropagation();
           if (typeof event.stopImmediatePropagation === 'function') {
@@ -1071,96 +987,37 @@ function buildElementPickerScript(bindingName: string): string {
           this.emitPayload(nextTarget, { type: 'select', shiftKey: !!event.shiftKey });
         },
         sync() {
-          if (state.active && state.current) state.update(state.current, state.locked);
-          state.renderNotes();
+          state.liveRectDirty = true;
+          if (!state.active) {
+            state.liveRectDirty = false;
+            return;
+          }
+          if (state.tagPreviewTarget) {
+            state.renderTags();
+            state.renderTagPreview(state.tagPreviewTarget);
+            state.liveRectDirty = false;
+            return;
+          }
+          if (state.current) state.update(state.current, state.locked);
+          else state.renderTags();
+          state.liveRectDirty = false;
         },
         setActiveProperty(property) {
           this.activeProperty = property || null;
           this.sync();
         },
-        pointerdown(event) {
-          const handle = event.target instanceof Element ? event.target.closest('[data-vi-handle]') : null;
-          if (!handle || !state.locked || !(state.current instanceof Element)) return;
-
-          event.preventDefault();
-          event.stopPropagation();
-          if (typeof event.stopImmediatePropagation === 'function') {
-            event.stopImmediatePropagation();
-          }
-
-          const dir = handle.getAttribute('data-vi-handle');
-          const rect = state.current.getBoundingClientRect();
-          state.resizing = {
-            target: state.current,
-            dir,
-            startX: event.clientX,
-            startY: event.clientY,
-            startWidth: rect.width,
-            startHeight: rect.height,
-          };
-
-          doc.addEventListener('pointermove', state.pointermove, true);
-          doc.addEventListener('pointerup', state.pointerup, true);
-        },
-        pointermove(event) {
-          if (!state.resizing) return;
-
-          const { target, dir, startX, startY, startWidth, startHeight } = state.resizing;
-          const deltaX = event.clientX - startX;
-          const deltaY = event.clientY - startY;
-          let nextWidth = startWidth;
-          let nextHeight = startHeight;
-
-          if (dir.includes('e')) nextWidth = startWidth + deltaX;
-          if (dir.includes('w')) nextWidth = startWidth - deltaX;
-          if (dir.includes('s')) nextHeight = startHeight + deltaY;
-          if (dir.includes('n')) nextHeight = startHeight - deltaY;
-
-          nextWidth = Math.max(12, Math.round(nextWidth));
-          nextHeight = Math.max(12, Math.round(nextHeight));
-
-          target.style.setProperty('width', nextWidth + 'px');
-          target.style.setProperty('height', nextHeight + 'px');
-
-          state.update(target, true);
-          state.scheduleResizeCommit(target, {
-            width: nextWidth + 'px',
-            height: nextHeight + 'px',
-          });
-        },
-        pointerup() {
-          if (!state.resizing) return;
-          state.resizing = null;
-          doc.removeEventListener('pointermove', state.pointermove, true);
-          doc.removeEventListener('pointerup', state.pointerup, true);
-        },
-        notePointerMove(event) {
-          if (!state.noteDragging) return;
-          const deltaX = event.clientX - state.noteDragging.startX;
-          const deltaY = event.clientY - state.noteDragging.startY;
-          if (typeof win[binding] === 'function') {
-            win[binding](JSON.stringify({
-              type: 'note-move',
-              noteId: state.noteDragging.noteId,
-              deltaX,
-              deltaY,
-            }));
-          }
-          state.noteDragging = {
-            noteId: state.noteDragging.noteId,
-            startX: event.clientX,
-            startY: event.clientY,
-          };
-        },
-        notePointerUp() {
-          state.noteDragging = null;
-        },
         tick() {
           if (!state.active) return;
-          if (state.current) state.update(state.current, state.locked);
+          if (state.tagPreviewTarget) {
+            state.renderTags();
+            state.renderTagPreview(state.tagPreviewTarget);
+          } else if (state.current) {
+            state.update(state.current, state.locked);
+          }
           state.rafId = win.requestAnimationFrame(state.tick);
         },
         keydown(event) {
+          if (state.tool === 'browse') return;
           if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
@@ -1185,14 +1042,11 @@ function buildElementPickerScript(bindingName: string): string {
           this.hide();
           doc.addEventListener('mousemove', this.move, true);
           doc.addEventListener('click', this.click, true);
-          doc.addEventListener('pointerdown', this.pointerdown, true);
-          doc.addEventListener('pointermove', this.notePointerMove, true);
-          doc.addEventListener('pointerup', this.notePointerUp, true);
           win.addEventListener('scroll', this.sync, true);
           win.addEventListener('resize', this.sync, true);
           doc.addEventListener('keydown', this.keydown, true);
           this.rafId = win.requestAnimationFrame(this.tick);
-          this.renderNotes();
+          this.renderTags();
         },
         disable() {
           if (!this.active) {
@@ -1202,16 +1056,9 @@ function buildElementPickerScript(bindingName: string): string {
           this.active = false;
           doc.removeEventListener('mousemove', this.move, true);
           doc.removeEventListener('click', this.click, true);
-          doc.removeEventListener('pointerdown', this.pointerdown, true);
-          doc.removeEventListener('pointermove', this.pointermove, true);
-          doc.removeEventListener('pointerup', this.pointerup, true);
-          doc.removeEventListener('pointermove', this.notePointerMove, true);
-          doc.removeEventListener('pointerup', this.notePointerUp, true);
           win.removeEventListener('scroll', this.sync, true);
           win.removeEventListener('resize', this.sync, true);
           doc.removeEventListener('keydown', this.keydown, true);
-          win.clearTimeout(this.commitTimer);
-          this.commitTimer = 0;
           if (this.rafId) {
             win.cancelAnimationFrame(this.rafId);
             this.rafId = 0;
@@ -1227,11 +1074,6 @@ function buildElementPickerScript(bindingName: string): string {
 
       state.move = state.move.bind(state);
       state.click = state.click.bind(state);
-      state.pointerdown = state.pointerdown.bind(state);
-      state.pointermove = state.pointermove.bind(state);
-      state.pointerup = state.pointerup.bind(state);
-      state.notePointerMove = state.notePointerMove.bind(state);
-      state.notePointerUp = state.notePointerUp.bind(state);
       state.setActiveProperty = state.setActiveProperty.bind(state);
       state.setTool = state.setTool.bind(state);
       state.setOverlayState = state.setOverlayState.bind(state);

@@ -37,8 +37,6 @@ visual-inspector/
     │   │   ├── App.tsx
     │   │   ├── components/
     │   │   │   ├── WelcomeScreen.tsx
-    │   │   │   ├── overlay/
-    │   │   │   │   └── OverlayInspector.tsx
     │   │   │   └── properties/
     │   │   │       ├── FieldControl.tsx
     │   │   │       └── PropertiesWorkbench.tsx
