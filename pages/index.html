@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DOMPrompter — Visual Bridge Between You and AI Code Editors</title>
+  <meta name="description"
+    content="DOMPrompter lets you visually select elements, tweak CSS, and generate precise AI prompts for Cursor, Claude, Codex and more." />
+  <link rel="icon" type="image/png" href="./img/DMG_Icon_1024x1024.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <!-- Background Graphic -->
+  <div class="bg-graphic">
+    <svg fill="none" stroke="black" stroke-width="0.3" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="40"></circle>
+      <rect x="15" y="15" width="70" height="70"></rect>
+      <line x1="50" y1="5" x2="50" y2="95"></line>
+      <line x1="5" y1="95" x2="95" y2="50"></line>
+    </svg>
+  </div>
+
+  <div class="site-shell" style="position:relative;z-index:10;">
+    <!-- Header -->
+    <header class="topbar">
+      <a href="./index.html" class="brand-link">
+        <img src="./img/DMG_Icon_1024x1024.png" alt="DOMPrompter" class="brand-logo">
+        <div class="brand-name">DOMPrompter</div>
+      </a>
+      <nav class="nav-links">
+        <a href="./index.html" class="is-active">
+          <span class="language-block is-visible" data-lang="zh">首页</span>
+          <span class="language-block" data-lang="en">Home</span>
+        </a>
+        <a href="./support.html">
+          <span class="language-block is-visible" data-lang="zh">支持</span>
+          <span class="language-block" data-lang="en">Support</span>
+        </a>
+        <div class="lang-dropdown">
+          <button type="button" class="lang-toggle" aria-expanded="false" aria-label="Select Language">
+            <span class="current-lang-label">Lang</span>
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div class="lang-menu">
+            <button type="button" data-lang-target="zh">中文</button>
+            <button type="button" data-lang-target="en">English</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="main-column">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="pulse-dot"></span>
+            <span class="language-block is-visible" data-lang="zh">macOS 桌面应用</span>
+            <span class="language-block" data-lang="en">macOS Desktop App</span>
+          </div>
+
+          <div class="language-block is-visible" data-lang="zh">
+            <h1 class="hero-title">用可视化的方式<br>告诉 AI<br>你要改什么</h1>
+            <p class="hero-subtitle">
+              选中元素、微调样式、生成精确的 AI 提示词。<br>
+              让 <strong>Cursor、Claude Code、Codex</strong> 等 AI 工具准确修改你的代码。
+            </p>
+          </div>
+          <div class="language-block" data-lang="en">
+            <h1 class="hero-title">Show AI<br>Exactly What<br>You Want<br>to Change</h1>
+            <p class="hero-subtitle">
+              Select elements, tweak styles visually, generate precise AI prompts.<br>
+              Let <strong>Cursor, Claude Code, Codex</strong> and more modify your code accurately.
+            </p>
+          </div>
+
+          <div class="cta-buttons">
+            <a class="btn-solid disabled" href="#" aria-disabled="true">
+              <span class="language-block is-visible" data-lang="zh">下载应用 (Mac)</span>
+              <span class="language-block" data-lang="en">Download for Mac</span>
+              <span class="btn-tag">Coming Soon</span>
+            </a>
+            <a class="btn-outline" href="./support.html">
+              <span class="language-block is-visible" data-lang="zh">了解更多</span>
+              <span class="language-block" data-lang="en">Learn More</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Available for these agents -->
+      <section class="agents-section">
+        <p class="agents-label">
+          <span class="language-block is-visible" data-lang="zh">适配以下 AI 编程工具</span>
+          <span class="language-block" data-lang="en">Works with these AI coding agents</span>
+        </p>
+        <div class="agents-track-wrapper">
+          <div class="agents-fade-left"></div>
+          <div class="agents-fade-right"></div>
+          <div class="agents-track" id="agents-track">
+            <!-- duplicated by JS for infinite scroll -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Zen Bar -->
+      <div class="zen-bar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M7 12h10M12 7v10" /><circle cx="12" cy="12" r="10" />
+        </svg>
+        <h2>
+          <span class="language-block is-visible" data-lang="zh">AI 时代的可视化微调协议</span>
+          <span class="language-block" data-lang="en">Visual Fine-Tuning Protocol for the AI Era</span>
+        </h2>
+      </div>
+
+      <!-- Problem / Solution -->
+      <section class="problem-section">
+        <div class="problem-row">
+          <span class="problem-tag pain">
+            <span class="language-block is-visible" data-lang="zh">痛点</span>
+            <span class="language-block" data-lang="en">Pain</span>
+          </span>
+          <div>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>微调页面时，截图总是选不中对应的元素。AI 无法精确定位「哪个元素要改什么」，反复沟通效率极低。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>When fine-tuning a page, screenshots never capture the right element. AI can't pinpoint "which element needs what change" — endless back-and-forth.</p>
+            </div>
+          </div>
+        </div>
+        <div class="problem-row">
+          <span class="problem-tag solution">
+            <span class="language-block is-visible" data-lang="zh">方案</span>
+            <span class="language-block" data-lang="en">Fix</span>
+          </span>
+          <div>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>DOMPrompter 让你直接在页面上选中元素、可视化调整参数、添加文字注释，然后自动生成结构化 AI 提示词，交给 Cursor / Claude Code / Codex 精确执行。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>DOMPrompter lets you select elements directly on the page, visually adjust parameters, add text annotations, and auto-generate structured AI prompts for Cursor / Claude Code / Codex to execute precisely.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Feature Rows -->
+      <div class="feature-row">
+        <div class="feature-row-header">
+          <div class="feature-row-left">
+            <span class="feature-row-icon">🎯</span>
+            <h3>
+              <span class="language-block is-visible" data-lang="zh">精确选择</span>
+              <span class="language-block" data-lang="en">Precise Selection</span>
+            </h3>
+          </div>
+          <span class="step-label">01_Select</span>
+        </div>
+        <div class="language-block is-visible" data-lang="zh">
+          <p>点击页面元素即刻选中，自动识别 CSS 选择器。蓝色边框精确高亮，浮动按钮一触即达。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <p>Click any element to select it instantly. Auto-identify CSS selectors. Blue outline for precise highlighting, floating buttons at your fingertips.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-row-header">
+          <div class="feature-row-left">
+            <span class="feature-row-icon">🔄</span>
+            <h3>
+              <span class="language-block is-visible" data-lang="zh">样式差异追踪</span>
+              <span class="language-block" data-lang="en">Style Diff Tracking</span>
+            </h3>
+          </div>
+          <span class="step-label">02_Diff</span>
+        </div>
+        <div class="language-block is-visible" data-lang="zh">
+          <p>每次调整自动记录为 before/after 差异。width: 200px → 300px, padding: 8px → 16px — AI 一目了然。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <p>Every adjustment auto-recorded as before/after diff. width: 200px → 300px, padding: 8px → 16px — crystal clear for AI.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-row-header">
+          <div class="feature-row-left">
+            <span class="feature-row-icon">💬</span>
+            <h3>
+              <span class="language-block is-visible" data-lang="zh">自然语言标签</span>
+              <span class="language-block" data-lang="en">Natural Language Tags</span>
+            </h3>
+          </div>
+          <span class="step-label">03_Tag</span>
+        </div>
+        <div class="language-block is-visible" data-lang="zh">
+          <p>为元素添加文字标签描述意图：「按钮颜色太深」「间距太大」。让 AI 理解你的设计思路，不仅仅是参数变化。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <p>Add text tags to describe intent: "button color too dark", "spacing too wide". AI understands your design thinking, not just parameter changes.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-row-header">
+          <div class="feature-row-left">
+            <span class="feature-row-icon">⚡</span>
+            <h3>
+              <span class="language-block is-visible" data-lang="zh">即时反馈 + 撤销重做</span>
+              <span class="language-block" data-lang="en">Instant Feedback + Undo/Redo</span>
+            </h3>
+          </div>
+          <span class="step-label">04_Iterate</span>
+        </div>
+        <div class="language-block is-visible" data-lang="zh">
+          <p>浮动按钮直接修改 DOM，所见即所得。完整操作历史，Cmd+Z 随时回退，放心实验。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <p>Floating buttons modify DOM directly — WYSIWYG. Full operation history, Cmd+Z to undo anytime. Experiment with confidence.</p>
+        </div>
+      </div>
+
+      <div class="feature-row">
+        <div class="feature-row-header">
+          <div class="feature-row-left">
+            <span class="feature-row-icon">🔒</span>
+            <h3>
+              <span class="language-block is-visible" data-lang="zh">本地优先，完全隐私</span>
+              <span class="language-block" data-lang="en">Local-First, Full Privacy</span>
+            </h3>
+          </div>
+          <span class="step-label">05_Privacy</span>
+        </div>
+        <div class="language-block is-visible" data-lang="zh">
+          <p>所有操作在本地完成，不收集任何数据。你的页面和代码始终在你自己的设备上。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <p>Everything runs locally. We don't collect any data. Your pages and code stay on your device — always.</p>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <section class="cta-section">
+        <div class="language-block is-visible" data-lang="zh">
+          <h2>精确描述，精准修改。</h2>
+          <p>告别截图猜测，告别反复沟通。DOMPrompter 让每一次 AI 代码修改都精确到位。</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <h2>Precise Description,<br>Precise Modification.</h2>
+          <p>No more guessing from screenshots. No more back-and-forth. DOMPrompter makes every AI code change pixel-perfect.</p>
+        </div>
+        <div class="cta-buttons">
+          <a class="btn-solid disabled" href="#" aria-disabled="true">
+            <span class="language-block is-visible" data-lang="zh">下载应用 (Mac)</span>
+            <span class="language-block" data-lang="en">Download for Mac</span>
+            <span class="btn-tag">Coming Soon</span>
+          </a>
+          <a class="btn-outline" href="https://github.com/hooosberg/DOMPrompter" target="_blank">GitHub</a>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="accent">DOMPrompter:~#</span>
+          <span>&copy; 2026 DOMPrompter.</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/hooosberg/DOMPrompter" target="_blank">[github]</a>
+          <a href="./support.html">[
+            <span class="language-block is-visible" data-lang="zh">support</span>
+            <span class="language-block" data-lang="en">support</span>
+          ]</a>
+          <a href="./privacy.html">[
+            <span class="language-block is-visible" data-lang="zh">privacy</span>
+            <span class="language-block" data-lang="en">privacy</span>
+          ]</a>
+          <a href="./terms.html">[
+            <span class="language-block is-visible" data-lang="zh">terms</span>
+            <span class="language-block" data-lang="en">terms</span>
+          ]</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="./lang.js"></script>
+  <script>
+    // Agents marquee
+    (function () {
+      const agents = [
+        { name: 'Claude Code', icon: './img/codeicon/code ide icon_Claude Code.svg' },
+        { name: 'Cursor', icon: './img/codeicon/code ide icon_cursor.svg' },
+        { name: 'Windsurf', icon: './img/codeicon/code ide icon_windsurf.svg' },
+        { name: 'OpenAI', icon: './img/codeicon/code ide icon_openai.svg' },
+        { name: 'GitHub Copilot', icon: './img/codeicon/code ide icon_copilot.svg' },
+        { name: 'Gemini', icon: './img/codeicon/code ide icon_gemini.svg' },
+        { name: 'Cline', icon: './img/codeicon/code ide icon_cline.svg' },
+        { name: 'Trae', icon: './img/codeicon/code ide icon_trae.svg' },
+        { name: 'AmpCode', icon: './img/codeicon/code ide icon_ampcode.svg' },
+        { name: 'Kiro', icon: './img/codeicon/code ide icon_kiro.svg' },
+        { name: 'Roo Code', icon: './img/codeicon/code ide icon_roocode.svg' },
+        { name: 'Goose', icon: './img/codeicon/code ide icon_goose.svg' },
+        { name: 'Kilo', icon: './img/codeicon/code ide icon_kilo.svg' },
+        { name: 'Factory', icon: './img/codeicon/code ide icon_factory.svg' },
+        { name: 'OpenCode', icon: './img/codeicon/code ide icon_opencode.svg' },
+      ];
+
+      const track = document.getElementById('agents-track');
+      // Duplicate for seamless loop
+      const all = [...agents, ...agents];
+      all.forEach(a => {
+        const el = document.createElement('a');
+        el.className = 'agent-item';
+        el.href = '#';
+        el.innerHTML = '<img src="' + a.icon + '" alt="' + a.name + '"><span>' + a.name + '</span>';
+        track.appendChild(el);
+      });
+    })();
+  </script>
+</body>
+
+</html>

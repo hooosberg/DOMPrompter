@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support | DOMPrompter</title>
+  <meta name="description" content="DOMPrompter Support Center — guides, FAQ, and contact." />
+  <link rel="icon" type="image/png" href="./img/DMG_Icon_1024x1024.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div class="site-shell" style="position:relative;z-index:10;">
+    <header class="topbar">
+      <a href="./index.html" class="brand-link">
+        <img src="./img/DMG_Icon_1024x1024.png" alt="DOMPrompter" class="brand-logo">
+        <div class="brand-name">DOMPrompter</div>
+      </a>
+      <nav class="nav-links">
+        <a href="./index.html">
+          <span class="language-block is-visible" data-lang="zh">首页</span>
+          <span class="language-block" data-lang="en">Home</span>
+        </a>
+        <a href="./support.html" class="is-active">
+          <span class="language-block is-visible" data-lang="zh">支持</span>
+          <span class="language-block" data-lang="en">Support</span>
+        </a>
+        <div class="lang-dropdown">
+          <button type="button" class="lang-toggle" aria-expanded="false" aria-label="Select Language">
+            <span class="current-lang-label">Lang</span>
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div class="lang-menu">
+            <button type="button" data-lang-target="zh">中文</button>
+            <button type="button" data-lang-target="en">English</button>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="main-column">
+      <div class="page-header">
+        <div class="language-block is-visible" data-lang="zh">
+          <h1>支持中心</h1>
+          <p>快速入门、常见问题和联系方式</p>
+        </div>
+        <div class="language-block" data-lang="en">
+          <h1>Support Center</h1>
+          <p>Quick start guide, FAQ, and contact</p>
+        </div>
+      </div>
+
+      <div class="text-content">
+        <!-- Quick Start -->
+        <section class="support-section">
+          <div class="language-block is-visible" data-lang="zh"><h2>快速入门</h2></div>
+          <div class="language-block" data-lang="en"><h2>Quick Start</h2></div>
+          <div class="steps-flow">
+            <div class="step-item">
+              <span class="step-num">1</span>
+              <div>
+                <div class="language-block is-visible" data-lang="zh">
+                  <h3>启动应用</h3>
+                  <p>打开 DOMPrompter，输入目标页面 URL 或从开发服务器启动。应用自动通过 Chrome DevTools Protocol 连接页面。</p>
+                </div>
+                <div class="language-block" data-lang="en">
+                  <h3>Launch App</h3>
+                  <p>Open DOMPrompter, enter the target page URL or launch from your dev server. Auto-connects via Chrome DevTools Protocol.</p>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">2</span>
+              <div>
+                <div class="language-block is-visible" data-lang="zh">
+                  <h3>选择元素</h3>
+                  <p>在目标页面点击任意元素。蓝色边框高亮选中容器，浮动动作按钮出现在蓝框周围。</p>
+                </div>
+                <div class="language-block" data-lang="en">
+                  <h3>Select Elements</h3>
+                  <p>Click any element on the target page. Blue outline highlights the container, floating action buttons appear around the frame.</p>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">3</span>
+              <div>
+                <div class="language-block is-visible" data-lang="zh">
+                  <h3>调整属性</h3>
+                  <p>蓝色 W/H 按钮调整宽高，绿色按钮调整 padding，橙色按钮调整 margin。也可在右侧属性面板精确输入数值。</p>
+                </div>
+                <div class="language-block" data-lang="en">
+                  <h3>Adjust Properties</h3>
+                  <p>Blue W/H buttons adjust size, green for padding, orange for margin. Or enter precise values in the properties panel.</p>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">4</span>
+              <div>
+                <div class="language-block is-visible" data-lang="zh">
+                  <h3>添加标签</h3>
+                  <p>为元素添加文字标签描述修改意图。标签徽章附着在对应元素上，支持多个元素同时标注。</p>
+                </div>
+                <div class="language-block" data-lang="en">
+                  <h3>Add Tags</h3>
+                  <p>Add text tags describing your change intent. Tag badges attach to the element. Multiple elements can be annotated simultaneously.</p>
+                </div>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">5</span>
+              <div>
+                <div class="language-block is-visible" data-lang="zh">
+                  <h3>导出提示词</h3>
+                  <p>点击导出，所有选择器 + 样式差异 + 标签注释合并为结构化 AI 提示词。复制粘贴到 Cursor / Claude Code / Codex 即可。</p>
+                </div>
+                <div class="language-block" data-lang="en">
+                  <h3>Export Prompt</h3>
+                  <p>Click export — all selectors + style diffs + tag annotations merged into a structured AI prompt. Copy-paste into Cursor / Claude Code / Codex.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="support-section">
+          <div class="language-block is-visible" data-lang="zh"><h2>常见问题</h2></div>
+          <div class="language-block" data-lang="en"><h2>FAQ</h2></div>
+
+          <details>
+            <summary>
+              <span class="language-block is-visible" data-lang="zh">DOMPrompter 支持哪些浏览器？</span>
+              <span class="language-block" data-lang="en">Which browsers does DOMPrompter support?</span>
+            </summary>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>通过 Chrome DevTools Protocol (CDP) 工作，支持 Chrome 和所有 Chromium 内核浏览器（Edge、Brave 等）。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>Works via Chrome DevTools Protocol (CDP), supporting Chrome and all Chromium-based browsers (Edge, Brave, etc.).</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="language-block is-visible" data-lang="zh">DOMPrompter 会修改我的源代码吗？</span>
+              <span class="language-block" data-lang="en">Does DOMPrompter modify my source code?</span>
+            </summary>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>不会。DOMPrompter 只修改浏览器中的运行时 DOM，不直接修改源代码。所有调整是临时的页面内修改，刷新后恢复。它的作用是生成精确的 AI 提示词，由你手动交给 AI 工具修改源代码。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>No. DOMPrompter only modifies the runtime DOM in the browser — never touches source files. All adjustments are temporary, resetting on refresh. Its role is generating precise AI prompts for you to hand to AI tools.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="language-block is-visible" data-lang="zh">可以同时标注多个元素吗？</span>
+              <span class="language-block" data-lang="en">Can I annotate multiple elements at once?</span>
+            </summary>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>可以。依次选择不同元素并添加标签和样式调整。导出时所有已标注元素的数据合并为一个完整的 AI 提示词。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>Yes. Select different elements one by one and add tags/adjustments. On export, all annotated elements merge into one complete AI prompt.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="language-block is-visible" data-lang="zh">如何撤销样式调整？</span>
+              <span class="language-block" data-lang="en">How do I undo style adjustments?</span>
+            </summary>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>Cmd+Z 撤销，Cmd+Shift+Z 重做。所有通过浮动按钮或属性面板的调整都记录在操作历史中。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>Cmd+Z to undo, Cmd+Shift+Z to redo. All adjustments via floating buttons or properties panel are recorded in history.</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>
+              <span class="language-block is-visible" data-lang="zh">应用窗口消失了怎么办？</span>
+              <span class="language-block" data-lang="en">What if the app window disappears?</span>
+            </summary>
+            <div class="language-block is-visible" data-lang="zh">
+              <p>在 macOS Dock 中点击 DOMPrompter 图标恢复窗口。如仍无法显示，尝试重启应用。</p>
+            </div>
+            <div class="language-block" data-lang="en">
+              <p>Click the DOMPrompter icon in macOS Dock to restore. If still not visible, restart the app.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- Contact -->
+        <section class="support-section">
+          <div class="language-block is-visible" data-lang="zh">
+            <h2>联系我们</h2>
+            <p style="font-family:var(--font-mono);color:#666;font-size:14px;line-height:1.7;">如遇到问题或有功能建议：</p>
+            <ul style="font-family:var(--font-mono);color:#666;font-size:14px;line-height:2;">
+              <li>邮箱：<a href="mailto:zikedece@proton.me" style="color:var(--accent-color)">zikedece@proton.me</a></li>
+              <li>GitHub Issues：<a href="https://github.com/hooosberg/DOMPrompter/issues" target="_blank" style="color:var(--accent-color)">hooosberg/TrekReel</a></li>
+            </ul>
+          </div>
+          <div class="language-block" data-lang="en">
+            <h2>Contact Us</h2>
+            <p style="font-family:var(--font-mono);color:#666;font-size:14px;line-height:1.7;">If you encounter issues or have feature suggestions:</p>
+            <ul style="font-family:var(--font-mono);color:#666;font-size:14px;line-height:2;">
+              <li>Email: <a href="mailto:zikedece@proton.me" style="color:var(--accent-color)">zikedece@proton.me</a></li>
+              <li>GitHub Issues: <a href="https://github.com/hooosberg/DOMPrompter/issues" target="_blank" style="color:var(--accent-color)">hooosberg/TrekReel</a></li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="accent">DOMPrompter:~#</span>
+          <span>&copy; 2026 DOMPrompter.</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/hooosberg/DOMPrompter" target="_blank">[github]</a>
+          <a href="./support.html">[support]</a>
+          <a href="./privacy.html">[privacy]</a>
+          <a href="./terms.html">[terms]</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script src="./lang.js"></script>
+</body>
+
+</html>
