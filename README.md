@@ -5,59 +5,74 @@
 <h1 align="center">DOMPrompter</h1>
 
 <p align="center">
-  <strong>Visual Bridge Between You and AI Code Editors</strong><br/>
-  <sub>用可视化的方式告诉 AI 你要改什么</sub>
+  <strong>Visual Bridge Between You and AI Code Editors</strong>
+  <br>
+  Show AI exactly what you want to change
+  <br>
+  <a href="https://hooosberg.github.io/DOMPrompter/">Website</a>
 </p>
 
 <p align="center">
-  <a href="https://hooosberg.github.io/DOMPrompter/">Website</a> ·
-  <a href="https://hooosberg.github.io/DOMPrompter/pages/support.html">Support</a> ·
-  <a href="https://hooosberg.github.io/DOMPrompter/pages/privacy.html">Privacy</a> ·
-  <a href="https://hooosberg.github.io/DOMPrompter/pages/terms.html">Terms</a>
+  <a href="README.md">English</a> |
+  <a href="i18n/README_zh.md">简体中文</a> |
+  <a href="i18n/README_ja.md">日本語</a> |
+  <a href="i18n/README_ko.md">한국어</a> |
+  <a href="i18n/README_es.md">Español</a> |
+  <a href="i18n/README_fr.md">Français</a> |
+  <a href="i18n/README_de.md">Deutsch</a>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-All%20Rights%20Reserved-red.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Apple%20Silicon-M1%20|%20M2%20|%20M3%20|%20M4-green.svg" alt="Apple Silicon">
+  <img src="https://img.shields.io/badge/Electron-33-47848F.svg" alt="Electron">
+  <img src="https://img.shields.io/badge/React-18-61DAFB.svg" alt="React">
+  <img src="https://img.shields.io/badge/CDP-Chrome%20DevTools%20Protocol-FF6D00.svg" alt="CDP">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Mac_App_Store-Coming_Soon-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Coming Soon on Mac App Store" height="40">
 </p>
 
 ---
 
-## What is DOMPrompter? / DOMPrompter 是什么？
-
-**EN** — DOMPrompter is a visual inspection tool that sits between AI coding assistants and your webpage. Instead of struggling with screenshots and vague descriptions, you can **precisely select elements**, **tweak CSS properties visually**, and **generate structured AI prompts** — so tools like Cursor, Claude Code, Codex and more can modify your source code accurately.
-
-**中文** — DOMPrompter 是一个介于 AI 编程助手和网页之间的可视化辅助工具。告别截图猜测和反复沟通，你可以**精确选中元素**、**可视化微调 CSS 属性**、**生成结构化 AI 提示词**——让 Cursor、Claude Code、Codex 等工具精准修改你的源代码。
+**DOMPrompter** is a macOS desktop app that lets you visually select elements, tweak CSS properties, and generate structured AI prompts — so tools like **Cursor**, **Claude Code**, **Codex**, and more can modify your source code accurately.
 
 ---
 
-## The Problem / 痛点
+## The Problem
 
-**EN** — When fine-tuning a webpage with AI, screenshots never capture the right element. AI can't pinpoint *"which element needs what change"*. You end up going back and forth, describing layout tweaks in words that get lost in translation.
+When fine-tuning a webpage with AI, screenshots never capture the right element. AI can't pinpoint *"which element needs what change"*. You end up going back and forth, describing layout tweaks in words that get lost in translation.
 
-**中文** — 微调页面时，截图总是选不中对应的元素。AI 无法精确定位「哪个元素要改什么」，反复沟通效率极低。
-
----
-
-## How It Works / 工作流程
-
-| Step | EN | 中文 |
-|:----:|:---|:-----|
-| **1** | **Select** — Click any element to highlight it with a precise CSS selector | **选中** — 点击任意元素，精确高亮并获取 CSS 选择器 |
-| **2** | **Tweak** — Adjust CSS properties visually, see changes in real time | **微调** — 可视化调整 CSS 属性，实时预览变化 |
-| **3** | **Annotate** — Add text tags describing what you want | **标注** — 添加文字标签描述修改意图 |
-| **4** | **Generate** — Merge selector + style diffs + annotations into a structured AI prompt | **生成** — 选择器 + 样式差异 + 注释合并为结构化 AI 提示词 |
-| **5** | **Hand Off** — Paste into Cursor, Claude Code, Codex or any AI assistant | **交付** — 粘贴到 Cursor、Claude Code、Codex 等 AI 工具 |
+**DOMPrompter solves this** — precise selection + precise description = precise code changes.
 
 ---
 
-## Key Features / 核心特性
+## How It Works
 
-- **Precise Element Selection / 精确选择** — Click-to-select with CSS selector identification
-- **Style Diff Tracking / 样式差异追踪** — Every change recorded as before/after diff (e.g., `width: 200px → 300px`)
-- **Natural Language Tags / 自然语言标签** — Tag elements with notes for AI context
-- **Instant Feedback / 即时反馈** — Floating buttons modify DOM directly, WYSIWYG
-- **Undo & Redo / 撤销重做** — Full operation history with Cmd+Z / Cmd+Shift+Z
-- **Local-First / 本地优先** — No data collection, everything stays on your device
+| Step | Description |
+|:----:|:------------|
+| **1** | **Select** — Click any element on your page to highlight it with a precise CSS selector |
+| **2** | **Tweak** — Adjust CSS properties (width, height, padding, margin) visually in real time |
+| **3** | **Annotate** — Add text tags describing what you want ("button too dark", "spacing too wide") |
+| **4** | **Generate** — DOMPrompter merges selector + style diffs + annotations into a structured AI prompt |
+| **5** | **Hand Off** — Paste into Cursor, Claude Code, Codex or any AI assistant for accurate code changes |
 
 ---
 
-## Architecture / 架构
+## Key Features
+
+- **Precise Element Selection** — Click-to-select with CSS selector auto-identification
+- **Style Diff Tracking** — Every change recorded as before/after diff (e.g., `width: 200px → 300px`)
+- **Natural Language Tags** — Tag elements with notes so AI understands your design intent
+- **Instant Feedback** — Floating action buttons modify DOM directly, WYSIWYG
+- **Undo & Redo** — Full operation history with `Cmd+Z` / `Cmd+Shift+Z`
+- **Local-First** — No data collection, everything stays on your device
+
+---
+
+## Architecture
 
 ```
 ┌──────────────────────────────────┐
@@ -87,9 +102,20 @@
 
 ---
 
-## Platform / 平台
+## Works With
 
-macOS (Electron)
+DOMPrompter generates prompts compatible with any AI coding assistant:
+
+**Claude Code** · **Cursor** · **Codex** · **Windsurf** · **GitHub Copilot** · **Gemini** · **Cline** · **Trae** · **AmpCode** · **Kiro** · **Roo Code** · and more
+
+---
+
+## Links
+
+- [Website](https://hooosberg.github.io/DOMPrompter/)
+- [Support Center](https://hooosberg.github.io/DOMPrompter/pages/support.html)
+- [Privacy Policy](https://hooosberg.github.io/DOMPrompter/pages/privacy.html)
+- [Terms of Service](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
 
 ---
 
