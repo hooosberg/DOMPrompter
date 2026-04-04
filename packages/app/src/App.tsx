@@ -387,7 +387,7 @@ export default function App() {
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>(DEFAULT_LICENSE_STATUS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [paywallOpen, setPaywallOpen] = useState(false)
-  const [licenseBusy, setLicenseBusy] = useState(false)
+  const [, setLicenseBusy] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [recentHtmlFiles, setRecentHtmlFiles] = useState<string[]>(() => loadRecentHtmlFiles())
 

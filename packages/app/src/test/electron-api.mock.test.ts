@@ -16,4 +16,14 @@ describe('electron api mock helper', () => {
       lastValidatedAt: null,
     })
   })
+
+  it('keeps a session-only pro state after purchase', async () => {
+    const api = installElectronApiMock()
+
+    await expect(api.license.purchase()).resolves.toEqual({ success: true })
+    await expect(api.license.getStatus()).resolves.toMatchObject({
+      isPro: true,
+      provider: 'dev-stub',
+    })
+  })
 })

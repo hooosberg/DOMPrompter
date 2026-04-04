@@ -24,6 +24,11 @@ export function createElectronApiMock() {
     newWindow: [] as Array<() => void>,
     escape: [] as Array<() => void>,
   }
+  let licenseStatus = {
+    isPro: false,
+    provider: 'dev-stub' as const,
+    lastValidatedAt: null as string | null,
+  }
 
   return {
     loadUrl: vi.fn(async (url: string) => Boolean(url)),
@@ -61,6 +66,7 @@ export function createElectronApiMock() {
     onAutoConnected: vi.fn(),
     onPropertyActivated: vi.fn(),
     onPropertyIncrement: vi.fn(),
+    onContextAction: vi.fn(),
     removeAllListeners: vi.fn(),
     generateAIPrompt: vi.fn(asyncValue('')),
     generateCSS: vi.fn(asyncValue('')),
@@ -88,8 +94,15 @@ export function createElectronApiMock() {
       onEscape: vi.fn((callback: () => void) => { shortcutListeners.escape.push(callback) }),
     },
     license: {
-      getStatus: vi.fn(asyncValue({ isPro: false, provider: 'dev-stub', lastValidatedAt: null })),
-      purchase: vi.fn(asyncValue({ success: true })),
+      getStatus: vi.fn(async () => ({ ...licenseStatus })),
+      purchase: vi.fn(async () => {
+        licenseStatus = {
+          ...licenseStatus,
+          isPro: true,
+          lastValidatedAt: new Date().toISOString(),
+        }
+        return { success: true }
+      }),
       restore: vi.fn(asyncValue({ success: true })),
     },
     __emitShortcut(name: keyof typeof shortcutListeners) {

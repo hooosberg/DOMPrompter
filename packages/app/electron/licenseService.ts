@@ -4,9 +4,18 @@ import { dirname, join } from 'path'
 import { MAS_PRODUCT_ID, type StoredLicenseState } from '../src/shared/license'
 
 const LICENSE_FILE = 'license-state.json'
+let devStubState: StoredLicenseState | null = null
 
 function getLicenseFilePath() {
   return join(app.getPath('userData'), LICENSE_FILE)
+}
+
+function createDefaultLicenseState(provider: StoredLicenseState['provider']): StoredLicenseState {
+  return {
+    isPro: false,
+    provider,
+    lastValidatedAt: null,
+  }
 }
 
 function getProvider(): StoredLicenseState['provider'] {
@@ -18,15 +27,17 @@ function getProvider(): StoredLicenseState['provider'] {
 function loadStoredLicenseState(): StoredLicenseState {
   const provider = getProvider()
 
-  // Always start as free in dev mode so the paywall can be tested on every launch
   if (provider === 'dev-stub') {
-    return { isPro: false, provider, lastValidatedAt: null }
+    if (!devStubState) {
+      devStubState = createDefaultLicenseState(provider)
+    }
+    return devStubState
   }
 
   try {
     const filePath = getLicenseFilePath()
     if (!existsSync(filePath)) {
-      return { isPro: false, provider, lastValidatedAt: null }
+      return createDefaultLicenseState(provider)
     }
 
     const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as Partial<StoredLicenseState>
@@ -36,11 +47,16 @@ function loadStoredLicenseState(): StoredLicenseState {
       lastValidatedAt: typeof parsed.lastValidatedAt === 'string' ? parsed.lastValidatedAt : null,
     }
   } catch {
-    return { isPro: false, provider, lastValidatedAt: null }
+    return createDefaultLicenseState(provider)
   }
 }
 
 function saveStoredLicenseState(state: StoredLicenseState) {
+  if (state.provider === 'dev-stub') {
+    devStubState = state
+    return
+  }
+
   const filePath = getLicenseFilePath()
   mkdirSync(dirname(filePath), { recursive: true })
   writeFileSync(filePath, JSON.stringify(state), 'utf8')
