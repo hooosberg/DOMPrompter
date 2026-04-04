@@ -14,7 +14,7 @@ import {
 import { dirname, join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { InspectorService, generateAIPrompt, generateCSSClass, generateCSSVariables } from '@visual-inspector/core'
-import type { CSSProperty, ICDPTransport, InspectedElement } from '@visual-inspector/core'
+import type { CSSProperty, ICDPTransport, InspectedElement, PageContextSnapshot } from '@visual-inspector/core'
 import { registerLicenseHandlers } from './licenseService'
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
@@ -1045,6 +1045,18 @@ ipcMain.handle('capture-preview', async (event): Promise<{ dataUrl: string; view
     return await session.inspectorService.capturePreviewDataUrl()
   } catch (error) {
     console.error('Failed to capture preview:', error)
+    return null
+  }
+})
+
+ipcMain.handle('get-page-context-snapshot', async (event): Promise<PageContextSnapshot | null> => {
+  const session = getSessionFromEvent(event)
+  if (!session?.inspectorService) return null
+
+  try {
+    return await session.inspectorService.getPageContextSnapshot()
+  } catch (error) {
+    console.error('Failed to get page context snapshot:', error)
     return null
   }
 })

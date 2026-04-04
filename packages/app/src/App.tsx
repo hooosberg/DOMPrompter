@@ -4,7 +4,9 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { PaywallDialog } from './components/PaywallDialog'
 import { Settings } from './components/Settings'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
+import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
 import { LicenseManager } from './services/LicenseManager'
+import { buildStyleHistorySlotKey, undoPersistedHistory, redoPersistedHistory, resetPersistedHistory, computeStyleDiffFromHistory } from './styleHistory'
 import type {
   ActiveEditProperty,
   AppLanguage,
@@ -14,10 +16,14 @@ import type {
   ElementTag,
   ElementTagTarget,
   ExportPromptSummaryMeta,
+  GlobalStyleHistoryOperation,
+  GlobalStyleHistoryState,
   InspectedElement,
   LicenseStatus,
   OverlayNudgeChange,
   PageEditLedgerEntry,
+  PageContextSnapshot,
+  PersistedStyleHistoryState,
 } from './types'
 import './App.css'
 
@@ -171,10 +177,6 @@ function areStyleDiffsEqual(left: Record<string, string>, right: Record<string, 
   return leftKeys.every((key) => left[key] === right[key])
 }
 
-interface PageExportElement extends PageEditLedgerEntry {
-  tags: string[]
-}
-
 function buildPageExportElements(
   pageEditLedger: Record<number, PageEditLedgerEntry>,
   tags: ElementTag[],
@@ -241,98 +243,6 @@ function buildExportSummaryMeta(
   }
 }
 
-function buildPageExportPrompt(args: {
-  currentElement: InspectedElement | null
-  elements: PageExportElement[]
-  summaryMeta: ExportPromptSummaryMeta
-  pageTitle: string
-  pageUrl: string
-  targetUrl: string
-}) {
-  const {
-    currentElement,
-    elements,
-    summaryMeta,
-    pageTitle,
-    pageUrl,
-    targetUrl,
-  } = args
-  const exportedAt = new Date().toISOString()
-  const currentSelection = currentElement
-    ? {
-        backendNodeId: currentElement.backendNodeId,
-        selector: buildElementSelector(currentElement),
-      }
-    : null
-
-  const payload = {
-    source: 'domprompter',
-    signalGuide: {
-      objectIdentity: 'Each element is identified by selector, preset, tagName, and backendNodeId.',
-      styleChanges: 'Structured style edits captured from the visual workbench.',
-      intentTags: 'Natural-language goals attached to a selected element.',
-      mergeRule: 'Honor styleChanges first, then use intentTags to preserve higher-level intent.',
-    },
-    page: {
-      appName: APP_NAME,
-      title: pageTitle || 'Untitled Page',
-      url: pageUrl || targetUrl || 'unknown',
-      exportedAt,
-      currentSelection,
-    },
-    elements: elements.map((entry) => ({
-      backendNodeId: entry.backendNodeId,
-      selector: entry.selector,
-      displayName: entry.displayName,
-      tagName: entry.tagName,
-      preset: entry.preset,
-      boxModel: entry.boxModel,
-      styleChanges: entry.styleDiff,
-      intentTags: entry.tags,
-    })),
-  }
-
-  const lines = [
-    `This is a ${APP_NAME} page-level prompt export. Apply the requested UI changes directly in source code.`,
-    '',
-    'Page information:',
-    `- Title: ${payload.page.title}`,
-    `- URL: ${payload.page.url}`,
-    `- Exported at: ${exportedAt}`,
-    `- Current selection: ${currentSelection ? `${currentSelection.selector} (backendNodeId: ${currentSelection.backendNodeId})` : 'none'}`,
-    '',
-    'Execution guidance:',
-    '- Modify only the code, styles, or copy related to the listed elements.',
-    '- Keep the existing DOM structure and naming style whenever possible.',
-    '- When styleChanges and intentTags both exist, satisfy styleChanges first.',
-    '',
-    'Summary:',
-    `- Affected elements: ${summaryMeta.elementCount}`,
-    `- Elements with style edits: ${summaryMeta.modifiedCount}`,
-    `- Tagged elements: ${summaryMeta.taggedElementCount}`,
-    `- Tag groups: ${summaryMeta.tagCount}`,
-    '',
-    'Element targets:',
-    ...elements.flatMap((entry, index) => {
-      const itemLines = [`${index + 1}. ${entry.selector} (${entry.preset} / <${entry.tagName}>)`]
-      if (Object.keys(entry.styleDiff).length > 0) {
-        itemLines.push(`   - styleChanges: ${JSON.stringify(entry.styleDiff)}`)
-      }
-      if (entry.tags.length > 0) {
-        itemLines.push(`   - intentTags: ${entry.tags.join('; ')}`)
-      }
-      return itemLines
-    }),
-    '',
-    'Structured JSON:',
-    '```json',
-    JSON.stringify(payload, null, 2),
-    '```',
-  ]
-
-  return lines.join('\n')
-}
-
 function buildTagFromElement(element: InspectedElement, text: string): ElementTag {
   return {
     id: `${element.backendNodeId}-${Date.now()}`,
@@ -366,6 +276,7 @@ export default function App() {
   const tagsRef = useRef<ElementTag[]>([])
   const pageIdentityRef = useRef('')
   const overlayNudgeChangeRef = useRef<OverlayNudgeChange | null>(null)
+  const contextKeyRef = useRef('')
 
   const [url, setUrl] = useState(DEFAULT_URL)
   const [addressBarUrl, setAddressBarUrl] = useState(DEFAULT_URL)
@@ -383,6 +294,9 @@ export default function App() {
   const [overlayNudgeTick, setOverlayNudgeTick] = useState(0)
   const [activeEditTick, setActiveEditTick] = useState(0)
   const [pageEditLedger, setPageEditLedger] = useState<Record<number, PageEditLedgerEntry>>({})
+  const [pageContextSnapshot, setPageContextSnapshot] = useState<PageContextSnapshot | null>(null)
+  const [persistedStyleHistories, setPersistedStyleHistories] = useState<Record<string, PersistedStyleHistoryState>>({})
+  const [globalHistory, setGlobalHistory] = useState<GlobalStyleHistoryState>({ operations: [], cursor: 0 })
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>(DEFAULT_LICENSE_STATUS)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -488,6 +402,17 @@ export default function App() {
     return nextStatus
   }, [])
 
+  const refreshPageContextSnapshot = useCallback(async () => {
+    try {
+      const snapshot = await window.electronAPI.getPageContextSnapshot()
+      setPageContextSnapshot(snapshot)
+      return snapshot
+    } catch (error) {
+      console.warn('Failed to refresh page context snapshot:', error)
+      return null
+    }
+  }, [])
+
   const updatePageEditLedger = useCallback((
     updater: (current: Record<number, PageEditLedgerEntry>) => Record<number, PageEditLedgerEntry>,
   ) => {
@@ -567,6 +492,21 @@ export default function App() {
         return
       }
 
+      // Record tag deletion in global history
+      setGlobalHistory((prev) => {
+        const ops = prev.operations.slice(0, prev.cursor)
+        ops.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          backendNodeId: targetElement.backendNodeId,
+          contextKey: contextKeyRef.current,
+          selector: '',
+          createdAt: Date.now(),
+          kind: 'tag-delete',
+          tagSnapshot: { before: { ...existingTag, targets: [...existingTag.targets] }, after: null },
+        })
+        return { operations: ops, cursor: ops.length }
+      })
+
       const nextTags = latestTags.filter((tag) => tag.id !== existingTag.id)
       tagsRef.current = nextTags
       setTags(nextTags)
@@ -607,6 +547,24 @@ export default function App() {
         }
       : buildTagFromElement(targetElement, trimmedText)
 
+    // Record tag upsert in global history
+    setGlobalHistory((prev) => {
+      const ops = prev.operations.slice(0, prev.cursor)
+      ops.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        backendNodeId: targetElement.backendNodeId,
+        contextKey: contextKeyRef.current,
+        selector: '',
+        createdAt: Date.now(),
+        kind: 'tag-upsert',
+        tagSnapshot: {
+          before: existingTag ? { ...existingTag, targets: [...existingTag.targets] } : null,
+          after: { ...nextTag, targets: [...nextTag.targets] },
+        },
+      })
+      return { operations: ops, cursor: ops.length }
+    })
+
     const nextTags = !existingTag
       ? [...latestTags, nextTag]
       : latestTags.map((tag) => (
@@ -631,12 +589,30 @@ export default function App() {
 
   const handleDeleteTag = useCallback((tagId: string) => {
     const removedTag = tagsRef.current.find((tag) => tag.id === tagId) || null
+    if (!removedTag) return
+
+    // Record tag deletion in global history (use first target's backendNodeId)
+    const primaryTarget = removedTag.targets[0]
+    if (primaryTarget) {
+      setGlobalHistory((prev) => {
+        const ops = prev.operations.slice(0, prev.cursor)
+        ops.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          backendNodeId: primaryTarget.backendNodeId,
+          contextKey: contextKeyRef.current,
+          selector: '',
+          createdAt: Date.now(),
+          kind: 'tag-delete',
+          tagSnapshot: { before: { ...removedTag, targets: [...removedTag.targets] }, after: null },
+        })
+        return { operations: ops, cursor: ops.length }
+      })
+    }
+
     const nextTags = tagsRef.current.filter((tag) => tag.id !== tagId)
     tagsRef.current = nextTags
     setTags(nextTags)
     updatePageEditLedger((current) => {
-      if (!removedTag) return current
-
       const nextLedger = { ...current }
       removedTag.targets.forEach((target) => {
         const existingEntry = nextLedger[target.backendNodeId]
@@ -699,6 +675,279 @@ export default function App() {
     () => buildExportSummaryMeta(pageExportElements, tags),
     [pageExportElements, tags],
   )
+  const previewPageContext = useMemo(
+    () => buildPageContextDescriptor({
+      snapshot: pageContextSnapshot,
+      pageTitle,
+      pageUrl,
+      targetUrl: url,
+    }),
+    [pageContextSnapshot, pageTitle, pageUrl, url],
+  )
+  contextKeyRef.current = previewPageContext.contextKey
+  const activePersistedStyleHistoryKey = useMemo(() => {
+    if (!element) return null
+    return buildStyleHistorySlotKey(previewPageContext.contextKey, element.backendNodeId)
+  }, [element, previewPageContext.contextKey])
+  const activePersistedStyleHistory = useMemo(() => {
+    if (!activePersistedStyleHistoryKey) return null
+    return persistedStyleHistories[activePersistedStyleHistoryKey] || null
+  }, [activePersistedStyleHistoryKey, persistedStyleHistories])
+  const handlePersistedStyleHistoryChange = useCallback((history: PersistedStyleHistoryState | null) => {
+    if (!activePersistedStyleHistoryKey || !history) return
+
+    setPersistedStyleHistories((current) => ({
+      ...current,
+      [activePersistedStyleHistoryKey]: history,
+    }))
+  }, [activePersistedStyleHistoryKey])
+
+  // --- Global history ---
+  const handleGlobalHistoryCommit = useCallback((info: { backendNodeId: number; kind: 'commit' | 'external' | 'reset' }) => {
+    const contextKey = previewPageContext.contextKey
+    setGlobalHistory((prev) => {
+      const ops = prev.operations.slice(0, prev.cursor)
+      const op: GlobalStyleHistoryOperation = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        backendNodeId: info.backendNodeId,
+        contextKey,
+        selector: '',
+        createdAt: Date.now(),
+        kind: info.kind,
+      }
+      ops.push(op)
+      return { operations: ops, cursor: ops.length }
+    })
+  }, [previewPageContext.contextKey])
+
+  const globalCanUndo = globalHistory.cursor > 0
+  const globalCanRedo = globalHistory.cursor < globalHistory.operations.length
+  const globalCanReset = globalHistory.cursor > 0
+
+  const applyTagSnapshot = useCallback((targetTags: ElementTag[], snapshot: { before: ElementTag | null; after: ElementTag | null }, direction: 'undo' | 'redo') => {
+    // For undo: restore 'before' state; for redo: restore 'after' state
+    const restoreTag = direction === 'undo' ? snapshot.before : snapshot.after
+    const removeTag = direction === 'undo' ? snapshot.after : snapshot.before
+
+    let nextTags = [...targetTags]
+
+    // Remove the tag that was applied
+    if (removeTag) {
+      nextTags = nextTags.filter((tag) => tag.id !== removeTag.id)
+    }
+
+    // Add back the tag to restore
+    if (restoreTag) {
+      const existingIndex = nextTags.findIndex((tag) => tag.id === restoreTag.id)
+      if (existingIndex >= 0) {
+        nextTags[existingIndex] = restoreTag
+      } else {
+        nextTags.push(restoreTag)
+      }
+    }
+
+    return nextTags
+  }, [])
+
+  const syncLedgerAfterStyleUndo = useCallback((backendNodeId: number, nextPersisted: PersistedStyleHistoryState) => {
+    const nextStyleDiff = computeStyleDiffFromHistory(nextPersisted)
+    updatePageEditLedger((current) => {
+      const existingEntry = current[backendNodeId]
+      const nextTagTexts = getTagTextsForTarget(tagsRef.current, backendNodeId)
+      const hasStyleDiff = Object.keys(nextStyleDiff).length > 0
+
+      if (!hasStyleDiff && nextTagTexts.length === 0) {
+        if (!existingEntry) return current
+        const nextLedger = { ...current }
+        delete nextLedger[backendNodeId]
+        return nextLedger
+      }
+
+      if (!existingEntry) return current
+      return {
+        ...current,
+        [backendNodeId]: { ...existingEntry, styleDiff: nextStyleDiff, updatedAt: Date.now() },
+      }
+    })
+  }, [updatePageEditLedger])
+
+  const syncLedgerAfterTagChange = useCallback((backendNodeId: number, nextTags: ElementTag[]) => {
+    updatePageEditLedger((current) => {
+      const existingEntry = current[backendNodeId]
+      const nextTagTexts = getTagTextsForTarget(nextTags, backendNodeId)
+
+      if (!existingEntry) {
+        // If there are tags but no entry, we can't create one without element info
+        return current
+      }
+
+      if (Object.keys(existingEntry.styleDiff).length === 0 && nextTagTexts.length === 0) {
+        const nextLedger = { ...current }
+        delete nextLedger[backendNodeId]
+        return nextLedger
+      }
+
+      return {
+        ...current,
+        [backendNodeId]: { ...existingEntry, updatedAt: Date.now() },
+      }
+    })
+  }, [updatePageEditLedger])
+
+  const handleGlobalUndo = useCallback(async () => {
+    if (globalHistory.cursor <= 0) return
+
+    const op = globalHistory.operations[globalHistory.cursor - 1]
+
+    // Handle tag operations
+    if ((op.kind === 'tag-upsert' || op.kind === 'tag-delete') && op.tagSnapshot) {
+      const nextTags = applyTagSnapshot(tagsRef.current, op.tagSnapshot, 'undo')
+      tagsRef.current = nextTags
+      setTags(nextTags)
+      syncLedgerAfterTagChange(op.backendNodeId, nextTags)
+      setGlobalHistory((prev) => ({ ...prev, cursor: prev.cursor - 1 }))
+      return
+    }
+
+    // Handle style operations
+    const slotKey = buildStyleHistorySlotKey(op.contextKey, op.backendNodeId)
+    const persisted = persistedStyleHistories[slotKey]
+    if (!persisted) return
+
+    const result = undoPersistedHistory(persisted)
+    if (!result) return
+
+    const el = await window.electronAPI.inspectElementByBackendId({ backendNodeId: op.backendNodeId })
+    if (el) {
+      await window.electronAPI.updateElementStyles({
+        nodeId: el.nodeId,
+        backendNodeId: el.backendNodeId,
+        styles: result.undoPatch,
+      })
+
+      if (element?.backendNodeId === op.backendNodeId) {
+        const refreshed = await window.electronAPI.inspectElementByBackendId({ backendNodeId: op.backendNodeId })
+        if (refreshed) setElement(refreshed)
+      }
+    }
+
+    setPersistedStyleHistories((current) => ({
+      ...current,
+      [slotKey]: result.next,
+    }))
+
+    // Sync ledger for prompt export
+    syncLedgerAfterStyleUndo(op.backendNodeId, result.next)
+
+    if (element?.backendNodeId === op.backendNodeId) {
+      setSelectionRevision((r) => r + 1)
+    }
+
+    setGlobalHistory((prev) => ({ ...prev, cursor: prev.cursor - 1 }))
+  }, [globalHistory, persistedStyleHistories, element, applyTagSnapshot, syncLedgerAfterTagChange, syncLedgerAfterStyleUndo])
+
+  const handleGlobalRedo = useCallback(async () => {
+    if (globalHistory.cursor >= globalHistory.operations.length) return
+
+    const op = globalHistory.operations[globalHistory.cursor]
+
+    // Handle tag operations
+    if ((op.kind === 'tag-upsert' || op.kind === 'tag-delete') && op.tagSnapshot) {
+      const nextTags = applyTagSnapshot(tagsRef.current, op.tagSnapshot, 'redo')
+      tagsRef.current = nextTags
+      setTags(nextTags)
+      syncLedgerAfterTagChange(op.backendNodeId, nextTags)
+      setGlobalHistory((prev) => ({ ...prev, cursor: prev.cursor + 1 }))
+      return
+    }
+
+    // Handle style operations
+    const slotKey = buildStyleHistorySlotKey(op.contextKey, op.backendNodeId)
+    const persisted = persistedStyleHistories[slotKey]
+    if (!persisted) return
+
+    const result = redoPersistedHistory(persisted)
+    if (!result) return
+
+    const el = await window.electronAPI.inspectElementByBackendId({ backendNodeId: op.backendNodeId })
+    if (el) {
+      await window.electronAPI.updateElementStyles({
+        nodeId: el.nodeId,
+        backendNodeId: el.backendNodeId,
+        styles: result.redoPatch,
+      })
+
+      if (element?.backendNodeId === op.backendNodeId) {
+        const refreshed = await window.electronAPI.inspectElementByBackendId({ backendNodeId: op.backendNodeId })
+        if (refreshed) setElement(refreshed)
+      }
+    }
+
+    setPersistedStyleHistories((current) => ({
+      ...current,
+      [slotKey]: result.next,
+    }))
+
+    // Sync ledger for prompt export
+    syncLedgerAfterStyleUndo(op.backendNodeId, result.next)
+
+    if (element?.backendNodeId === op.backendNodeId) {
+      setSelectionRevision((r) => r + 1)
+    }
+
+    setGlobalHistory((prev) => ({ ...prev, cursor: prev.cursor + 1 }))
+  }, [globalHistory, persistedStyleHistories, element, applyTagSnapshot, syncLedgerAfterTagChange, syncLedgerAfterStyleUndo])
+
+  const handleGlobalReset = useCallback(async () => {
+    if (globalHistory.cursor <= 0) return
+
+    // Reset styles: collect all unique elements with style changes
+    const affectedSlots = new Map<string, { backendNodeId: number }>()
+    for (let i = 0; i < globalHistory.cursor; i++) {
+      const op = globalHistory.operations[i]
+      if (op.kind === 'tag-upsert' || op.kind === 'tag-delete') continue
+      const slotKey = buildStyleHistorySlotKey(op.contextKey, op.backendNodeId)
+      affectedSlots.set(slotKey, { backendNodeId: op.backendNodeId })
+    }
+
+    for (const [slotKey, { backendNodeId }] of affectedSlots) {
+      const persisted = persistedStyleHistories[slotKey]
+      if (!persisted) continue
+
+      const result = resetPersistedHistory(persisted)
+      if (!result) continue
+
+      const el = await window.electronAPI.inspectElementByBackendId({ backendNodeId })
+      if (el) {
+        await window.electronAPI.updateElementStyles({
+          nodeId: el.nodeId,
+          backendNodeId: el.backendNodeId,
+          styles: result.resetPatch,
+        })
+      }
+    }
+
+    // Delete all persisted histories so useStyleBinding starts fresh
+    // (new baseline = current computed styles, guaranteed empty diff)
+    setPersistedStyleHistories({})
+
+    // Reset tags: clear all tags
+    tagsRef.current = []
+    setTags([])
+
+    // Clear ledger entirely
+    setPageEditLedger({})
+
+    // Refresh current element — useStyleBinding will create a fresh baseline
+    if (element) {
+      const refreshed = await window.electronAPI.inspectElementByBackendId({ backendNodeId: element.backendNodeId })
+      if (refreshed) setElement(refreshed)
+      setSelectionRevision((r) => r + 1)
+    }
+
+    setGlobalHistory({ operations: globalHistory.operations, cursor: 0 })
+  }, [globalHistory, persistedStyleHistories, element])
+
   const canExportPrompt = exportSummaryMeta.elementCount > 0
   const exportPromptPreview = useMemo(() => {
     if (!canExportPrompt) {
@@ -706,14 +955,16 @@ export default function App() {
     }
 
     return buildPageExportPrompt({
+      appName: APP_NAME,
       currentElement: element,
       elements: pageExportElements,
       summaryMeta: exportSummaryMeta,
       pageTitle,
       pageUrl,
       targetUrl: url,
+      pageContext: previewPageContext,
     })
-  }, [canExportPrompt, element, exportSummaryMeta, pageExportElements, pageTitle, pageUrl, url])
+  }, [canExportPrompt, element, exportSummaryMeta, pageExportElements, pageTitle, pageUrl, previewPageContext, url])
 
   const connectToTarget = useCallback(async (rawTarget: string, successMessage: string) => {
     if (!rawTarget.trim()) return false
@@ -726,6 +977,8 @@ export default function App() {
     pageIdentityRef.current = ''
     setPageTitle('')
     setPageUrl('')
+    setPageContextSnapshot(null)
+    setPersistedStyleHistories({})
     resetInspectorState()
     setIsConnecting(true)
 
@@ -765,6 +1018,7 @@ export default function App() {
 
   useEffect(() => {
     window.electronAPI.onElementSelected((selectedElement, meta) => {
+      void refreshPageContextSnapshot()
       if (meta?.nudge && meta?.nudgeChange) {
         overlayNudgeChangeRef.current = meta.nudgeChange
         setOverlayNudgeTick((tick) => tick + 1)
@@ -802,10 +1056,11 @@ export default function App() {
       setPageUrl(nextUrl)
       setAddressBarUrl(nextUrl || addressBarUrl)
       setUrl(nextUrl || url)
+      void refreshPageContextSnapshot()
     })
 
     return () => window.electronAPI.removeAllListeners()
-  }, [addressBarUrl, resetInspectorState, syncCurrentElement, url])
+  }, [addressBarUrl, refreshPageContextSnapshot, resetInspectorState, syncCurrentElement, url])
 
   useEffect(() => {
     if (!connected) return
@@ -908,6 +1163,8 @@ export default function App() {
     setActiveEditProperty(null)
     setPageTitle('')
     setPageUrl('')
+    setPageContextSnapshot(null)
+    setPersistedStyleHistories({})
     setIsWorkbenchVisible(true)
     pageIdentityRef.current = ''
     resetInspectorState()
@@ -928,8 +1185,34 @@ export default function App() {
       return
     }
 
-    await copyText(exportPromptPreview, t('toast.promptCopied'))
-  }, [canExportPrompt, connected, copyText, exportPromptPreview, flash, licenseStatus, t])
+    let livePageContextSnapshot: PageContextSnapshot | null = null
+    try {
+      livePageContextSnapshot = await window.electronAPI.getPageContextSnapshot()
+      setPageContextSnapshot(livePageContextSnapshot)
+    } catch (error) {
+      console.warn('Failed to read page context snapshot for export prompt:', error)
+    }
+
+    const livePageContext = buildPageContextDescriptor({
+      snapshot: livePageContextSnapshot,
+      pageTitle,
+      pageUrl,
+      targetUrl: url,
+    })
+
+    const livePrompt = buildPageExportPrompt({
+      appName: APP_NAME,
+      currentElement: element,
+      elements: pageExportElements,
+      summaryMeta: exportSummaryMeta,
+      pageTitle,
+      pageUrl,
+      targetUrl: url,
+      pageContext: livePageContext,
+    })
+
+    await copyText(livePrompt, t('toast.promptCopied'))
+  }, [canExportPrompt, connected, copyText, element, exportSummaryMeta, flash, licenseStatus, pageExportElements, pageTitle, pageUrl, t, url])
 
   const handleCopyElementCSS = useCallback(async () => {
     if (!element) return
@@ -1217,10 +1500,20 @@ export default function App() {
                 activeEditProperty={activeEditProperty}
                 activeEditTick={activeEditTick}
                 selectionRevision={selectionRevision}
+                historyScopeKey={previewPageContext.contextKey}
+                persistedStyleHistory={activePersistedStyleHistory}
                 overlayNudgeChange={overlayNudgeChangeRef.current}
                 overlayNudgeTick={overlayNudgeTick}
                 onElementChange={syncCurrentElement}
                 onStyleDiffChange={handleElementStyleDiffChange}
+                onPersistedStyleHistoryChange={handlePersistedStyleHistoryChange}
+                onGlobalHistoryCommit={handleGlobalHistoryCommit}
+                globalCanUndo={globalCanUndo}
+                globalCanRedo={globalCanRedo}
+                globalCanReset={globalCanReset}
+                onGlobalUndo={handleGlobalUndo}
+                onGlobalRedo={handleGlobalRedo}
+                onGlobalReset={handleGlobalReset}
                 onToolChange={setActiveTool}
                 onActiveEditPropertyChange={setActiveEditProperty}
                 onUpsertTag={handleUpsertTag}

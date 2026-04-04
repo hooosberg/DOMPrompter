@@ -94,6 +94,40 @@ export interface StyleHistoryEntry {
   diffKeys: string[]
 }
 
+export interface PersistedStyleHistoryState {
+  baselineStyles: Record<string, string>
+  history: StyleHistoryEntry[]
+  redo: StyleHistoryEntry[]
+}
+
+export interface GlobalStyleHistoryOperation {
+  id: string
+  backendNodeId: number
+  contextKey: string
+  selector: string
+  createdAt: number
+  kind: 'commit' | 'external' | 'reset' | 'tag-upsert' | 'tag-delete'
+  tagSnapshot?: {
+    before: ElementTag | null
+    after: ElementTag | null
+  }
+}
+
+export interface GlobalStyleHistoryState {
+  operations: GlobalStyleHistoryOperation[]
+  cursor: number
+}
+
+export interface HistoryActionController {
+  backendNodeId: number
+  canUndo: boolean
+  canRedo: boolean
+  canReset: boolean
+  undo: () => void
+  redo: () => void
+  reset: () => void
+}
+
 export interface OverlayNudgeChange {
   keys: string[]
   beforeStyles: Record<string, string>
@@ -128,6 +162,27 @@ export interface PageEditLedgerEntry {
   }
   styleDiff: Record<string, string>
   updatedAt: number
+}
+
+export interface PageContextSnapshot {
+  title: string
+  url: string
+  pathname: string
+  htmlLang: string | null
+  activeRouteLabel: string | null
+  activeRouteHref: string | null
+  visibleVariantLabel: string | null
+  visibleVariantKey: string | null
+  activeVariantLabel: string | null
+  activeVariantKey: string | null
+}
+
+export interface PageContextDescriptor {
+  contextKey: string
+  pageLabel: string
+  variantLabel: string | null
+  scopeLabel: string
+  signals: string[]
 }
 
 export interface ExportPromptSummaryMeta {
@@ -208,6 +263,7 @@ declare global {
       updateElementStyles: (payload: { nodeId: number; backendNodeId: number; styles: Record<string, string> }) => Promise<InspectedElement | null>
       updateTextContent: (payload: { nodeId: number; backendNodeId: number; value: string }) => Promise<InspectedElement | null>
       updateElementAttribute: (payload: { nodeId: number; backendNodeId: number; name: string; value: string }) => Promise<InspectedElement | null>
+      getPageContextSnapshot: () => Promise<PageContextSnapshot | null>
       onElementSelected: (cb: (el: InspectedElement, meta?: InspectorSelectionMeta) => void) => void
       onBrowserViewLoaded: (cb: (info: { url: string; title: string }) => void) => void
       onPropertyActivated: (cb: (property: ActiveEditProperty) => void) => void

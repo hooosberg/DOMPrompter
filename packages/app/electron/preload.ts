@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('update-text-content', payload),
   updateElementAttribute: (payload: { nodeId: number; backendNodeId: number; name: string; value: string }): Promise<any> =>
     ipcRenderer.invoke('update-element-attribute', payload),
+  getPageContextSnapshot: (): Promise<any> => ipcRenderer.invoke('get-page-context-snapshot'),
 
   onElementSelected: (callback: (element: any, meta?: any) => void): void => {
     ipcRenderer.on('element-selected', (_event, element, meta) => callback(element, meta))

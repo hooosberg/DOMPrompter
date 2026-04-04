@@ -44,6 +44,19 @@ export interface PreviewCapture {
     viewport: BoxModelRect
 }
 
+export interface PageContextSnapshot {
+    title: string
+    url: string
+    pathname: string
+    htmlLang: string | null
+    activeRouteLabel: string | null
+    activeRouteHref: string | null
+    visibleVariantLabel: string | null
+    visibleVariantKey: string | null
+    activeVariantLabel: string | null
+    activeVariantKey: string | null
+}
+
 export interface InspectorSelectionMeta {
     append?: boolean
     /** 浮动按钮直接修改 DOM 后的同步通知，属性面板应记录变化但不重置 baseline */
@@ -277,6 +290,130 @@ export class InspectorService {
     async stopInspecting(): Promise<void> {
         this.inspecting = false
         await this.helper.stopInspectMode()
+    }
+
+    async getPageContextSnapshot(): Promise<PageContextSnapshot | null> {
+        try {
+            const evaluated = await this.helper.evaluate(`(() => {
+                /* visual-inspector:page-context */
+                const normalize = (value) => String(value || '').replace(/\\s+/g, ' ').trim();
+                const getText = (node) => {
+                    if (!(node instanceof Element)) return '';
+                    return normalize(node.getAttribute('aria-label') || node.textContent || '');
+                };
+                const isVisible = (node) => {
+                    if (!(node instanceof Element)) return false;
+                    const style = window.getComputedStyle(node);
+                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                        return false;
+                    }
+                    const rect = node.getBoundingClientRect();
+                    return rect.width > 0 && rect.height > 0;
+                };
+                const findFirst = (selectors) => {
+                    for (const selector of selectors) {
+                        const match = document.querySelector(selector);
+                        if (match instanceof Element) {
+                            return match;
+                        }
+                    }
+                    return null;
+                };
+                const findVisibleVariantNode = () => {
+                    const candidates = Array.from(document.querySelectorAll('[data-lang], .language-block[lang], [data-view], [data-locale]'));
+                    return candidates.find((candidate) => (
+                        candidate instanceof Element
+                        && isVisible(candidate)
+                        && (
+                            candidate.classList.contains('is-visible')
+                            || candidate.classList.contains('is-active')
+                            || candidate.classList.contains('active')
+                            || candidate.classList.contains('selected')
+                            || candidate.getAttribute('aria-hidden') === 'false'
+                            || candidate.getAttribute('data-state') === 'active'
+                        )
+                    )) || null;
+                };
+                const activeRoute = findFirst([
+                    'nav [aria-current="page"]',
+                    'nav [aria-current="true"]',
+                    'nav .is-active',
+                    'nav .active',
+                    'nav .current',
+                    '[role="navigation"] [aria-current="page"]',
+                    '[role="navigation"] .is-active',
+                    '.breadcrumb [aria-current="page"]',
+                    '.breadcrumb .is-active',
+                ]);
+                const activeVariant = findFirst([
+                    '.lang-menu button.is-active',
+                    '.lang-menu [aria-current="true"]',
+                    '[data-lang-target].is-active',
+                    '[data-lang-target].active',
+                    '[role="tab"][aria-selected="true"]',
+                    '[aria-selected="true"]',
+                    '[data-state="active"]',
+                    '.tabs .is-active',
+                    '.tabs .active',
+                    '.segmented-control .is-active',
+                    '.segmented-control .active',
+                ]);
+                const visibleVariant = findVisibleVariantNode();
+                const visibleVariantLabelNode = visibleVariant instanceof Element
+                    ? visibleVariant.querySelector('[data-lang-label], [data-locale-label], .lang-label, .locale-label')
+                    : null;
+
+                return {
+                    title: normalize(document.title),
+                    url: window.location.href,
+                    pathname: window.location.pathname,
+                    htmlLang: normalize(document.documentElement.lang) || null,
+                    activeRouteLabel: getText(activeRoute) || null,
+                    activeRouteHref: activeRoute instanceof Element ? normalize(activeRoute.getAttribute('href')) || null : null,
+                    visibleVariantLabel: getText(visibleVariantLabelNode) || null,
+                    visibleVariantKey: visibleVariant instanceof Element
+                        ? normalize(
+                            visibleVariant.getAttribute('data-lang')
+                            || visibleVariant.getAttribute('lang')
+                            || visibleVariant.getAttribute('data-locale')
+                            || visibleVariant.getAttribute('data-view')
+                          ) || null
+                        : null,
+                    activeVariantLabel: getText(activeVariant) || null,
+                    activeVariantKey: activeVariant instanceof Element
+                        ? normalize(
+                            activeVariant.getAttribute('data-lang-target')
+                            || activeVariant.getAttribute('data-lang')
+                            || activeVariant.getAttribute('lang')
+                            || activeVariant.getAttribute('data-locale')
+                            || activeVariant.getAttribute('data-view')
+                            || activeVariant.getAttribute('data-state')
+                          ) || null
+                        : null,
+                };
+            })()`, true)
+
+            const value = evaluated?.result?.value
+            if (!value || typeof value !== 'object') {
+                return null
+            }
+
+            return {
+                title: typeof value.title === 'string' ? value.title : '',
+                url: typeof value.url === 'string' ? value.url : '',
+                pathname: typeof value.pathname === 'string' ? value.pathname : '',
+                htmlLang: typeof value.htmlLang === 'string' && value.htmlLang ? value.htmlLang : null,
+                activeRouteLabel: typeof value.activeRouteLabel === 'string' && value.activeRouteLabel ? value.activeRouteLabel : null,
+                activeRouteHref: typeof value.activeRouteHref === 'string' && value.activeRouteHref ? value.activeRouteHref : null,
+                visibleVariantLabel: typeof value.visibleVariantLabel === 'string' && value.visibleVariantLabel ? value.visibleVariantLabel : null,
+                visibleVariantKey: typeof value.visibleVariantKey === 'string' && value.visibleVariantKey ? value.visibleVariantKey : null,
+                activeVariantLabel: typeof value.activeVariantLabel === 'string' && value.activeVariantLabel ? value.activeVariantLabel : null,
+                activeVariantKey: typeof value.activeVariantKey === 'string' && value.activeVariantKey ? value.activeVariantKey : null,
+            }
+        } catch (err) {
+            console.error('Get page context snapshot error:', err)
+            return null
+        }
     }
 
     async setActiveEditProperty(property: string | null): Promise<void> {

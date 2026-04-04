@@ -60,6 +60,7 @@ export function createElectronApiMock() {
     updateElementStyles: vi.fn(asyncValue(null)),
     updateTextContent: vi.fn(asyncValue(null)),
     updateElementAttribute: vi.fn(asyncValue(null)),
+    getPageContextSnapshot: vi.fn(asyncValue(null)),
     onElementSelected: vi.fn(),
     onBrowserViewLoaded: vi.fn(),
     onLaunchStatus: vi.fn(),

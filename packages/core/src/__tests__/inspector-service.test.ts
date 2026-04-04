@@ -11,6 +11,7 @@ import type { ICDPTransport } from '../cdp/connection'
 function createMockTransport() {
   const eventHandlers: Record<string, Array<(params: any) => void>> = {}
   const sentCommands: Array<{ method: string; params: any }> = []
+  let pageContextValue: Record<string, any> | null = null
 
   const transport: ICDPTransport = {
     send: vi.fn(async (method: string, params?: any) => {
@@ -67,6 +68,28 @@ function createMockTransport() {
       }
       // 模拟 Runtime.evaluate (picker token consume → 返回 DOM 对象引用)
       if (method === 'Runtime.evaluate') {
+        if (
+          params?.returnByValue
+          && String(params?.expression || '').includes('visual-inspector:page-context')
+        ) {
+          return {
+            result: {
+              type: 'object',
+              value: pageContextValue || {
+                title: 'DOMPrompter',
+                url: 'file:///demo/index.html',
+                pathname: '/demo/index.html',
+                htmlLang: 'en',
+                activeRouteLabel: 'Home',
+                activeRouteHref: './index.html',
+                visibleVariantLabel: null,
+                visibleVariantKey: 'en',
+                activeVariantLabel: 'English',
+                activeVariantKey: 'en',
+              },
+            }
+          }
+        }
         return {
           result: {
             type: 'object',
@@ -143,6 +166,9 @@ function createMockTransport() {
           payload: JSON.stringify(payload),
         })
       }
+    },
+    setPageContextValue(nextValue: Record<string, any>) {
+      pageContextValue = nextValue
     },
   }
 }
@@ -257,6 +283,36 @@ describe('InspectorService', () => {
 
       await new Promise(r => setTimeout(r, 50))
       expect(callback).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('page context snapshot', () => {
+    it('reads the current page scope from the inspected document on demand', async () => {
+      mock.setPageContextValue({
+        title: 'DOMPrompter',
+        url: 'file:///demo/pages/index.html',
+        pathname: '/demo/pages/index.html',
+        htmlLang: 'en',
+        activeRouteLabel: '首页',
+        activeRouteHref: './index.html',
+        visibleVariantLabel: null,
+        visibleVariantKey: 'en',
+        activeVariantLabel: 'English',
+        activeVariantKey: 'en',
+      })
+
+      await expect(service.getPageContextSnapshot()).resolves.toEqual({
+        title: 'DOMPrompter',
+        url: 'file:///demo/pages/index.html',
+        pathname: '/demo/pages/index.html',
+        htmlLang: 'en',
+        activeRouteLabel: '首页',
+        activeRouteHref: './index.html',
+        visibleVariantLabel: null,
+        visibleVariantKey: 'en',
+        activeVariantLabel: 'English',
+        activeVariantKey: 'en',
+      })
     })
   })
 

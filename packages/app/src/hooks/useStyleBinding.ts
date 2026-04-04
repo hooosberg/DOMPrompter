@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { InspectedElement, OverlayNudgeChange, StyleHistoryEntry } from '../types'
+import type { InspectedElement, OverlayNudgeChange, PersistedStyleHistoryState, StyleHistoryEntry } from '../types'
+
+export interface GlobalHistoryCommitInfo {
+  backendNodeId: number
+  kind: 'commit' | 'external' | 'reset'
+}
 
 interface UseStyleBindingOptions {
   element: InspectedElement | null
   selectionRevision: number
+  historyScopeKey?: string | null
+  persistedStyleHistory?: PersistedStyleHistoryState | null
   externalNudgeChange?: OverlayNudgeChange | null
   externalNudgeTick?: number
   onElementChange: (element: InspectedElement) => void
   onStyleDiffChange?: (element: InspectedElement, styleDiff: Record<string, string>) => void
+  onPersistedStyleHistoryChange?: (history: PersistedStyleHistoryState | null) => void
+  onGlobalHistoryCommit?: (info: GlobalHistoryCommitInfo) => void
 }
 
-function expandStylePatch(stylePatch: Record<string, string>) {
+export function expandStylePatch(stylePatch: Record<string, string>) {
   const nextPatch = { ...stylePatch }
 
   if (Object.prototype.hasOwnProperty.call(stylePatch, 'gap')) {
@@ -29,13 +38,63 @@ function readEffectiveStyleValue(propertyName: string, styles: Record<string, st
   return styles[propertyName] || ''
 }
 
+function cloneHistoryEntries(entries: StyleHistoryEntry[]) {
+  return entries.map((entry) => ({
+    undoPatch: { ...entry.undoPatch },
+    redoPatch: { ...entry.redoPatch },
+    diffKeys: [...entry.diffKeys],
+  }))
+}
+
+function buildStyleDiffFromBaseline(
+  styles: Record<string, string>,
+  baselineStyles: Record<string, string>,
+) {
+  const diff: Record<string, string> = {}
+  const keys = new Set([
+    ...Object.keys(styles),
+    ...Object.keys(baselineStyles),
+  ])
+
+  keys.forEach((propertyName) => {
+    const currentValue = readEffectiveStyleValue(propertyName, styles)
+    const baselineValue = readEffectiveStyleValue(propertyName, baselineStyles)
+
+    if (currentValue === baselineValue || (!currentValue && !baselineValue)) {
+      return
+    }
+
+    diff[propertyName] = currentValue
+  })
+
+  return diff
+}
+
+function areStyleDiffRecordsEqual(
+  left: Record<string, string>,
+  right: Record<string, string>,
+) {
+  const leftKeys = Object.keys(left)
+  const rightKeys = Object.keys(right)
+
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+
+  return leftKeys.every((key) => left[key] === right[key])
+}
+
 export function useStyleBinding({
   element,
   selectionRevision,
+  historyScopeKey,
+  persistedStyleHistory,
   externalNudgeChange,
   externalNudgeTick,
   onElementChange,
   onStyleDiffChange,
+  onPersistedStyleHistoryChange,
+  onGlobalHistoryCommit,
 }: UseStyleBindingOptions) {
   const [draftStyles, setDraftStyles] = useState<Record<string, string>>({})
   const [styleDiff, setStyleDiff] = useState<Record<string, string>>({})
@@ -44,6 +103,7 @@ export function useStyleBinding({
   const [redoDepth, setRedoDepth] = useState(0)
   const baselineRef = useRef<Record<string, string>>({})
   const resetRevisionRef = useRef<number>(-1)
+  const activeHistoryScopeRef = useRef<string | null>(null)
   const handledExternalTickRef = useRef<number>(0)
   const timersRef = useRef<Record<string, number>>({})
   const draftStylesRef = useRef<Record<string, string>>({})
@@ -83,6 +143,24 @@ export function useStyleBinding({
     setRedoDepth(0)
   }, [])
 
+  const syncPersistedHistory = useCallback((baselineStyles = baselineRef.current) => {
+    if (!onPersistedStyleHistoryChange) return
+
+    onPersistedStyleHistoryChange({
+      baselineStyles: { ...baselineStyles },
+      history: cloneHistoryEntries(historyRef.current),
+      redo: cloneHistoryEntries(redoRef.current),
+    })
+  }, [onPersistedStyleHistoryChange])
+
+  const syncStyleDiffState = useCallback((nextStyleDiff: Record<string, string>) => {
+    setStyleDiff((current) => (
+      areStyleDiffRecordsEqual(current, nextStyleDiff)
+        ? current
+        : nextStyleDiff
+    ))
+  }, [])
+
   const syncDraftAndDiff = useCallback((stylePatch: Record<string, string>, diffKeys: string[]) => {
     setDraftStyles((current) => {
       const nextDraft = {
@@ -118,7 +196,8 @@ export function useStyleBinding({
     redoRef.current = []
     setHistoryDepth(historyRef.current.length)
     setRedoDepth(0)
-  }, [])
+    syncPersistedHistory()
+  }, [syncPersistedHistory])
 
   const commitPanelStyleChange = useCallback((stylePatch: Record<string, string>, fieldKey = `styles:${Object.keys(stylePatch).sort().join(',')}`) => {
     if (!element) return
@@ -136,6 +215,7 @@ export function useStyleBinding({
     if (!hasRealChange) return
 
     pushHistoryEntry({ undoPatch, redoPatch: stylePatch, diffKeys })
+    onGlobalHistoryCommit?.({ backendNodeId: element.backendNodeId, kind: 'commit' })
 
     syncDraftAndDiff(expandedPatch, diffKeys)
 
@@ -146,7 +226,7 @@ export function useStyleBinding({
         styles: expandedPatch,
       }),
     )
-  }, [element, pushHistoryEntry, scheduleUpdate, syncDraftAndDiff])
+  }, [element, pushHistoryEntry, scheduleUpdate, syncDraftAndDiff, onGlobalHistoryCommit])
 
   const commitExternalStyleChange = useCallback((change: OverlayNudgeChange) => {
     const diffKeys = change.keys.filter(Boolean)
@@ -166,12 +246,14 @@ export function useStyleBinding({
     if (!hasRealChange) return
 
     pushHistoryEntry({ undoPatch, redoPatch, diffKeys })
+    onGlobalHistoryCommit?.({ backendNodeId: element?.backendNodeId ?? 0, kind: 'external' })
     syncDraftAndDiff(expandStylePatch(redoPatch), diffKeys)
-  }, [pushHistoryEntry, syncDraftAndDiff])
+  }, [element, pushHistoryEntry, syncDraftAndDiff, onGlobalHistoryCommit])
 
   useEffect(() => {
     if (!element) {
       baselineRef.current = {}
+      activeHistoryScopeRef.current = null
       handledExternalTickRef.current = 0
       setDraftStyles({})
       setStyleDiff({})
@@ -184,11 +266,28 @@ export function useStyleBinding({
       return
     }
 
-    if (resetRevisionRef.current !== selectionRevision) {
+    const nextHistoryScope = historyScopeKey || '__local__'
+    if (
+      resetRevisionRef.current !== selectionRevision
+      || activeHistoryScopeRef.current !== nextHistoryScope
+    ) {
       resetRevisionRef.current = selectionRevision
-      baselineRef.current = element.computedStyles
+      activeHistoryScopeRef.current = nextHistoryScope
       handledExternalTickRef.current = externalNudgeTick ?? 0
-      clearHistory()
+
+      if (persistedStyleHistory) {
+        baselineRef.current = { ...persistedStyleHistory.baselineStyles }
+        historyRef.current = cloneHistoryEntries(persistedStyleHistory.history)
+        redoRef.current = cloneHistoryEntries(persistedStyleHistory.redo)
+        setHistoryDepth(historyRef.current.length)
+        setRedoDepth(redoRef.current.length)
+        syncStyleDiffState(buildStyleDiffFromBaseline(element.computedStyles, baselineRef.current))
+      } else {
+        baselineRef.current = element.computedStyles
+        clearHistory()
+        syncPersistedHistory(element.computedStyles)
+      }
+
       setDraftStyles(element.computedStyles)
       draftStylesRef.current = element.computedStyles
       return
@@ -207,13 +306,18 @@ export function useStyleBinding({
 
     setDraftStyles(element.computedStyles)
     draftStylesRef.current = element.computedStyles
+    syncStyleDiffState(buildStyleDiffFromBaseline(element.computedStyles, baselineRef.current))
   }, [
     clearHistory,
     commitExternalStyleChange,
     element,
     externalNudgeChange,
     externalNudgeTick,
+    historyScopeKey,
+    persistedStyleHistory,
     selectionRevision,
+    syncStyleDiffState,
+    syncPersistedHistory,
   ])
 
   useEffect(() => {
@@ -261,6 +365,7 @@ export function useStyleBinding({
     redoRef.current.push(historyEntry)
     setHistoryDepth(historyRef.current.length)
     setRedoDepth(redoRef.current.length)
+    syncPersistedHistory()
     const expandedPatch = expandStylePatch(historyEntry.undoPatch)
     syncDraftAndDiff(expandedPatch, historyEntry.diffKeys)
 
@@ -271,7 +376,7 @@ export function useStyleBinding({
         styles: expandedPatch,
       }),
     )
-  }, [element, scheduleUpdate, syncDraftAndDiff])
+  }, [element, scheduleUpdate, syncDraftAndDiff, syncPersistedHistory])
 
   const redoLastStyleChange = useCallback(() => {
     if (!element) return
@@ -282,6 +387,7 @@ export function useStyleBinding({
     historyRef.current.push(historyEntry)
     setHistoryDepth(historyRef.current.length)
     setRedoDepth(redoRef.current.length)
+    syncPersistedHistory()
     const expandedPatch = expandStylePatch(historyEntry.redoPatch)
     syncDraftAndDiff(expandedPatch, historyEntry.diffKeys)
 
@@ -292,7 +398,7 @@ export function useStyleBinding({
         styles: expandedPatch,
       }),
     )
-  }, [element, scheduleUpdate, syncDraftAndDiff])
+  }, [element, scheduleUpdate, syncDraftAndDiff, syncPersistedHistory])
 
   const resetStyleChanges = useCallback(() => {
     if (!element) return
@@ -316,6 +422,8 @@ export function useStyleBinding({
     redoRef.current = []
     setHistoryDepth(historyRef.current.length)
     setRedoDepth(0)
+    syncPersistedHistory()
+    onGlobalHistoryCommit?.({ backendNodeId: element.backendNodeId, kind: 'reset' })
 
     const expandedPatch = expandStylePatch(redoPatch)
     syncDraftAndDiff(expandedPatch, diffKeys)
@@ -327,7 +435,7 @@ export function useStyleBinding({
         styles: expandedPatch,
       }),
     )
-  }, [element, scheduleUpdate, styleDiff, syncDraftAndDiff])
+  }, [element, scheduleUpdate, styleDiff, syncDraftAndDiff, syncPersistedHistory, onGlobalHistoryCommit])
 
   return {
     draftStyles,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react'
 import { BASE_PROPERTY_SECTIONS, IMAGE_SECTION, TYPOGRAPHY_SECTION } from '../../config/propertySections'
-import { useStyleBinding } from '../../hooks/useStyleBinding'
-import type { ActiveEditProperty, CanvasTool, ElementCapabilityProfile, ElementTag, ExportPromptSummaryMeta, InspectedElement, OverlayNudgeChange, PropertyFieldConfig, PropertySectionConfig } from '../../types'
+import { useStyleBinding, type GlobalHistoryCommitInfo } from '../../hooks/useStyleBinding'
+import type { ActiveEditProperty, CanvasTool, ElementCapabilityProfile, ElementTag, ExportPromptSummaryMeta, InspectedElement, OverlayNudgeChange, PersistedStyleHistoryState, PropertyFieldConfig, PropertySectionConfig } from '../../types'
 import { FieldControl } from './FieldControl'
 
 const SNAPSHOT_SECTIONS = [
@@ -1343,10 +1343,20 @@ export function PropertiesWorkbench({
   activeEditTick = 0,
   compact,
   selectionRevision,
+  historyScopeKey,
+  persistedStyleHistory,
   overlayNudgeChange,
   overlayNudgeTick,
   onElementChange,
   onStyleDiffChange,
+  onPersistedStyleHistoryChange,
+  onGlobalHistoryCommit,
+  globalCanUndo,
+  globalCanRedo,
+  globalCanReset,
+  onGlobalUndo,
+  onGlobalRedo,
+  onGlobalReset,
   onToolChange,
   onActiveEditPropertyChange,
   onUpsertTag,
@@ -1363,10 +1373,20 @@ export function PropertiesWorkbench({
   activeEditTick?: number
   compact?: boolean
   selectionRevision: number
+  historyScopeKey?: string | null
+  persistedStyleHistory?: PersistedStyleHistoryState | null
   overlayNudgeChange?: OverlayNudgeChange | null
   overlayNudgeTick?: number
   onElementChange: (element: InspectedElement) => void
   onStyleDiffChange: (element: InspectedElement, styleDiff: Record<string, string>) => void
+  onPersistedStyleHistoryChange?: (history: PersistedStyleHistoryState | null) => void
+  onGlobalHistoryCommit?: (info: GlobalHistoryCommitInfo) => void
+  globalCanUndo?: boolean
+  globalCanRedo?: boolean
+  globalCanReset?: boolean
+  onGlobalUndo?: () => void
+  onGlobalRedo?: () => void
+  onGlobalReset?: () => void
   onToolChange: (tool: CanvasTool) => void
   onActiveEditPropertyChange: (property: ActiveEditProperty | null) => void
   onUpsertTag: (element: InspectedElement, text: string, tagId?: string) => void
@@ -1379,23 +1399,21 @@ export function PropertiesWorkbench({
   const {
     draftStyles,
     pendingField,
-    canUndo,
-    canRedo,
-    canReset,
     updateStyle,
     updateStyles,
     updateTextContent,
     updateAttribute,
-    undoLastStyleChange,
-    redoLastStyleChange,
-    resetStyleChanges,
   } = useStyleBinding({
     element,
     selectionRevision,
+    historyScopeKey,
+    persistedStyleHistory,
     externalNudgeChange: overlayNudgeChange,
     externalNudgeTick: overlayNudgeTick,
     onElementChange,
     onStyleDiffChange,
+    onPersistedStyleHistoryChange,
+    onGlobalHistoryCommit,
   })
   const [helperState, setHelperState] = useState<{ title: string; description: string }>(() => getDefaultHelperText(activeTool))
   const [copiedSelector, setCopiedSelector] = useState(false)
@@ -1813,9 +1831,9 @@ export function PropertiesWorkbench({
                   type="button"
                   className="history-action"
                   onClick={() => {
-                    undoLastStyleChange()
+                    onGlobalUndo?.()
                   }}
-                  disabled={!canUndo}
+                  disabled={!globalCanUndo}
                 >
                   <span>↶</span>
                   <span>撤销</span>
@@ -1824,9 +1842,9 @@ export function PropertiesWorkbench({
                   type="button"
                   className="history-action"
                   onClick={() => {
-                    redoLastStyleChange()
+                    onGlobalRedo?.()
                   }}
-                  disabled={!canRedo}
+                  disabled={!globalCanRedo}
                 >
                   <span>↷</span>
                   <span>前进</span>
@@ -1835,9 +1853,9 @@ export function PropertiesWorkbench({
                   type="button"
                   className="history-action"
                   onClick={() => {
-                    resetStyleChanges()
+                    onGlobalReset?.()
                   }}
-                  disabled={!canReset}
+                  disabled={!globalCanReset}
                 >
                   <span>⟲</span>
                   <span>复位</span>
