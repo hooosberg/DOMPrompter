@@ -1,0 +1,40 @@
+{
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "視覺化微調你的 UI，為 Vibe Coding 產生精準提示詞"
+  },
+  "about": {
+    "description": "視覺化 DOM 檢查與 AI 提示詞產生工具。選取元素、微調樣式、為 Cursor、Claude Code、Codex 等工具產生精準的 AI 提示詞。",
+    "website": "官網",
+    "support": "支援中心",
+    "privacy": "隱私政策",
+    "terms": "服務條款",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. 保留所有權利。"
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "解鎖全部能力",
+    "subtitle": "為每個檢查的頁面匯出精確的 AI 提示詞。一次購買，無限精準。",
+    "lifetimeBadge": "終身買斷",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "無限頁面提示詞匯出",
+    "benefitExportDesc": "匯出完整頁面 AI 提示詞，融合元素選擇器、樣式差異和標籤註釋為一體。",
+    "benefitPrecisionTitle": "樣式差異追蹤",
+    "benefitPrecisionDesc": "每次 CSS 微調自動記錄前後對比 — width: 200px \u2192 300px，AI 一目了然。",
+    "benefitTagsTitle": "自然語言標籤",
+    "benefitTagsDesc": "為元素添加意圖註釋：「按鈕顏色太深」「間距太大」。讓 AI 理解你的設計思路。",
+    "benefitFutureTitle": "包含所有未來 Pro 功能",
+    "benefitFutureDesc": "一次購買，永久享有每項新增 Pro 功能。無訂閱費用。",
+    "unlockNow": "升級到 Pro",
+    "cancel": "取消",
+    "purchasing": "正在購買...",
+    "purchaseFailed": "購買失敗，請重試。",
+    "purchaseCancelled": "購買已取消。",
+    "restorePurchase": "恢復購買",
+    "restoring": "正在恢復...",
+    "restoreNotFound": "未找到之前的購買紀錄。",
+    "restoreFailed": "恢復失敗，請重試。",
+    "ctaNote": "一次付費，無訂閱費用。Pro 功能永久解鎖。"
+  }
+}

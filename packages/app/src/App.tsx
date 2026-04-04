@@ -1,66 +1,103 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { WelcomeScreen } from './components/WelcomeScreen'
+import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import { OnboardingWizard } from './components/OnboardingWizard'
+import { PaywallDialog } from './components/PaywallDialog'
+import { Settings } from './components/Settings'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
-import { useAdaptiveWindowPreset } from './hooks/useAdaptiveWindowPreset'
-import type { ActiveEditProperty, CanvasTool, DiscoveredApp, ElementPreset, ElementTag, ElementTagTarget, ExportPromptSummaryMeta, InspectorMode, InspectedElement, OverlayNudgeChange, PageEditLedgerEntry, ProjectLaunchStatus } from './types'
+import { LicenseManager } from './services/LicenseManager'
+import type {
+  ActiveEditProperty,
+  AppLanguage,
+  AppSettings,
+  CanvasTool,
+  ElementPreset,
+  ElementTag,
+  ElementTagTarget,
+  ExportPromptSummaryMeta,
+  InspectedElement,
+  LicenseStatus,
+  OverlayNudgeChange,
+  PageEditLedgerEntry,
+} from './types'
 import './App.css'
 
+const APP_NAME = 'DOMPrompter'
 const DEFAULT_WORKBENCH_WIDTH = 320
+const DEFAULT_URL = 'http://localhost:5173'
+const EMPTY_EXPORT_PROMPT_PREVIEW = 'No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you.'
+const RECENT_HTML_FILES_STORAGE_KEY = 'domprompter:recent-html-files'
+const MAX_RECENT_HTML_FILES = 4
 
-const DEFAULT_URLS = {
-  builtin: 'http://localhost:5174',
-  external: '127.0.0.1:9222',
-} as const
+function getDefaultTheme() {
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+    return 'dark' as const
+  }
 
-const EMPTY_PROJECT_SESSION: ProjectLaunchStatus = {
-  status: 'idle',
-  projectDir: '',
-  projectName: '',
-  builtinUrl: null,
-  externalEndpoint: null,
-  commands: {
-    builtin: null,
-    external: null,
-  },
-  capabilities: {
-    builtin: false,
-    external: false,
-  },
-  message: '',
+  return 'light' as const
 }
 
-const EMPTY_EXPORT_PROMPT_PREVIEW = '当前页面还没有记录到结构化微调或标签意图。先在画布或属性面板里修改对象，底部会自动汇总为可直接交给 AI 编程工具执行的页面级提示词。'
+function loadRecentHtmlFiles() {
+  if (typeof window === 'undefined') {
+    return [] as string[]
+  }
 
-function getRelevantApps(apps: DiscoveredApp[], mode: InspectorMode) {
-  return apps.filter((app) => {
-    if (mode === 'builtin') {
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
-      return app.type === 'web' && !app.cdpUrl && app.url !== currentOrigin
-    }
-    return Boolean(app.cdpUrl)
-  })
+  try {
+    const raw = window.localStorage.getItem(RECENT_HTML_FILES_STORAGE_KEY)
+    if (!raw) return []
+
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+
+    return parsed
+      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .slice(0, MAX_RECENT_HTML_FILES)
+  } catch {
+    return []
+  }
 }
 
-function scoreBuiltinApp(app: DiscoveredApp): number {
-  const priorities = [5174, 5175, 5173, 5176, 3000, 3001, 4173, 4200, 8080, 8081]
-  const index = priorities.indexOf(app.port)
-  return index === -1 ? priorities.length + app.port : index
+const DEFAULT_SETTINGS: AppSettings = {
+  theme: getDefaultTheme(),
+  language: 'en',
+}
+const DEFAULT_LICENSE_STATUS: LicenseStatus = {
+  isPro: false,
+  provider: 'dev-stub',
+  lastValidatedAt: null,
 }
 
-function scoreExternalApp(app: DiscoveredApp): number {
-  const priorities = [9222, 9223, 9229]
-  const index = priorities.indexOf(app.port)
-  return index === -1 ? priorities.length + app.port : index
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M10.81 2.68c.25-.95.65-1.18 1.19-1.18s.94.23 1.19 1.18l.21.84c.1.38.42.66.8.74.59.11 1.15.26 1.69.46.36.14.76.07 1.05-.18l.65-.56c.73-.64 1.16-.68 1.52-.32.36.36.32.79-.32 1.52l-.56.65c-.25.29-.32.69-.18 1.05.2.54.35 1.1.46 1.69.08.38.36.7.74.8l.84.21c.95.25 1.18.65 1.18 1.19s-.23.94-1.18 1.19l-.84.21a1 1 0 0 0-.74.8c-.11.59-.26 1.15-.46 1.69-.14.36-.07.76.18 1.05l.56.65c.64.73.68 1.16.32 1.52-.36.36-.79.32-1.52-.32l-.65-.56a.99.99 0 0 0-1.05-.18c-.54.2-1.1.35-1.69.46-.38.08-.7.36-.8.74l-.21.84c-.25.95-.65 1.18-1.19 1.18s-.94-.23-1.19-1.18l-.21-.84a1 1 0 0 0-.8-.74 8.03 8.03 0 0 1-1.69-.46.99.99 0 0 0-1.05.18l-.65.56c-.73.64-1.16.68-1.52.32-.36-.36-.32-.79.32-1.52l.56-.65c.25-.29.32-.69.18-1.05a8.03 8.03 0 0 1-.46-1.69 1 1 0 0 0-.74-.8l-.84-.21c-.95-.25-1.18-.65-1.18-1.19s.23-.94 1.18-1.19l.84-.21c.38-.1.66-.42.74-.8.11-.59.26-1.15.46-1.69.14-.36.07-.76-.18-1.05l-.56-.65c-.64-.73-.68-1.16-.32-1.52.36-.36.79-.32 1.52.32l.65.56c.29.25.69.32 1.05.18.54-.2 1.1-.35 1.69-.46.38-.08.7-.36.8-.74l.21-.84Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.2"
+      />
+      <circle cx="12" cy="12" r="3.05" fill="none" stroke="currentColor" strokeWidth="1.45" />
+    </svg>
+  )
 }
 
-function pickSuggestedTarget(mode: InspectorMode, apps: DiscoveredApp[]) {
-  const relevant = getRelevantApps(apps, mode)
-  const sorter = mode === 'builtin' ? scoreBuiltinApp : scoreExternalApp
-  return [...relevant].sort((a, b) => sorter(a) - sorter(b))[0] || null
+function RefreshIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 6v5h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      <path d="M5.6 18.1A8 8 0 0 0 19 11M18.4 5.9A8 8 0 0 0 5 13" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  )
 }
 
-function getTargetValue(mode: InspectorMode, app: DiscoveredApp) {
-  return mode === 'builtin' ? app.url : `127.0.0.1:${app.port}`
+function LoadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h12" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      <path d="M13 8l4 4-4 4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      <rect x="3.5" y="5.5" width="17" height="13" rx="3.5" fill="none" stroke="currentColor" opacity="0.4" />
+    </svg>
+  )
 }
 
 function buildElementSelector(element: InspectedElement) {
@@ -123,10 +160,7 @@ function getTagTextsForTarget(tags: ElementTag[], backendNodeId: number) {
     .filter(Boolean)
 }
 
-function areStyleDiffsEqual(
-  left: Record<string, string>,
-  right: Record<string, string>,
-) {
+function areStyleDiffsEqual(left: Record<string, string>, right: Record<string, string>) {
   const leftKeys = Object.keys(left)
   const rightKeys = Object.keys(right)
 
@@ -211,8 +245,6 @@ function buildPageExportPrompt(args: {
   currentElement: InspectedElement | null
   elements: PageExportElement[]
   summaryMeta: ExportPromptSummaryMeta
-  mode: InspectorMode
-  projectSession: ProjectLaunchStatus
   pageTitle: string
   pageUrl: string
   targetUrl: string
@@ -221,8 +253,6 @@ function buildPageExportPrompt(args: {
     currentElement,
     elements,
     summaryMeta,
-    mode,
-    projectSession,
     pageTitle,
     pageUrl,
     targetUrl,
@@ -234,19 +264,19 @@ function buildPageExportPrompt(args: {
         selector: buildElementSelector(currentElement),
       }
     : null
+
   const payload = {
-    source: 'visual-inspector',
+    source: 'domprompter',
     signalGuide: {
-      objectIdentity: '对象身份。每个元素都通过 selector、preset、tagName 和 backendNodeId 标识，AI 应先定位对象，再执行后续修改。',
-      styleChanges: '结构化微调。来自可视化编辑器记录的最终属性变化，通常是宽高、间距、颜色、对齐等具体最终值。',
-      intentTags: '标签意图。来自用户直接写给 AI 的自然语言说明，用来表达结构、语义、视觉目标或无法只靠数值描述的要求。',
-      mergeRule: '当 styleChanges 和 intentTags 同时存在时，先满足 styleChanges 的最终值，再用 intentTags 补充实现方式和更高层目标。',
+      objectIdentity: 'Each element is identified by selector, preset, tagName, and backendNodeId.',
+      styleChanges: 'Structured style edits captured from the visual workbench.',
+      intentTags: 'Natural-language goals attached to a selected element.',
+      mergeRule: 'Honor styleChanges first, then use intentTags to preserve higher-level intent.',
     },
     page: {
-      title: pageTitle || projectSession.projectName || '未命名页面',
-      url: pageUrl || targetUrl || '未知',
-      mode,
-      projectName: projectSession.projectName || '未命名项目',
+      appName: APP_NAME,
+      title: pageTitle || 'Untitled Page',
+      url: pageUrl || targetUrl || 'unknown',
       exportedAt,
       currentSelection,
     },
@@ -263,48 +293,38 @@ function buildPageExportPrompt(args: {
   }
 
   const lines = [
-    '这是 Visual Inspector 导出的页面级微调任务。请直接修改源码，让页面达到下面描述的最终状态。',
+    `This is a ${APP_NAME} page-level prompt export. Apply the requested UI changes directly in source code.`,
     '',
-    '页面信息：',
-    `- 项目名称：${payload.page.projectName}`,
-    `- 运行模式：${mode === 'builtin' ? 'builtin（网页调试）' : 'external（桌面调试）'}`,
-    `- 页面标题：${payload.page.title}`,
-    `- 页面地址：${payload.page.url}`,
-    `- 导出时间：${exportedAt}`,
-    `- 当前选中元素：${currentSelection ? `${currentSelection.selector} (backendNodeId: ${currentSelection.backendNodeId})` : '未选中'}`,
+    'Page information:',
+    `- Title: ${payload.page.title}`,
+    `- URL: ${payload.page.url}`,
+    `- Exported at: ${exportedAt}`,
+    `- Current selection: ${currentSelection ? `${currentSelection.selector} (backendNodeId: ${currentSelection.backendNodeId})` : 'none'}`,
     '',
-    '执行要求：',
-    '- 只修改与下列元素相关的代码、样式或文案。',
-    '- 以最终状态为准，不要保留中间调试步骤。',
-    '- 尽量保留现有 DOM 结构、组件拆分、类名和命名风格。',
-    '- 如果某元素同时存在结构化微调和标签意图，请优先满足结构化微调里的最终值，再让实现结果符合标签意图。',
-    '- 不要输出解释，直接实施修改。',
+    'Execution guidance:',
+    '- Modify only the code, styles, or copy related to the listed elements.',
+    '- Keep the existing DOM structure and naming style whenever possible.',
+    '- When styleChanges and intentTags both exist, satisfy styleChanges first.',
     '',
-    '信号说明：',
-    '- 对象身份：每个元素都通过 selector、preset、tagName 和 backendNodeId 标识。请先定位对象，再执行后续修改。',
-    '- 结构化微调（styleChanges）：这是 Inspector 记录到的具体最终变化，表示这个对象最后应该改成什么值。',
-    '- 标签意图（intentTags）：这是用户直接写给 AI 的自然语言要求，表示这个对象为什么要改、整体效果想达到什么状态。',
-    '- 执行时请把两者合并理解：结构化微调负责“改成什么数值”，标签意图负责“补充目标和约束”。',
+    'Summary:',
+    `- Affected elements: ${summaryMeta.elementCount}`,
+    `- Elements with style edits: ${summaryMeta.modifiedCount}`,
+    `- Tagged elements: ${summaryMeta.taggedElementCount}`,
+    `- Tag groups: ${summaryMeta.tagCount}`,
     '',
-    '修改摘要：',
-    `- 受影响元素：${summaryMeta.elementCount}`,
-    `- 直接样式变更元素：${summaryMeta.modifiedCount}`,
-    `- 含标签元素：${summaryMeta.taggedElementCount}`,
-    `- 标签组数：${summaryMeta.tagCount}`,
-    '',
-    '元素级最终状态：',
+    'Element targets:',
     ...elements.flatMap((entry, index) => {
       const itemLines = [`${index + 1}. ${entry.selector} (${entry.preset} / <${entry.tagName}>)`]
       if (Object.keys(entry.styleDiff).length > 0) {
-        itemLines.push(`   - 结构化微调 styleChanges: ${JSON.stringify(entry.styleDiff)}`)
+        itemLines.push(`   - styleChanges: ${JSON.stringify(entry.styleDiff)}`)
       }
       if (entry.tags.length > 0) {
-        itemLines.push(`   - 标签意图 intentTags: ${entry.tags.join('；')}`)
+        itemLines.push(`   - intentTags: ${entry.tags.join('; ')}`)
       }
       return itemLines
     }),
     '',
-    '下面附上结构化 JSON，便于程序化读取：',
+    'Structured JSON:',
     '```json',
     JSON.stringify(payload, null, 2),
     '```',
@@ -322,33 +342,35 @@ function buildTagFromElement(element: InspectedElement, text: string): ElementTa
   }
 }
 
-function pickProjectSessionTarget(mode: InspectorMode, session: ProjectLaunchStatus) {
-  if (mode === 'builtin') {
-    return session.builtinUrl || session.externalEndpoint || ''
-  }
-  return session.externalEndpoint || session.builtinUrl || ''
-}
-
-function parseNumeric(value: string): number | null {
-  const match = value.match(/-?\d*\.?\d+/)
-  return match ? Number(match[0]) : null
-}
-
 export default function App() {
-  const builtinCanvasRef = useRef<HTMLDivElement | null>(null)
+  const { t, i18n } = useTranslation()
   const workbenchRef = useRef<HTMLElement | null>(null)
+  const addressBarRef = useRef<HTMLInputElement | null>(null)
+  const shortcutActionsRef = useRef({
+    openSettings: () => {},
+    openHtmlFile: () => {},
+    reloadPage: () => {},
+    forceReload: () => {},
+    toggleToolbar: () => {},
+    copyPagePrompt: () => {},
+    copyElementCSS: () => {},
+    focusAddressBar: () => {},
+    newWindow: () => {},
+    escape: () => {},
+    selectParent: () => {},
+    selectChild: () => {},
+    addTag: () => {},
+  })
   const selectedBackendNodeRef = useRef<number | null>(null)
   const activeToolRef = useRef<CanvasTool>('select')
   const tagsRef = useRef<ElementTag[]>([])
-  const activeEditPropertyRef = useRef<ActiveEditProperty | null>(null)
-  const projectSessionRef = useRef<ProjectLaunchStatus>(EMPTY_PROJECT_SESSION)
-  const autoConnectTokenRef = useRef<string | null>(null)
-  const autoConnectAttemptsRef = useRef<Record<string, number>>({})
-  const autoConnectInFlightRef = useRef<string | null>(null)
   const pageIdentityRef = useRef('')
-  const [mode, setMode] = useState<InspectorMode>('builtin')
-  const [url, setUrl] = useState<string>(DEFAULT_URLS.builtin)
+  const overlayNudgeChangeRef = useRef<OverlayNudgeChange | null>(null)
+
+  const [url, setUrl] = useState(DEFAULT_URL)
+  const [addressBarUrl, setAddressBarUrl] = useState(DEFAULT_URL)
   const [connected, setConnected] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(true)
   const [activeTool, setActiveTool] = useState<CanvasTool>('select')
   const [activeEditProperty, setActiveEditProperty] = useState<ActiveEditProperty | null>(null)
   const [element, setElement] = useState<InspectedElement | null>(null)
@@ -356,20 +378,18 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null)
   const [pageTitle, setPageTitle] = useState('')
   const [pageUrl, setPageUrl] = useState('')
-  const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([])
   const [selectionRevision, setSelectionRevision] = useState(0)
-  const [projectSession, setProjectSession] = useState<ProjectLaunchStatus>(EMPTY_PROJECT_SESSION)
   const [isWorkbenchVisible, setIsWorkbenchVisible] = useState(true)
   const [overlayNudgeTick, setOverlayNudgeTick] = useState(0)
   const [activeEditTick, setActiveEditTick] = useState(0)
   const [pageEditLedger, setPageEditLedger] = useState<Record<number, PageEditLedgerEntry>>({})
-  const overlayNudgeChangeRef = useRef<OverlayNudgeChange | null>(null)
-
-  const windowPreset = useAdaptiveWindowPreset(mode, connected)
-  const sidebarMode = windowPreset === 'sidebar'
-  const externalWorkbenchMode = mode === 'external' && connected
-  const workbenchCompact = mode === 'builtin' && sidebarMode
-  const showWorkbench = connected && (mode === 'external' || isWorkbenchVisible)
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>(DEFAULT_LICENSE_STATUS)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [paywallOpen, setPaywallOpen] = useState(false)
+  const [licenseBusy, setLicenseBusy] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [recentHtmlFiles, setRecentHtmlFiles] = useState<string[]>(() => loadRecentHtmlFiles())
 
   useEffect(() => {
     activeToolRef.current = activeTool
@@ -380,21 +400,43 @@ export default function App() {
   }, [tags])
 
   useEffect(() => {
-    activeEditPropertyRef.current = activeEditProperty
-  }, [activeEditProperty])
+    let cancelled = false
 
-  useEffect(() => {
-    projectSessionRef.current = projectSession
-  }, [projectSession])
+    void (async () => {
+      const nextSettings: AppSettings = {
+        theme: await window.electronAPI.settings.get('theme').catch(() => DEFAULT_SETTINGS.theme),
+        language: await window.electronAPI.settings.get('language').catch(() => DEFAULT_SETTINGS.language),
+      }
+      const nextLicenseStatus = await LicenseManager.getStatus().catch(() => DEFAULT_LICENSE_STATUS)
 
-  useEffect(() => {
-    if (!connected || mode === 'external') {
-      setIsWorkbenchVisible(true)
+      if (cancelled) return
+
+      setSettings(nextSettings)
+      setLicenseStatus(nextLicenseStatus)
+      void i18n.changeLanguage(nextSettings.language)
+    })()
+
+    return () => {
+      cancelled = true
     }
-  }, [connected, mode])
+  }, [i18n])
 
   useEffect(() => {
-    if (!connected || mode !== 'builtin') {
+    const root = document.documentElement
+    root.dataset.theme = settings.theme
+    root.lang = settings.language
+  }, [settings])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RECENT_HTML_FILES_STORAGE_KEY, JSON.stringify(recentHtmlFiles))
+    } catch {
+      // Ignore local storage failures in restricted environments.
+    }
+  }, [recentHtmlFiles])
+
+  useEffect(() => {
+    if (!connected) {
       void window.electronAPI.setPanelWidth(DEFAULT_WORKBENCH_WIDTH)
       return
     }
@@ -428,26 +470,7 @@ export default function App() {
       observer?.disconnect()
       window.removeEventListener('resize', syncPanelWidth)
     }
-  }, [connected, isWorkbenchVisible, mode])
-
-  const syncExternalOverlayRuntime = useCallback(async (overrides?: {
-    tool?: CanvasTool
-    tags?: ElementTag[]
-    activeEditProperty?: ActiveEditProperty | null
-  }) => {
-    if (!connected) return
-
-    const tool = overrides?.tool ?? activeToolRef.current
-
-    await window.electronAPI.setExternalOverlayState({
-      tool,
-      tags: overrides?.tags ?? tagsRef.current,
-    })
-    if (tool === 'browse') return
-    await window.electronAPI.setActiveEditProperty(
-      overrides?.activeEditProperty ?? activeEditPropertyRef.current,
-    )
-  }, [connected])
+  }, [connected, isWorkbenchVisible])
 
   const flash = useCallback((message: string) => {
     setToast(message)
@@ -459,27 +482,27 @@ export default function App() {
     flash(successMessage)
   }, [flash])
 
-  const refreshLocalApps = useCallback(async (preferredMode: InspectorMode = mode) => {
-    try {
-      const apps = await window.electronAPI.discoverLocalApps()
-      setDiscoveredApps(apps)
-
-      if (!connected) {
-        const suggested = pickSuggestedTarget(preferredMode, apps)
-        if (suggested) {
-          setUrl(getTargetValue(preferredMode, suggested))
-        }
-      }
-    } catch (error) {
-      console.error(error)
-      flash('本地目标扫描失败')
-    }
-  }, [connected, flash, mode])
+  const refreshLicenseStatus = useCallback(async () => {
+    const nextStatus = await LicenseManager.getStatus()
+    setLicenseStatus(nextStatus)
+    return nextStatus
+  }, [])
 
   const updatePageEditLedger = useCallback((
     updater: (current: Record<number, PageEditLedgerEntry>) => Record<number, PageEditLedgerEntry>,
   ) => {
     setPageEditLedger((current) => updater(current))
+  }, [])
+
+  const resetInspectorState = useCallback(() => {
+    selectedBackendNodeRef.current = null
+    overlayNudgeChangeRef.current = null
+    tagsRef.current = []
+    setActiveEditProperty(null)
+    setActiveEditTick(0)
+    setElement(null)
+    setTags([])
+    setPageEditLedger({})
   }, [])
 
   const syncCurrentElement = useCallback((selectedElement: InspectedElement) => {
@@ -569,10 +592,6 @@ export default function App() {
           },
         }
       })
-      void syncExternalOverlayRuntime({
-        tool: activeToolRef.current,
-        tags: nextTags,
-      })
       return
     }
 
@@ -608,11 +627,7 @@ export default function App() {
         },
       }
     })
-    void syncExternalOverlayRuntime({
-      tool: activeToolRef.current,
-      tags: nextTags,
-    })
-  }, [syncExternalOverlayRuntime, updatePageEditLedger])
+  }, [updatePageEditLedger])
 
   const handleDeleteTag = useCallback((tagId: string) => {
     const removedTag = tagsRef.current.find((tag) => tag.id === tagId) || null
@@ -639,23 +654,8 @@ export default function App() {
       })
       return nextLedger
     })
-    void syncExternalOverlayRuntime({
-      tool: activeToolRef.current,
-      tags: nextTags,
-    })
-    flash('标签已删除')
-  }, [flash, syncExternalOverlayRuntime, updatePageEditLedger])
-
-  const resetInspectorState = useCallback(() => {
-    selectedBackendNodeRef.current = null
-    overlayNudgeChangeRef.current = null
-    tagsRef.current = []
-    setActiveEditProperty(null)
-    setActiveEditTick(0)
-    setElement(null)
-    setTags([])
-    setPageEditLedger({})
-  }, [])
+    flash(t('toast.tagRemoved'))
+  }, [flash, t, updatePageEditLedger])
 
   const handleElementStyleDiffChange = useCallback((
     targetElement: InspectedElement,
@@ -709,154 +709,65 @@ export default function App() {
       currentElement: element,
       elements: pageExportElements,
       summaryMeta: exportSummaryMeta,
-      mode,
-      projectSession,
       pageTitle,
       pageUrl,
       targetUrl: url,
     })
-  }, [canExportPrompt, element, exportSummaryMeta, mode, pageExportElements, pageTitle, pageUrl, projectSession, url])
+  }, [canExportPrompt, element, exportSummaryMeta, pageExportElements, pageTitle, pageUrl, url])
 
-  const connectToTarget = useCallback(async (
-    nextMode: InspectorMode,
-    rawTarget: string,
-    options?: { reset?: boolean; silentSuccess?: boolean; silentError?: boolean },
-  ) => {
+  const connectToTarget = useCallback(async (rawTarget: string, successMessage: string) => {
     if (!rawTarget.trim()) return false
 
-    if (options?.reset !== false) {
-      pageIdentityRef.current = ''
-      setPageTitle('')
-      setPageUrl('')
-      resetInspectorState()
+    let nextUrl = rawTarget.trim()
+    if (!nextUrl.startsWith('http://') && !nextUrl.startsWith('https://') && !nextUrl.startsWith('file://')) {
+      nextUrl = `http://${nextUrl}`
     }
 
-    try {
-      if (nextMode === 'builtin') {
-        let nextUrl = rawTarget.trim()
-        if (!nextUrl.startsWith('http')) {
-          nextUrl = `http://${nextUrl}`
-        }
-
-        const loaded = await window.electronAPI.loadUrl(nextUrl)
-        if (!loaded) {
-          if (!options?.silentError) {
-            flash('页面加载失败')
-          }
-          return false
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 1500))
-        const attached = await window.electronAPI.attachDebugger()
-        if (!attached) {
-          if (!options?.silentError) {
-            flash('调试器附加失败')
-          }
-          return false
-        }
-
-        setConnected(true)
-        setMode('builtin')
-        setUrl(nextUrl)
-        await window.electronAPI.setBuiltinViewInteractive(true)
-        if (!options?.silentSuccess) {
-          flash('已连接内置浏览器')
-        }
-      } else {
-        const cdpUrl = await window.electronAPI.discoverCDPUrl(rawTarget.trim())
-        if (!cdpUrl) {
-          if (!options?.silentError) {
-            flash('无法发现 CDP 端点，请确认目标已打开调试端口')
-          }
-          return false
-        }
-
-        const ok = await window.electronAPI.connectCDP(cdpUrl)
-        if (!ok) {
-          if (!options?.silentError) {
-            flash('连接桌面目标失败')
-          }
-          return false
-        }
-
-        setConnected(true)
-        setMode('external')
-        setUrl(rawTarget.trim())
-        if (!options?.silentSuccess) {
-          flash('已连接桌面目标')
-        }
-      }
-      return true
-    } catch (error) {
-      console.error(error)
-      if (!options?.silentError) {
-        flash('连接过程发生错误')
-      }
-      return false
-    } finally {
-    }
-  }, [flash, resetInspectorState])
-
-  const applyAutoConnectedState = useCallback((nextMode: InspectorMode, target: string, message?: string) => {
-    const token = `${nextMode}:${target}`
-    const alreadyApplied = autoConnectTokenRef.current === token
     pageIdentityRef.current = ''
     setPageTitle('')
     setPageUrl('')
     resetInspectorState()
-    setConnected(true)
-    setMode(nextMode)
-    setUrl(target)
-    autoConnectTokenRef.current = token
-    autoConnectAttemptsRef.current[token] = 2
-    autoConnectInFlightRef.current = null
-    if (message && !alreadyApplied) {
-      flash(message)
-    }
-  }, [flash, resetInspectorState])
+    setIsConnecting(true)
 
-  const triggerAutoConnect = useCallback(async (nextMode: InspectorMode, target: string) => {
-    const token = `${nextMode}:${target}`
-    if (autoConnectTokenRef.current === token || autoConnectInFlightRef.current === token) {
-      return
-    }
-
-    const previousAttempts = autoConnectAttemptsRef.current[token] || 0
-    if (previousAttempts >= 2) {
-      return
-    }
-
-    autoConnectInFlightRef.current = token
-    setMode(nextMode)
-    setUrl(target)
-
-    let ok = false
-    for (let attempt = previousAttempts; attempt < 2 && !ok; attempt += 1) {
-      autoConnectAttemptsRef.current[token] = attempt + 1
-      ok = await connectToTarget(nextMode, target, {
-        reset: attempt === 0,
-        silentSuccess: true,
-        silentError: attempt === 0,
-      })
-
-      if (!ok && attempt === 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, 600))
+    try {
+      const loaded = await window.electronAPI.loadUrl(nextUrl)
+      if (!loaded) {
+        flash(t('toast.loadFailed'))
+        setIsConnecting(false)
+        return false
       }
-    }
 
-    autoConnectInFlightRef.current = null
-    if (ok) {
-      autoConnectTokenRef.current = token
+      await new Promise((resolve) => window.setTimeout(resolve, nextUrl.startsWith('file://') ? 1000 : 1500))
+      const attached = await window.electronAPI.attachDebugger()
+      if (!attached) {
+        flash(t('toast.debuggerFailed'))
+        setIsConnecting(false)
+        return false
+      }
+
+      setUrl(nextUrl)
+      setAddressBarUrl(nextUrl)
+      setConnected(true)
+      setSettingsOpen(false)
+      setShowOnboarding(false)
+      setIsWorkbenchVisible(true)
+      await window.electronAPI.setBuiltinViewInteractive(true)
+      flash(successMessage)
+      setIsConnecting(false)
+      return true
+    } catch (error) {
+      console.error(error)
+      flash(t('toast.connectionFailed'))
+      setIsConnecting(false)
+      return false
     }
-  }, [connectToTarget])
+  }, [flash, resetInspectorState, t])
 
   useEffect(() => {
     window.electronAPI.onElementSelected((selectedElement, meta) => {
-      // 浮动按钮的 nudge：DOM 已改，只需让属性面板记录变化
       if (meta?.nudge && meta?.nudgeChange) {
         overlayNudgeChangeRef.current = meta.nudgeChange
-        setOverlayNudgeTick((t) => t + 1)
-        // 同时更新 element 状态（不重置 baseline）
+        setOverlayNudgeTick((tick) => tick + 1)
         setElement(selectedElement)
         return
       }
@@ -871,6 +782,12 @@ export default function App() {
       setActiveEditTick((tick) => tick + 1)
     })
 
+    window.electronAPI.onContextAction((action) => {
+      if (action === 'select-parent') shortcutActionsRef.current.selectParent()
+      else if (action === 'select-child') shortcutActionsRef.current.selectChild()
+      else if (action === 'add-tag') shortcutActionsRef.current.addTag()
+    })
+
     window.electronAPI.onBrowserViewLoaded((info) => {
       const nextTitle = info.title || info.url
       const nextUrl = info.url || ''
@@ -883,328 +800,418 @@ export default function App() {
       pageIdentityRef.current = nextIdentity
       setPageTitle(nextTitle)
       setPageUrl(nextUrl)
+      setAddressBarUrl(nextUrl || addressBarUrl)
+      setUrl(nextUrl || url)
     })
 
-    window.electronAPI.onLaunchStatus((info) => {
-      setProjectSession((current) => ({
-        ...current,
-        ...info,
-        selectedMode: info.status === 'project-selected'
-          ? current.selectedMode || mode
-          : (info.selectedMode ?? current.selectedMode),
-        commands: info.commands || current.commands,
-        capabilities: info.capabilities || current.capabilities,
-        builtinUrl: info.builtinUrl ?? current.builtinUrl ?? null,
-        externalEndpoint: info.externalEndpoint ?? current.externalEndpoint ?? null,
-      }))
-
-      const sessionLike = {
-        ...projectSessionRef.current,
-        ...info,
-        selectedMode: info.status === 'project-selected'
-          ? projectSessionRef.current.selectedMode || mode
-          : (info.selectedMode ?? projectSessionRef.current.selectedMode),
-        commands: info.commands || projectSessionRef.current.commands,
-        capabilities: info.capabilities || projectSessionRef.current.capabilities,
-        builtinUrl: info.builtinUrl ?? projectSessionRef.current.builtinUrl ?? null,
-        externalEndpoint: info.externalEndpoint ?? projectSessionRef.current.externalEndpoint ?? null,
-      } satisfies ProjectLaunchStatus
-
-      if (info.status === 'project-selected') {
-        const suggestedTarget = pickProjectSessionTarget(sessionLike.selectedMode || mode, sessionLike)
-        if (suggestedTarget) {
-          setUrl(suggestedTarget)
-        }
-        return
-      }
-
-      if (info.status === 'error' && info.message) {
-        autoConnectInFlightRef.current = null
-        flash(info.message)
-        return
-      }
-
-      if (info.status !== 'ready' || connected) return
-
-      const targetMode = sessionLike.selectedMode
-        || (mode === 'external'
-          ? (sessionLike.externalEndpoint ? 'external' : sessionLike.builtinUrl ? 'builtin' : null)
-          : (sessionLike.builtinUrl ? 'builtin' : sessionLike.externalEndpoint ? 'external' : null))
-
-      const target = targetMode ? pickProjectSessionTarget(targetMode, sessionLike) : ''
-      if (!targetMode || !target) return
-
-      if (info.autoConnected) {
-        applyAutoConnectedState(targetMode, target, info.message || '已自动连接目标应用')
-        return
-      }
-
-      void triggerAutoConnect(targetMode, target)
-    })
-
-    // 处理主进程已自动完成的 CDP 连接
-    window.electronAPI.onAutoConnected((info) => {
-      console.log('[App] auto-connected from main process:', info)
-      applyAutoConnectedState(info.mode as InspectorMode, info.endpoint, '已自动连接目标应用')
-    })
-
-    void refreshLocalApps()
     return () => window.electronAPI.removeAllListeners()
-  }, [applyAutoConnectedState, connected, flash, mode, refreshLocalApps, syncCurrentElement, triggerAutoConnect])
+  }, [addressBarUrl, resetInspectorState, syncCurrentElement, url])
 
   useEffect(() => {
     if (!connected) return
+
+    let cancelled = false
 
     void (async () => {
-      if (mode === 'builtin') {
-        await window.electronAPI.setBuiltinViewInteractive(true)
-      }
-
       await window.electronAPI.startInspect()
-      await syncExternalOverlayRuntime({ tool: activeToolRef.current })
+      if (cancelled) return
+      await window.electronAPI.overlay.sync({
+        tool: activeToolRef.current,
+        tags: tagsRef.current,
+      })
     })()
-  }, [activeTool, connected, mode, syncExternalOverlayRuntime])
 
-  useEffect(() => {
-    if (!connected || activeTool === 'browse') return
-
-    void window.electronAPI.setActiveEditProperty(activeEditProperty)
-  }, [activeEditProperty, activeTool, connected])
+    return () => {
+      cancelled = true
+    }
+  }, [connected])
 
   useEffect(() => {
     if (!connected) return
+    void window.electronAPI.setBuiltinViewInteractive(!(settingsOpen || paywallOpen))
+  }, [connected, paywallOpen, settingsOpen])
 
-    void window.electronAPI.setExternalOverlayState({
+  useEffect(() => {
+    if (!connected) return
+    void window.electronAPI.overlay.sync({
       tool: activeTool,
       tags,
     })
   }, [activeTool, connected, tags])
 
-  const handleSelectProject = useCallback(async () => {
-    try {
-      const info = await window.electronAPI.selectProjectDirectory({ forceDialog: true })
-      if (!info) return
-      setProjectSession((current) => ({
-        ...current,
-        ...info,
-        selectedMode: mode,
-        commands: info.commands || current.commands,
-        capabilities: info.capabilities || current.capabilities,
-      }))
+  useEffect(() => {
+    if (!connected || activeTool === 'browse') return
+    void window.electronAPI.setActiveEditProperty(activeEditProperty)
+  }, [activeEditProperty, activeTool, connected])
 
-      const suggestedTarget = pickProjectSessionTarget(mode, info)
-      if (suggestedTarget) {
-        setUrl(suggestedTarget)
+  const handleLoadUrl = useCallback((targetUrl: string) => {
+    void connectToTarget(targetUrl, t('toast.connected'))
+  }, [connectToTarget, t])
+
+  const rememberRecentHtmlFile = useCallback((filePath: string) => {
+    setRecentHtmlFiles((current) => (
+      [filePath, ...current.filter((item) => item !== filePath)].slice(0, MAX_RECENT_HTML_FILES)
+    ))
+  }, [])
+
+  const handleLoadHtmlFile = useCallback(async (providedFilePath?: string) => {
+    try {
+      const filePath = providedFilePath || await window.electronAPI.selectHtmlFile()
+      if (!filePath) return
+
+      const loaded = await connectToTarget(`file://${filePath}`, t('toast.htmlOpened'))
+      if (loaded) {
+        rememberRecentHtmlFile(filePath)
       }
     } catch (error) {
       console.error(error)
-      flash('选择项目目录失败')
+      flash(t('toast.htmlFailed'))
     }
-  }, [flash, mode])
+  }, [connectToTarget, flash, rememberRecentHtmlFile, t])
 
-  const handleLaunchProject = useCallback(async (launchMode?: InspectorMode, customCommand?: string) => {
-    const targetMode = launchMode || mode
-    if (launchMode) setMode(launchMode)
-    autoConnectTokenRef.current = null
-    autoConnectAttemptsRef.current = {}
-    autoConnectInFlightRef.current = null
-    try {
-      const result = await window.electronAPI.launchProjectSession({
-        projectDir: projectSessionRef.current.projectDir || null,
-        preferredMode: targetMode,
-        customCommand,
-      })
-      if (!result.success && result.error && result.error !== 'cancelled') {
-        flash(result.error)
-      }
-    } catch (error) {
-      console.error(error)
-      flash('项目启动失败')
-    }
-  }, [flash, mode])
+  const handleRefresh = useCallback(() => {
+    const target = connected ? url : (addressBarUrl || url)
+    if (!target) return
+    void connectToTarget(target, t('toast.pageRefreshed'))
+  }, [addressBarUrl, connectToTarget, connected, t, url])
 
-  const handleLoadStaticHtml = useCallback(async (filePath: string) => {
-    pageIdentityRef.current = ''
-    setPageTitle('')
-    setPageUrl('')
-    resetInspectorState()
-    try {
-      const fileUrl = `file://${filePath}`
-      const loaded = await window.electronAPI.loadUrl(fileUrl)
-      if (!loaded) {
-        flash('页面加载失败')
-        return
-      }
-      await new Promise((resolve) => window.setTimeout(resolve, 1000))
-      const attached = await window.electronAPI.attachDebugger()
-      if (!attached) {
-        flash('调试器附加失败')
-        return
-      }
-      setConnected(true)
-      setMode('builtin')
-      setUrl(fileUrl)
-      flash('已打开静态 HTML')
-    } catch (error) {
-      console.error(error)
-      flash('加载静态 HTML 失败')
-    }
-  }, [flash, resetInspectorState])
+  const handleLoadFromAddressBar = useCallback(() => {
+    if (!addressBarUrl.trim()) return
+    handleLoadUrl(addressBarUrl)
+  }, [addressBarUrl, handleLoadUrl])
+  const handleAddressClipboardEvent = useCallback((event: ClipboardEvent<HTMLInputElement>) => {
+    event.stopPropagation()
+  }, [])
+  const handleAddressPaste = useCallback((event: ClipboardEvent<HTMLInputElement>) => {
+    const pastedValue = event.clipboardData.getData('text')
+    if (!pastedValue) return
 
-  const handleConnectRunning = useCallback(async (endpoint: string) => {
-    pageIdentityRef.current = ''
-    setPageTitle('')
-    setPageUrl('')
-    resetInspectorState()
-    try {
-      const cdpUrl = await window.electronAPI.discoverCDPUrl(endpoint)
-      if (!cdpUrl) {
-        flash('无法发现 CDP 端点，请确认目标已打开调试端口')
-        return
-      }
-      const ok = await window.electronAPI.connectCDP(cdpUrl)
-      if (!ok) {
-        flash('连接目标失败')
-        return
-      }
-      setConnected(true)
-      setMode('external')
-      setUrl(endpoint)
-      flash('已连接目标')
-    } catch (error) {
-      console.error(error)
-      flash('连接过程发生错误')
-    }
-  }, [flash, resetInspectorState])
+    event.preventDefault()
+    event.stopPropagation()
+    setAddressBarUrl(pastedValue)
 
-  const handleStopProject = useCallback(async () => {
-    await window.electronAPI.stopProjectSession()
-    autoConnectTokenRef.current = null
-    autoConnectAttemptsRef.current = {}
-    autoConnectInFlightRef.current = null
+    window.requestAnimationFrame(() => {
+      const input = addressBarRef.current
+      if (!input) return
+      input.focus()
+      input.setSelectionRange(pastedValue.length, pastedValue.length)
+    })
   }, [])
 
   const handleCloseConnection = useCallback(async () => {
-    await window.electronAPI.stopProjectSession()
     await window.electronAPI.disconnect()
-    autoConnectTokenRef.current = null
-    autoConnectAttemptsRef.current = {}
-    autoConnectInFlightRef.current = null
     setConnected(false)
+    setIsConnecting(false)
+    setSettingsOpen(false)
+    setShowOnboarding(true)
     setActiveTool('select')
     setActiveEditProperty(null)
-    pageIdentityRef.current = ''
     setPageTitle('')
     setPageUrl('')
     setIsWorkbenchVisible(true)
+    pageIdentityRef.current = ''
     resetInspectorState()
   }, [resetInspectorState])
 
   const handleCopyExportPrompt = useCallback(async () => {
     if (!canExportPrompt) {
-      flash('当前还没有可导出的微调改动')
+      flash(t('toast.noPrompt'))
       return
     }
 
-    await copyText(exportPromptPreview, '页面级修改提示词已复制')
-  }, [canExportPrompt, copyText, exportPromptPreview, flash])
+    const access = LicenseManager.checkFeatureAccess('page-export', licenseStatus)
+    if (!access.allowed) {
+      if (connected) {
+        void window.electronAPI.setBuiltinViewInteractive(false)
+      }
+      setPaywallOpen(true)
+      return
+    }
 
-  const relevantApps = getRelevantApps(discoveredApps, mode)
-  const currentTargetLabel = mode === 'builtin'
-    ? (pageTitle || projectSession.projectName || '网页目标')
-    : (projectSession.projectName || relevantApps.find((app) => app.port === parseNumeric(url) || `127.0.0.1:${app.port}` === url)?.name || '桌面目标')
-  const sessionLaunchBusy = projectSession.status === 'launching'
-    || projectSession.status === 'starting-web'
-    || projectSession.status === 'starting-electron'
-    || projectSession.status === 'waiting-web'
-    || projectSession.status === 'waiting-cdp'
+    await copyText(exportPromptPreview, t('toast.promptCopied'))
+  }, [canExportPrompt, connected, copyText, exportPromptPreview, flash, licenseStatus, t])
+
+  const handleCopyElementCSS = useCallback(async () => {
+    if (!element) return
+    const css = await window.electronAPI.generateCSS(element)
+    await copyText(css, 'Element CSS copied')
+  }, [copyText, element])
+
+  const handleThemeChange = useCallback((theme: AppSettings['theme']) => {
+    setSettings((current) => ({ ...current, theme }))
+    void window.electronAPI.settings.set('theme', theme)
+  }, [])
+
+  const handleLanguageChange = useCallback((language: AppLanguage) => {
+    setSettings((current) => ({ ...current, language }))
+    void window.electronAPI.settings.set('language', language)
+    void window.electronAPI.menu.changeLanguage(language)
+    void i18n.changeLanguage(language)
+  }, [i18n])
+
+  const handlePurchase = useCallback(async () => {
+    setLicenseBusy(true)
+    try {
+      const result = await LicenseManager.purchase()
+      if (!result.success) {
+        flash(result.error || 'Purchase failed.')
+        return
+      }
+
+      await refreshLicenseStatus()
+      setPaywallOpen(false)
+      flash('Pro unlocked')
+    } finally {
+      setLicenseBusy(false)
+    }
+  }, [flash, refreshLicenseStatus])
+
+  const handleRestore = useCallback(async () => {
+    setLicenseBusy(true)
+    try {
+      const result = await LicenseManager.restore()
+      if (!result.success) {
+        flash(result.error || 'Restore failed.')
+        return
+      }
+
+      await refreshLicenseStatus()
+      setPaywallOpen(false)
+      flash('Purchase restored')
+    } finally {
+      setLicenseBusy(false)
+    }
+  }, [flash, refreshLicenseStatus])
+
+  const handleOpenSettings = useCallback(() => {
+    setSettingsOpen((prev) => {
+      const next = !prev
+      if (connected) {
+        void window.electronAPI.setBuiltinViewInteractive(!next)
+      }
+      return next
+    })
+  }, [connected])
+
+  const handleSelectParent = useCallback(async () => {
+    if (!element) return
+    const parent = await window.electronAPI.selectParentElement({ backendNodeId: element.backendNodeId })
+    if (parent) {
+      syncCurrentElement(parent)
+    }
+  }, [element, syncCurrentElement])
+
+  const handleSelectChild = useCallback(async () => {
+    if (!element) return
+    const child = await window.electronAPI.selectFirstChildElement({ backendNodeId: element.backendNodeId })
+    if (child) {
+      syncCurrentElement(child)
+    }
+  }, [element, syncCurrentElement])
+
+  const handleContextMenuAddTag = useCallback(() => {
+    if (!element) return
+    if (!isWorkbenchVisible) {
+      setIsWorkbenchVisible(true)
+    }
+    // Scroll to tag section after workbench opens
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const labelSection = document.querySelector('.label-section')
+        if (labelSection) {
+          labelSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          const input = labelSection.querySelector<HTMLInputElement>('.label-input')
+          if (input) input.focus()
+        }
+      })
+    })
+  }, [element, isWorkbenchVisible])
+
+  shortcutActionsRef.current = {
+    openSettings: () => setSettingsOpen(true),
+    openHtmlFile: () => {
+      void handleLoadHtmlFile()
+    },
+    reloadPage: handleRefresh,
+    forceReload: handleRefresh,
+    toggleToolbar: () => setIsWorkbenchVisible((visible) => !visible),
+    copyPagePrompt: () => {
+      void handleCopyExportPrompt()
+    },
+    copyElementCSS: () => {
+      void handleCopyElementCSS()
+    },
+    focusAddressBar: () => {
+      addressBarRef.current?.focus()
+      addressBarRef.current?.select()
+    },
+    newWindow: () => {},
+    escape: () => {
+      setPaywallOpen(false)
+      setSettingsOpen(false)
+      setActiveEditProperty(null)
+    },
+    selectParent: () => { void handleSelectParent() },
+    selectChild: () => { void handleSelectChild() },
+    addTag: () => { handleContextMenuAddTag() },
+  }
+
+  useEffect(() => {
+    window.electronAPI.shortcuts.onOpenSettings(() => shortcutActionsRef.current.openSettings())
+    window.electronAPI.shortcuts.onOpenHtmlFile(() => shortcutActionsRef.current.openHtmlFile())
+    window.electronAPI.shortcuts.onReloadPage(() => shortcutActionsRef.current.reloadPage())
+    window.electronAPI.shortcuts.onForceReload(() => shortcutActionsRef.current.forceReload())
+    window.electronAPI.shortcuts.onToggleToolbar(() => shortcutActionsRef.current.toggleToolbar())
+    window.electronAPI.shortcuts.onCopyPagePrompt(() => shortcutActionsRef.current.copyPagePrompt())
+    window.electronAPI.shortcuts.onCopyElementCSS(() => shortcutActionsRef.current.copyElementCSS())
+    window.electronAPI.shortcuts.onFocusAddressBar(() => shortcutActionsRef.current.focusAddressBar())
+    window.electronAPI.shortcuts.onNewWindow(() => shortcutActionsRef.current.newWindow())
+    window.electronAPI.shortcuts.onEscape(() => shortcutActionsRef.current.escape())
+  }, [])
+
+  const currentTargetLabel = pageTitle || `${APP_NAME} Canvas`
+  const showWorkbench = connected && isWorkbenchVisible
+  const connectionState = isConnecting ? 'connecting' : connected ? 'connected' : 'disconnected'
+  const connectionLabel = connectionState === 'connecting'
+    ? t('topbar.connecting')
+    : connectionState === 'connected'
+      ? t('topbar.connected')
+      : t('topbar.disconnected')
 
   return (
-    <div className={`app-layout ${sidebarMode ? 'compact-mode' : ''}`}>
-      <div className={`topbar ${!connected ? 'topbar-minimal' : ''}`}>
-        <div className="topbar-spacer" />
+    <div className={`app-layout${connected ? ' app-layout-connected' : ''}`}>
+      <div className="app-shell-header">
+        <div className="titlebar">
+          <div className="titlebar-side titlebar-side-left" aria-hidden="true" />
 
-        {connected ? (
-          <>
-            <div className="project-session-pill">
-              <span className="project-session-kicker">{mode === 'builtin' ? '网页调试' : '桌面调试'}</span>
-              <strong>{projectSession.projectName || '目标项目'}</strong>
-            </div>
+          <div className="titlebar-brand">
+            <span className="titlebar-name">{APP_NAME}</span>
+          </div>
+
+          <div className="titlebar-side titlebar-side-right">
+            <button
+              className="titlebar-icon-button"
+              onClick={handleOpenSettings}
+              title={t('topbar.settings')}
+              aria-label={t('topbar.settings')}
+            >
+              <GearIcon />
+            </button>
+          </div>
+        </div>
+
+        <div className="controlbar">
+          <button
+            className="controlbar-button"
+            onClick={handleRefresh}
+            title={t('topbar.refresh')}
+            aria-label={t('topbar.refresh')}
+            disabled={isConnecting}
+          >
+            <RefreshIcon />
+            <span>{t('topbar.refresh')}</span>
+          </button>
+
+          <div className="address-field">
+            <input
+              ref={addressBarRef}
+              className="address-input"
+              type="text"
+              value={addressBarUrl}
+              inputMode="url"
+              placeholder={t('topbar.urlPlaceholder')}
+              aria-label={t('topbar.addressLabel')}
+              spellCheck={false}
+              autoCapitalize="none"
+              autoCorrect="off"
+              draggable={false}
+              onChange={(event) => setAddressBarUrl(event.target.value)}
+              onCopy={handleAddressClipboardEvent}
+              onCut={handleAddressClipboardEvent}
+              onPaste={handleAddressPaste}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  handleLoadFromAddressBar()
+                }
+              }}
+            />
+          </div>
+
+          <button
+            className="controlbar-button primary"
+            onClick={handleLoadFromAddressBar}
+            title={t('topbar.load')}
+            aria-label={t('topbar.load')}
+            disabled={isConnecting}
+          >
+            <LoadIcon />
+            <span>{t('topbar.load')}</span>
+          </button>
+
+          <div className={`connection-indicator ${connectionState}`} aria-live="polite">
+            <span className="connection-indicator-dot" />
+            <span>{connectionLabel}</span>
+          </div>
+
+          {connected && (
             <div className="topbar-actions">
-              <span className="topbar-status-pill">已连接</span>
-              {mode === 'builtin' && (
-                <button
-                  className="btn-utility wide"
-                  onClick={() => setIsWorkbenchVisible((visible) => !visible)}
-                  title={isWorkbenchVisible ? '隐藏右侧属性工具栏' : '显示右侧属性工具栏'}
-                >
-                  {isWorkbenchVisible ? '隐藏工具栏' : '显示工具栏'}
-                </button>
-              )}
-              <button className="btn-utility wide ghost" onClick={() => void handleCloseConnection()} title="关闭连接">
-                关闭连接
+              <button
+                className="btn-utility wide"
+                onClick={() => setIsWorkbenchVisible((visible) => !visible)}
+                title={isWorkbenchVisible ? t('topbar.hideToolbar') : t('topbar.showToolbar')}
+              >
+                {isWorkbenchVisible ? t('topbar.hideToolbar') : t('topbar.showToolbar')}
+              </button>
+              <button className="btn-utility wide ghost" onClick={() => void handleCloseConnection()} title={t('topbar.disconnect')}>
+                {t('topbar.disconnect')}
               </button>
             </div>
-          </>
-        ) : (
-          <div className="topbar-title">Visual Inspector</div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className={`content-area ${sidebarMode ? 'sidebar-mode' : ''} ${externalWorkbenchMode ? 'external-workbench-only' : ''}`}>
-        {!externalWorkbenchMode && (
-          <div className="canvas">
-            {!connected ? (
-              <WelcomeScreen
-                projectSession={projectSession}
-                onSelectProject={() => void handleSelectProject()}
-                onLaunch={(launchMode, customCommand) => void handleLaunchProject(launchMode, customCommand)}
-                onLoadStaticHtml={(filePath) => void handleLoadStaticHtml(filePath)}
-                onConnectRunning={(endpoint) => void handleConnectRunning(endpoint)}
-                onStop={() => void handleStopProject()}
-                launchBusy={sessionLaunchBusy}
-              />
-            ) : mode === 'builtin' ? (
-              <div className="canvas-browserview" ref={builtinCanvasRef}>
-                <div className="canvas-hud">
-                  <span className="canvas-hud-chip">Live Canvas</span>
-                  <span className="canvas-hud-title">{currentTargetLabel}</span>
-                </div>
-                <span className="loading">{pageTitle || '页面加载中…'}</span>
+      <div className="content-area">
+        <div className="canvas">
+          {settingsOpen ? (
+            <Settings
+              open={settingsOpen}
+              settings={settings}
+              licenseStatus={licenseStatus}
+              onClose={() => setSettingsOpen(false)}
+              onThemeChange={handleThemeChange}
+              onLanguageChange={handleLanguageChange}
+              onPurchase={handlePurchase}
+              onRestore={handleRestore}
+            />
+          ) : !connected && showOnboarding ? (
+            <OnboardingWizard
+              defaultUrl={DEFAULT_URL}
+              onLoadUrl={handleLoadUrl}
+              recentHtmlFiles={recentHtmlFiles}
+              onLoadHtmlFile={(filePath) => void handleLoadHtmlFile(filePath)}
+            />
+          ) : (
+            <div className="canvas-browserview">
+              <div className="canvas-hud">
+                <span className="canvas-hud-chip">Live Canvas</span>
+                <span className="canvas-hud-title">{currentTargetLabel}</span>
               </div>
-            ) : (
-              <div className="workspace-hero">
-                <div className="workspace-card workspace-card-external">
-                  <div className="workspace-kicker">External Workspace</div>
-                  <h3>{currentTargetLabel}</h3>
-                  <p>请直接在目标桌面应用里操作和选元素。这个模式下 Inspector 只保留右侧工作台，不再镜像一份桌面界面。</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+              <span className="loading">{pageTitle || 'Page loading…'}</span>
+            </div>
+          )}
+        </div>
 
         {showWorkbench && (
-          <aside
-            ref={workbenchRef}
-            className={`right-panel ${sidebarMode ? 'sidebar-panel' : ''} ${externalWorkbenchMode ? 'external-right-panel' : ''}`}
-          >
+          <aside ref={workbenchRef} className="right-panel">
             {!element ? (
-              <div className={`panel-empty ${connected ? 'panel-empty-live' : ''}`}>
-                <div className="icon">{connected ? '🧭' : '📐'}</div>
-                <h4>{connected ? '准备选择元素' : '等待连接目标'}</h4>
-                <p>
-                  {connected
-                    ? (mode === 'external'
-                        ? '请直接在桌面目标窗口里移动鼠标并点击元素。右侧工具台会跟随当前选中对象。'
-                        : '移动鼠标悬停目标元素，看到淡蓝 Hover 框后点击锁定。锁定后可以直接拖拽、缩放，并实时联动右侧属性。')
-                    : '连接后右侧会显示中文化的尺寸、定位、背景、透明度和阴影参数。'}
-                </p>
+              <div className="panel-empty panel-empty-live">
+                <div className="icon">DOM</div>
+                <h4>{t('panel.ready')}</h4>
+                <p>{t('panel.readyDesc')}</p>
               </div>
             ) : (
               <PropertiesWorkbench
                 element={element}
-                compact={workbenchCompact}
                 activeTool={activeTool}
                 tags={tags}
                 activeEditProperty={activeEditProperty}
@@ -1221,7 +1228,7 @@ export default function App() {
                 exportPromptPreview={exportPromptPreview}
                 exportSummaryMeta={exportSummaryMeta}
                 canExportPrompt={canExportPrompt}
-                onCopyExportPrompt={() => handleCopyExportPrompt()}
+                onCopyExportPrompt={() => void handleCopyExportPrompt()}
               />
             )}
           </aside>
@@ -1229,6 +1236,12 @@ export default function App() {
       </div>
 
       <div id="inspector-top-layer" className="inspector-top-layer" />
+      <PaywallDialog
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        onPurchase={handlePurchase}
+        onRestore={handleRestore}
+      />
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

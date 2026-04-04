@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "시각적 DOM 검사기 및 AI 프롬프트 생성기. 요소를 선택하고, 스타일을 시각적으로 조정하고, Cursor, Claude Code, Codex 등을 위한 정확한 AI 프롬프트를 생성합니다.",
+    "website": "웹사이트",
+    "support": "지원 센터",
+    "privacy": "개인정보 보호정책",
+    "terms": "서비스 약관",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. All rights reserved."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "전체 기능 잠금 해제",
+    "subtitle": "검사하는 모든 페이지에 대해 정확한 AI 프롬프트를 내보내세요. 한 번 구매, 무제한 정밀도.",
+    "lifetimeBadge": "영구 라이선스",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "무제한 페이지 프롬프트 내보내기",
+    "benefitExportDesc": "요소 선택자, 스타일 차이, 주석을 하나의 구조화된 출력으로 통합하여 내보냅니다.",
+    "benefitPrecisionTitle": "스타일 차이 추적",
+    "benefitPrecisionDesc": "CSS 조정이 자동으로 전후 기록 — width: 200px \u2192 300px. AI가 정확히 실행.",
+    "benefitTagsTitle": "자연어 태그",
+    "benefitTagsDesc": "요소에 의도를 주석: \"버튼 색상이 너무 어두움\", \"간격이 너무 넓음\". AI가 디자인 의도를 이해합니다.",
+    "benefitFutureTitle": "모든 미래 Pro 기능 포함",
+    "benefitFutureDesc": "한 번의 구매로 향후 모든 Pro 기능을 영구 이용. 구독료 없음.",
+    "unlockNow": "Pro로 업그레이드",
+    "cancel": "취소",
+    "purchasing": "구매 중...",
+    "purchaseFailed": "구매에 실패했습니다. 다시 시도해 주세요.",
+    "purchaseCancelled": "구매가 취소되었습니다.",
+    "restorePurchase": "구매 복원",
+    "restoring": "복원 중...",
+    "restoreNotFound": "이전 구매 기록을 찾을 수 없습니다.",
+    "restoreFailed": "복원에 실패했습니다. 다시 시도해 주세요.",
+    "ctaNote": "일회성 결제. 구독료 없음. Pro 기능 영구 잠금 해제."
+  }
+}

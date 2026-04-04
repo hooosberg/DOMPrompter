@@ -1801,7 +1801,7 @@ export function PropertiesWorkbench({
                   title={activeTool === 'select' ? '关闭元素选择，恢复真实点击' : '开启元素选择'}
                 >
                   <span className="panel-tool-icon">{item.icon}</span>
-                  <span className="panel-tool-text">{activeTool === 'select' ? '拾取中' : '可交互'}</span>
+                  <span className="panel-tool-text">{activeTool === 'select' ? '选择中' : '可交互'}</span>
                 </button>
               ))}
             </div>

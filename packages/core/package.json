@@ -1,10 +1,12 @@
 {
   "name": "@visual-inspector/core",
   "version": "0.1.0",
-  "description": "Core CDP client and utilities for Visual Inspector",
+  "description": "Core CDP client and utilities for DOMPrompter",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build": "tsc",
     "clean": "rm -rf dist"
   },

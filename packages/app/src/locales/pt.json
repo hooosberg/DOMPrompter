@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "Inspetor DOM visual e gerador de prompts IA. Selecione elementos, ajuste estilos visualmente, gere prompts IA precisos para Cursor, Claude Code, Codex e mais.",
+    "website": "Site",
+    "support": "Central de suporte",
+    "privacy": "Pol\u00edtica de privacidade",
+    "terms": "Termos de servi\u00e7o",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. Todos os direitos reservados."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "Desbloqueie todo o poder",
+    "subtitle": "Exporte prompts IA precisos para cada p\u00e1gina inspecionada. Uma compra, precis\u00e3o ilimitada.",
+    "lifetimeBadge": "Licen\u00e7a vital\u00edcia",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "Exporta\u00e7\u00e3o ilimitada de prompts",
+    "benefitExportDesc": "Exporte prompts combinando seletores, diferen\u00e7as de estilo e anota\u00e7\u00f5es em uma sa\u00edda estruturada.",
+    "benefitPrecisionTitle": "Rastreamento de diferen\u00e7as de estilo",
+    "benefitPrecisionDesc": "Cada ajuste CSS registrado automaticamente antes/depois \u2014 width: 200px \u2192 300px. Claro para a IA.",
+    "benefitTagsTitle": "Tags em linguagem natural",
+    "benefitTagsDesc": "Anote elementos com inten\u00e7\u00e3o: \u201ccor do bot\u00e3o muito escura\u201d, \u201cespa\u00e7amento muito grande\u201d. A IA entende seu design.",
+    "benefitFutureTitle": "Todas as futuras fun\u00e7\u00f5es Pro",
+    "benefitFutureDesc": "Compra \u00fanica para todas as fun\u00e7\u00f5es Pro atuais e futuras. Sem assinatura.",
+    "unlockNow": "Atualizar para Pro",
+    "cancel": "Cancelar",
+    "purchasing": "Comprando...",
+    "purchaseFailed": "A compra falhou. Tente novamente.",
+    "purchaseCancelled": "A compra foi cancelada.",
+    "restorePurchase": "Restaurar compra",
+    "restoring": "Restaurando...",
+    "restoreNotFound": "Nenhuma compra anterior encontrada.",
+    "restoreFailed": "A restaura\u00e7\u00e3o falhou. Tente novamente.",
+    "ctaNote": "Pagamento \u00fanico. Sem taxas de assinatura. As fun\u00e7\u00f5es Pro permanecem desbloqueadas permanentemente."
+  }
+}

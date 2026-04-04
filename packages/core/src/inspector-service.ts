@@ -114,6 +114,7 @@ export class InspectorService {
     private onElementSelectedCallback?: (element: InspectedElement, meta?: InspectorSelectionMeta) => void
     private onPropertyActivatedCallback?: (property: string) => void
     private onPropertyIncrementCallback?: (cssProperty: string) => void
+    private onContextMenuCallback?: (position: { x: number; y: number; clientX: number; clientY: number }) => void
 
     constructor(transport: ICDPTransport) {
         this.transport = transport
@@ -127,7 +128,7 @@ export class InspectorService {
             if (params.name !== ELEMENT_PICKER_BINDING) return
             try {
                 const payload = JSON.parse(params.payload || '{}') as {
-                    type?: 'select' | 'activate-property' | 'increment-property' | 'style-nudge'
+                    type?: 'select' | 'activate-property' | 'increment-property' | 'style-nudge' | 'contextmenu'
                     token?: string
                     backendNodeId?: number
                     nodeId?: number
@@ -138,6 +139,22 @@ export class InspectorService {
                     beforeStyles?: Record<string, string>
                     afterStyles?: Record<string, string>
                     shiftKey?: boolean
+                    x?: number
+                    y?: number
+                    clientX?: number
+                    clientY?: number
+                }
+
+                if (payload.type === 'contextmenu') {
+                    if (this.onContextMenuCallback) {
+                        this.onContextMenuCallback({
+                            x: payload.x || 0,
+                            y: payload.y || 0,
+                            clientX: payload.clientX || 0,
+                            clientY: payload.clientY || 0,
+                        })
+                    }
+                    return
                 }
 
                 // 浮动按钮点击 → 激活属性面板对应字段
@@ -246,6 +263,10 @@ export class InspectorService {
 
     onPropertyIncrement(callback: (cssProperty: string) => void): void {
         this.onPropertyIncrementCallback = callback
+    }
+
+    onContextMenu(callback: (position: { x: number; y: number; clientX: number; clientY: number }) => void): void {
+        this.onContextMenuCallback = callback
     }
 
     async startInspecting(preferNativeOverlay: boolean = false): Promise<void> {
@@ -370,6 +391,88 @@ export class InspectorService {
         }
     }
 
+    async selectParentElement(backendNodeId: number): Promise<InspectedElement | null> {
+        try {
+            await this.helper.getDocument()
+            const nodeIds = await this.helper.pushNodesByBackendIdsToFrontend([backendNodeId])
+            const nodeId = nodeIds[0]
+            if (!nodeId) return null
+
+            const objectId = await this.helper.resolveNode(nodeId)
+            try {
+                const result = await this.helper.callFunctionOn(
+                    objectId,
+                    `function() {
+                        let parent = this.parentElement;
+                        while (parent) {
+                            if (parent.hasAttribute && parent.hasAttribute('data-vi-overlay-root')) {
+                                parent = parent.parentElement;
+                                continue;
+                            }
+                            if (parent.tagName === 'HTML' || parent.tagName === 'BODY') {
+                                return null;
+                            }
+                            return parent;
+                        }
+                        return null;
+                    }`,
+                    [],
+                )
+                if (!result?.result?.objectId) return null
+
+                const described = await this.helper.describeNodeByObjectId(result.result.objectId)
+                const parentBackendNodeId = described?.node?.backendNodeId
+                if (!parentBackendNodeId) return null
+
+                return await this.getElementDetails(parentBackendNodeId)
+            } finally {
+                try { await this.helper.releaseObject(objectId) } catch { /* ignore */ }
+            }
+        } catch (err) {
+            console.error('Select parent element error:', err)
+            return null
+        }
+    }
+
+    async selectFirstChildElement(backendNodeId: number): Promise<InspectedElement | null> {
+        try {
+            await this.helper.getDocument()
+            const nodeIds = await this.helper.pushNodesByBackendIdsToFrontend([backendNodeId])
+            const nodeId = nodeIds[0]
+            if (!nodeId) return null
+
+            const objectId = await this.helper.resolveNode(nodeId)
+            try {
+                const result = await this.helper.callFunctionOn(
+                    objectId,
+                    `function() {
+                        const children = Array.from(this.children || []);
+                        for (const child of children) {
+                            if (!(child instanceof Element)) continue;
+                            if (child.hasAttribute && child.hasAttribute('data-vi-overlay-root')) continue;
+                            const rect = child.getBoundingClientRect();
+                            if (rect.width > 0 && rect.height > 0) return child;
+                        }
+                        return null;
+                    }`,
+                    [],
+                )
+                if (!result?.result?.objectId) return null
+
+                const described = await this.helper.describeNodeByObjectId(result.result.objectId)
+                const childBackendNodeId = described?.node?.backendNodeId
+                if (!childBackendNodeId) return null
+
+                return await this.getElementDetails(childBackendNodeId)
+            } finally {
+                try { await this.helper.releaseObject(objectId) } catch { /* ignore */ }
+            }
+        } catch (err) {
+            console.error('Select first child element error:', err)
+            return null
+        }
+    }
+
     async capturePreviewDataUrl(): Promise<PreviewCapture | null> {
         try {
             const result = await this.helper.captureScreenshot()
@@ -410,7 +513,7 @@ export class InspectorService {
     async getElementDetails(backendNodeId: number): Promise<InspectedElement | null> {
         try {
             await this.helper.getDocument()
-            const { node } = await this.helper.describeNode(backendNodeId)
+            await this.helper.describeNode(backendNodeId)
             const nodeIds = await this.helper.pushNodesByBackendIdsToFrontend([backendNodeId])
             const nodeId = nodeIds[0]
             if (!nodeId) {

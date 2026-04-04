@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "Visueller DOM-Inspektor und KI-Prompt-Generator. Elemente ausw\u00e4hlen, Styles visuell anpassen, pr\u00e4zise KI-Prompts f\u00fcr Cursor, Claude Code, Codex und mehr generieren.",
+    "website": "Website",
+    "support": "Hilfecenter",
+    "privacy": "Datenschutzrichtlinie",
+    "terms": "Nutzungsbedingungen",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. Alle Rechte vorbehalten."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "Alle Funktionen freischalten",
+    "subtitle": "Exportieren Sie pr\u00e4zise KI-Prompts f\u00fcr jede inspizierte Seite. Einmaliger Kauf, unbegrenzte Pr\u00e4zision.",
+    "lifetimeBadge": "Lebenslange Lizenz",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "Unbegrenzter Seitenexport",
+    "benefitExportDesc": "Exportieren Sie Prompts mit Selektoren, Style-Diffs und Annotationen in einer strukturierten Ausgabe.",
+    "benefitPrecisionTitle": "Style-Diff-Tracking",
+    "benefitPrecisionDesc": "Jede CSS-Anpassung automatisch als Vorher/Nachher erfasst \u2014 width: 200px \u2192 300px. Glasklar f\u00fcr KI.",
+    "benefitTagsTitle": "Nat\u00fcrlichsprachige Tags",
+    "benefitTagsDesc": "Elemente annotieren: \u201eButtonfarbe zu dunkel\u201c, \u201eAbstand zu gro\u00df\u201c. Die KI versteht Ihre Designabsicht.",
+    "benefitFutureTitle": "Alle zuk\u00fcnftigen Pro-Funktionen",
+    "benefitFutureDesc": "Einmaliger Kauf f\u00fcr alle aktuellen und zuk\u00fcnftigen Pro-Funktionen. Ohne Abo.",
+    "unlockNow": "Auf Pro upgraden",
+    "cancel": "Abbrechen",
+    "purchasing": "Kauf l\u00e4uft...",
+    "purchaseFailed": "Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "purchaseCancelled": "Kauf wurde abgebrochen.",
+    "restorePurchase": "Kauf wiederherstellen",
+    "restoring": "Wiederherstellung...",
+    "restoreNotFound": "Kein fr\u00fcherer Kauf gefunden.",
+    "restoreFailed": "Wiederherstellung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "ctaNote": "Einmalige Zahlung. Keine Abonnementgeb\u00fchren. Pro-Funktionen bleiben dauerhaft freigeschaltet."
+  }
+}

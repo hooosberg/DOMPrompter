@@ -1,5 +1,3 @@
-import WebSocket from 'ws'
-
 // ─── CDP 传输层抽象 ──────────────────────────────
 
 /** CDP 命令发送 + 事件监听的统一接口 */
@@ -30,10 +28,9 @@ export interface DescendantRectReference {
   label: string
 }
 
-type EventCallback = (params: any) => void
 const ELEMENT_PICKER_BINDING = '__viInspectorHostSelect__'
 const ELEMENT_PICKER_STATE = '__visualInspectorPicker'
-const ELEMENT_PICKER_RUNTIME_VERSION = '2026-04-03-overlay-layout-planner-v6'
+const ELEMENT_PICKER_RUNTIME_VERSION = '2026-04-04-enter-key-child-nav-v8'
 function mergeInlineStyleText(currentText: string, patch: Record<string, string>): string {
   const styleMap = new Map<string, string>()
 
@@ -1483,6 +1480,38 @@ function buildElementPickerScript(bindingName: string): string {
           }
           state.rafId = win.requestAnimationFrame(state.tick);
         },
+        mousedown(event) {
+          if (!this.active) return;
+          if (this.tool === 'browse') return;
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
+          if (target.dataset?.viAction) return;
+          if (this.tagBadgeLayer.contains(target)) return;
+          if (isOverlayElement(target)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+        },
+        contextmenu(event) {
+          if (!this.active) return;
+          if (this.tool === 'browse') return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+          if (typeof win[binding] === 'function') {
+            win[binding](JSON.stringify({
+              type: 'contextmenu',
+              x: event.screenX,
+              y: event.screenY,
+              clientX: event.clientX,
+              clientY: event.clientY,
+            }));
+          }
+        },
         keydown(event) {
           if (state.tool === 'browse') return;
           if (event.key === 'Escape') {
@@ -1498,6 +1527,27 @@ function buildElementPickerScript(bindingName: string): string {
             state.update(nextTarget, true);
             state.emitPayload(nextTarget, { type: 'select', shiftKey: false });
           }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!state.current) return;
+            // 进入子级：获取当前元素的第一个可见子元素
+            const children = Array.from(state.current.children || [])
+              .filter(function(child) { return child instanceof Element; })
+              .filter(function(child) {
+                if (isOverlayElement(child)) return false;
+                var rect = child.getBoundingClientRect();
+                return rect.width > 1 && rect.height > 1;
+              });
+            if (!children.length) return;
+            var childTarget = children[0];
+            var childStack = buildElementStack(childTarget);
+            if (!childStack.length) return;
+            state.selectionCycle = { point: { x: 0, y: 0 }, stack: childStack };
+            state.hoverStack = childStack;
+            state.update(childTarget, true);
+            state.emitPayload(childTarget, { type: 'select', shiftKey: false });
+          }
         },
         enable() {
           if (this.active) {
@@ -1508,7 +1558,9 @@ function buildElementPickerScript(bindingName: string): string {
           this.locked = false;
           this.hide();
           doc.addEventListener('mousemove', this.move, true);
+          doc.addEventListener('mousedown', this.mousedown, true);
           doc.addEventListener('click', this.click, true);
+          doc.addEventListener('contextmenu', this.contextmenu, true);
           win.addEventListener('scroll', this.sync, true);
           win.addEventListener('resize', this.sync, true);
           doc.addEventListener('keydown', this.keydown, true);
@@ -1522,7 +1574,9 @@ function buildElementPickerScript(bindingName: string): string {
           }
           this.active = false;
           doc.removeEventListener('mousemove', this.move, true);
+          doc.removeEventListener('mousedown', this.mousedown, true);
           doc.removeEventListener('click', this.click, true);
+          doc.removeEventListener('contextmenu', this.contextmenu, true);
           win.removeEventListener('scroll', this.sync, true);
           win.removeEventListener('resize', this.sync, true);
           doc.removeEventListener('keydown', this.keydown, true);
@@ -1540,7 +1594,9 @@ function buildElementPickerScript(bindingName: string): string {
       };
 
       state.move = state.move.bind(state);
+      state.mousedown = state.mousedown.bind(state);
       state.click = state.click.bind(state);
+      state.contextmenu = state.contextmenu.bind(state);
       state.setActiveProperty = state.setActiveProperty.bind(state);
       state.setTool = state.setTool.bind(state);
       state.setOverlayState = state.setOverlayState.bind(state);
@@ -1554,109 +1610,6 @@ function buildElementPickerScript(bindingName: string): string {
     win[stateKey].enable();
     return true;
   })();`
-}
-
-// ─── WebSocket CDP 客户端（模式 B）─────────────────
-
-export class CDPClient implements ICDPTransport {
-  private ws: WebSocket | null = null
-  private messageId = 0
-  private pendingMessages = new Map<number, { resolve: (value: any) => void; reject: (error: any) => void }>()
-  private eventListeners = new Map<string, Set<EventCallback>>()
-  private _connected = false
-
-  get connected(): boolean {
-    return this._connected
-  }
-
-  async connect(cdpUrl: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(cdpUrl)
-
-      this.ws.on('open', () => {
-        this._connected = true
-        resolve()
-      })
-
-      this.ws.on('error', (error) => {
-        reject(error)
-      })
-
-      this.ws.on('message', (data: WebSocket.Data) => {
-        this.handleMessage(data.toString())
-      })
-
-      this.ws.on('close', () => {
-        this._connected = false
-        this.emit('disconnected', {})
-      })
-    })
-  }
-
-  on(event: string, callback: EventCallback): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set())
-    }
-    this.eventListeners.get(event)!.add(callback)
-  }
-
-  off(event: string, callback: EventCallback): void {
-    this.eventListeners.get(event)?.delete(callback)
-  }
-
-  private emit(event: string, params: any): void {
-    const listeners = this.eventListeners.get(event)
-    if (listeners) {
-      for (const cb of listeners) {
-        try { cb(params) } catch (err) { console.error(`CDP event error [${event}]:`, err) }
-      }
-    }
-  }
-
-  private handleMessage(data: string): void {
-    try {
-      const msg = JSON.parse(data)
-      if (msg.method && msg.id === undefined) {
-        this.emit(msg.method, msg.params || {})
-        return
-      }
-      if (msg.id !== undefined) {
-        const pending = this.pendingMessages.get(msg.id)
-        if (pending) {
-          this.pendingMessages.delete(msg.id)
-          msg.error ? pending.reject(new Error(msg.error.message)) : pending.resolve(msg.result)
-        }
-      }
-    } catch (err) {
-      console.error('CDP parse error:', err)
-    }
-  }
-
-  async send(method: string, params?: any): Promise<any> {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new Error('CDP not connected')
-    }
-    const id = ++this.messageId
-    return new Promise((resolve, reject) => {
-      this.pendingMessages.set(id, { resolve, reject })
-      this.ws!.send(JSON.stringify({ id, method, params }))
-      setTimeout(() => {
-        if (this.pendingMessages.has(id)) {
-          this.pendingMessages.delete(id)
-          reject(new Error(`CDP timeout: ${method}`))
-        }
-      }, 10000)
-    })
-  }
-
-  disconnect(): void {
-    if (this.ws) {
-      this.ws.close()
-      this.ws = null
-    }
-    this._connected = false
-    this.eventListeners.clear()
-  }
 }
 
 // ─── CDP 便捷方法（所有传输通用）──────────────────

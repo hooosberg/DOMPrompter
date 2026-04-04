@@ -12,14 +12,14 @@ function patchMainJs() {
     let content = readFileSync(mainPath, 'utf-8')
 
     // Check if already patched
-    if (content.includes('const { app, BrowserWindow, BrowserView, ipcMain, dialog, screen } = electron;')) {
+    if (content.includes('const { app, BrowserWindow, BrowserView, ipcMain, dialog, Menu, nativeTheme, screen, shell } = electron;')) {
       return
     }
 
     // Add destructuring after electron require — must cover every named import used in main.ts
     content = content.replace(
       'const electron = require("electron");',
-      'const electron = require("electron");\nconst { app, BrowserWindow, BrowserView, ipcMain, dialog, screen } = electron;'
+      'const electron = require("electron");\nconst { app, BrowserWindow, BrowserView, ipcMain, dialog, Menu, nativeTheme, screen, shell } = electron;'
     )
 
     // Replace remaining electron.* references that Rollup emits for namespace access
@@ -28,7 +28,10 @@ function patchMainJs() {
     content = content.replace(/electron\.BrowserView\b/g, 'BrowserView')
     content = content.replace(/electron\.ipcMain\b/g, 'ipcMain')
     content = content.replace(/electron\.dialog\b/g, 'dialog')
+    content = content.replace(/electron\.Menu\b/g, 'Menu')
+    content = content.replace(/electron\.nativeTheme\b/g, 'nativeTheme')
     content = content.replace(/electron\.screen\b/g, 'screen')
+    content = content.replace(/electron\.shell\b/g, 'shell')
 
     writeFileSync(mainPath, content, 'utf-8')
     console.log('✓ Patched dist-electron/main.js')
@@ -39,6 +42,7 @@ function patchMainJs() {
 
 export default defineConfig({
   server: {
+    host: '127.0.0.1',
     port: 15173,
     strictPort: true,
   },
@@ -63,7 +67,7 @@ export default defineConfig({
             outDir: 'dist-electron',
             minify: false,
             rollupOptions: {
-              external: ['electron', '@visual-inspector/core'],
+              external: ['electron'],
               output: {
                 format: 'cjs',
                 entryFileNames: '[name].js',
@@ -73,7 +77,7 @@ export default defineConfig({
           },
           resolve: {
             alias: {
-              '@visual-inspector/core': resolve(__dirname, '../core/dist/index.js')
+              '@visual-inspector/core': resolve(__dirname, '../core/src/index.ts')
             }
           }
         }
@@ -87,7 +91,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron', '@visual-inspector/core']
+              external: ['electron']
             }
           }
         }

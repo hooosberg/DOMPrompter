@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "ビジュアルDOMインスペクターとAIプロンプトジェネレーター。要素を選択し、スタイルを視覚的に調整し、Cursor、Claude Code、Codexなどのための正確なAIプロンプトを生成します。",
+    "website": "ウェブサイト",
+    "support": "サポートセンター",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. All rights reserved."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "すべての機能を解放",
+    "subtitle": "検査したすべてのページの正確なAIプロンプトをエクスポート。一度の購入で無制限の精度。",
+    "lifetimeBadge": "永久ライセンス",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "無制限のページプロンプトエクスポート",
+    "benefitExportDesc": "要素セレクター、スタイル差分、アノテーションを一つの構造化出力に統合してエクスポート。",
+    "benefitPrecisionTitle": "スタイル差分トラッキング",
+    "benefitPrecisionDesc": "CSSの微調整を自動で前後記録 — width: 200px \u2192 300px。AIが正確に実行。",
+    "benefitTagsTitle": "自然言語タグ",
+    "benefitTagsDesc": "要素に意図を注釈：「ボタンの色が暗すぎる」「余白が広すぎる」。AIがデザイン意図を理解。",
+    "benefitFutureTitle": "すべての将来のPro機能を含む",
+    "benefitFutureDesc": "一度の購入で今後追加されるすべてのPro機能を永久利用。サブスクなし。",
+    "unlockNow": "Proにアップグレード",
+    "cancel": "キャンセル",
+    "purchasing": "購入中...",
+    "purchaseFailed": "購入に失敗しました。もう一度お試しください。",
+    "purchaseCancelled": "購入がキャンセルされました。",
+    "restorePurchase": "購入を復元",
+    "restoring": "復元中...",
+    "restoreNotFound": "以前の購入が見つかりませんでした。",
+    "restoreFailed": "復元に失敗しました。もう一度お試しください。",
+    "ctaNote": "一回限りの支払い。サブスクリプション料金なし。Pro機能は永久にアンロック。"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "Ispettore DOM visuale e generatore di prompt IA. Seleziona elementi, regola gli stili visivamente, genera prompt IA precisi per Cursor, Claude Code, Codex e altri.",
+    "website": "Sito web",
+    "support": "Centro assistenza",
+    "privacy": "Informativa sulla privacy",
+    "terms": "Termini di servizio",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. Tutti i diritti riservati."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "Sblocca tutte le funzionalit\u00e0",
+    "subtitle": "Esporta prompt IA precisi per ogni pagina ispezionata. Un acquisto, precisione illimitata.",
+    "lifetimeBadge": "Licenza a vita",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "Esportazione illimitata di prompt",
+    "benefitExportDesc": "Esporta prompt combinando selettori, differenze di stile e annotazioni in un output strutturato.",
+    "benefitPrecisionTitle": "Tracciamento differenze di stile",
+    "benefitPrecisionDesc": "Ogni regolazione CSS registrata automaticamente prima/dopo \u2014 width: 200px \u2192 300px. Chiaro per l'IA.",
+    "benefitTagsTitle": "Tag in linguaggio naturale",
+    "benefitTagsDesc": "Annota elementi con intento: \u201ccolore del pulsante troppo scuro\u201d, \u201cspaziatura troppo ampia\u201d. L'IA capisce il tuo design.",
+    "benefitFutureTitle": "Tutte le future funzionalit\u00e0 Pro",
+    "benefitFutureDesc": "Acquisto unico per tutte le funzionalit\u00e0 Pro attuali e future. Senza abbonamento.",
+    "unlockNow": "Passa a Pro",
+    "cancel": "Annulla",
+    "purchasing": "Acquisto in corso...",
+    "purchaseFailed": "Acquisto fallito. Riprova.",
+    "purchaseCancelled": "L'acquisto \u00e8 stato annullato.",
+    "restorePurchase": "Ripristina acquisto",
+    "restoring": "Ripristino...",
+    "restoreNotFound": "Nessun acquisto precedente trovato.",
+    "restoreFailed": "Ripristino fallito. Riprova.",
+    "ctaNote": "Pagamento unico. Nessun costo di abbonamento. Le funzionalit\u00e0 Pro restano sbloccate in modo permanente."
+  }
+}

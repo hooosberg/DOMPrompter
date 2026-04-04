@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@visual-inspector/core": ["../core/src/index.ts"]
     }
   },
   "include": ["src", "electron"],

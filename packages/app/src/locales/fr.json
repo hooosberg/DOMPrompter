@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "Inspecteur DOM visuel et g\u00e9n\u00e9rateur de prompts IA. S\u00e9lectionnez des \u00e9l\u00e9ments, ajustez les styles visuellement, g\u00e9n\u00e9rez des prompts IA pr\u00e9cis pour Cursor, Claude Code, Codex et plus.",
+    "website": "Site web",
+    "support": "Centre d'aide",
+    "privacy": "Politique de confidentialit\u00e9",
+    "terms": "Conditions d'utilisation",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. Tous droits r\u00e9serv\u00e9s."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "D\u00e9bloquer toutes les fonctionnalit\u00e9s",
+    "subtitle": "Exportez des prompts IA pr\u00e9cis pour chaque page inspect\u00e9e. Un seul achat, une pr\u00e9cision illimit\u00e9e.",
+    "lifetimeBadge": "Licence \u00e0 vie",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "Export illimit\u00e9 de prompts",
+    "benefitExportDesc": "Exportez des prompts combinant s\u00e9lecteurs, diff\u00e9rences de style et annotations en une sortie structur\u00e9e.",
+    "benefitPrecisionTitle": "Suivi des diff\u00e9rences de style",
+    "benefitPrecisionDesc": "Chaque ajustement CSS auto-enregistr\u00e9 avant/apr\u00e8s \u2014 width: 200px \u2192 300px. Limpide pour l'IA.",
+    "benefitTagsTitle": "Tags en langage naturel",
+    "benefitTagsDesc": "Annotez les \u00e9l\u00e9ments : \u00ab couleur du bouton trop fonc\u00e9e \u00bb, \u00ab espacement trop large \u00bb. L'IA comprend votre intention.",
+    "benefitFutureTitle": "Toutes les futures fonctionnalit\u00e9s Pro",
+    "benefitFutureDesc": "Achat unique pour chaque fonctionnalit\u00e9 Pro actuelle et future. Sans abonnement.",
+    "unlockNow": "Passer \u00e0 Pro",
+    "cancel": "Annuler",
+    "purchasing": "Achat en cours...",
+    "purchaseFailed": "L'achat a \u00e9chou\u00e9. Veuillez r\u00e9essayer.",
+    "purchaseCancelled": "L'achat a \u00e9t\u00e9 annul\u00e9.",
+    "restorePurchase": "Restaurer l'achat",
+    "restoring": "Restauration...",
+    "restoreNotFound": "Aucun achat pr\u00e9c\u00e9dent trouv\u00e9.",
+    "restoreFailed": "La restauration a \u00e9chou\u00e9. Veuillez r\u00e9essayer.",
+    "ctaNote": "Paiement unique. Pas de frais d'abonnement. Les fonctionnalit\u00e9s Pro restent d\u00e9bloqu\u00e9es en permanence."
+  }
+}

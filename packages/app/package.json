@@ -1,29 +1,92 @@
 {
-  "name": "@visual-inspector/app",
+  "name": "domprompter",
   "version": "0.1.0",
-  "description": "Visual Inspector Electron application",
+  "description": "DOMPrompter Electron application",
+  "productName": "DOMPrompter",
+  "author": "maohuhu",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
     "electron:dev": "vite",
-    "build": "tsc && vite build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc && vite build",
+    "build:mas": "tsc && vite build && electron-builder --mac mas",
     "clean": "rm -rf dist dist-electron"
   },
   "dependencies": {
     "@visual-inspector/core": "workspace:*",
+    "i18next": "^24.2.3",
+    "i18next-browser-languagedetector": "^8.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-i18next": "^15.4.1",
     "react-moveable": "^0.56.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.7.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^28.3.3",
     "electron-builder": "^25.1.8",
+    "jsdom": "^25.0.1",
     "typescript": "^5.7.3",
     "vite": "^5.4.21",
     "vite-plugin-electron": "^0.29.0",
-    "vite-plugin-electron-renderer": "^0.14.6"
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^2.1.9"
+  },
+  "build": {
+    "appId": "com.domprompter.app",
+    "productName": "DOMPrompter",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "mas"
+      ],
+      "minimumSystemVersion": "12.0"
+    },
+    "mas": {
+      "type": "distribution",
+      "target": {
+        "target": "mas",
+        "arch": [
+          "arm64"
+        ]
+      },
+      "entitlements": "build/entitlements.mas.plist",
+      "entitlementsInherit": "build/entitlements.mas.inherit.plist",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "minimumSystemVersion": "12.0"
+    },
+    "extraResources": [
+      { "from": "build/en.lproj", "to": "en.lproj" },
+      { "from": "build/zh-Hans.lproj", "to": "zh-Hans.lproj" },
+      { "from": "build/zh-Hant.lproj", "to": "zh-Hant.lproj" },
+      { "from": "build/ja.lproj", "to": "ja.lproj" },
+      { "from": "build/ko.lproj", "to": "ko.lproj" },
+      { "from": "build/fr.lproj", "to": "fr.lproj" },
+      { "from": "build/de.lproj", "to": "de.lproj" },
+      { "from": "build/es.lproj", "to": "es.lproj" },
+      { "from": "build/pt.lproj", "to": "pt.lproj" },
+      { "from": "build/it.lproj", "to": "it.lproj" },
+      { "from": "build/ru.lproj", "to": "ru.lproj" },
+      { "from": "build/ar.lproj", "to": "ar.lproj" }
+    ]
+  },
+  "masReview": {
+    "productId": "com.domprompter.app.pro.lifetime",
+    "supportUrl": "https://hooosberg.github.io/DOMPrompter/support.html",
+    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/privacy.html"
   }
 }

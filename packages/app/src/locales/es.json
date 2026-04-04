@@ -1,0 +1,36 @@
+{
+  "about": {
+    "description": "Inspector DOM visual y generador de prompts IA. Selecciona elementos, ajusta estilos visualmente, genera prompts IA precisos para Cursor, Claude Code, Codex y m\u00e1s.",
+    "website": "Sitio web",
+    "support": "Centro de soporte",
+    "privacy": "Pol\u00edtica de privacidad",
+    "terms": "T\u00e9rminos de servicio",
+    "github": "GitHub",
+    "copyright": "\u00a9 2025 hooosberg. Todos los derechos reservados."
+  },
+  "paywall": {
+    "kicker": "DOMPROMPTER PRO",
+    "title": "Desbloquea todo el poder",
+    "subtitle": "Exporta prompts IA precisos para cada p\u00e1gina que inspeccionas. Una compra, precisi\u00f3n ilimitada.",
+    "lifetimeBadge": "Licencia de por vida",
+    "priceValue": "$19.99",
+    "benefitExportTitle": "Exportaci\u00f3n ilimitada de prompts",
+    "benefitExportDesc": "Exporta prompts combinando selectores, diferencias de estilo y anotaciones en una salida estructurada.",
+    "benefitPrecisionTitle": "Seguimiento de diferencias de estilo",
+    "benefitPrecisionDesc": "Cada ajuste CSS registrado autom\u00e1ticamente antes/despu\u00e9s \u2014 width: 200px \u2192 300px. Claro para la IA.",
+    "benefitTagsTitle": "Tags en lenguaje natural",
+    "benefitTagsDesc": "Anota elementos con intenci\u00f3n: \u201ccolor del bot\u00f3n muy oscuro\u201d, \u201cespaciado muy amplio\u201d. La IA entiende tu dise\u00f1o.",
+    "benefitFutureTitle": "Todas las futuras funciones Pro",
+    "benefitFutureDesc": "Compra \u00fanica para todas las funciones Pro actuales y futuras. Sin suscripci\u00f3n.",
+    "unlockNow": "Actualizar a Pro",
+    "cancel": "Cancelar",
+    "purchasing": "Comprando...",
+    "purchaseFailed": "La compra fall\u00f3. Int\u00e9ntalo de nuevo.",
+    "purchaseCancelled": "La compra fue cancelada.",
+    "restorePurchase": "Restaurar compra",
+    "restoring": "Restaurando...",
+    "restoreNotFound": "No se encontr\u00f3 ninguna compra anterior.",
+    "restoreFailed": "La restauraci\u00f3n fall\u00f3. Int\u00e9ntalo de nuevo.",
+    "ctaNote": "Pago \u00fanico. Sin tarifas de suscripci\u00f3n. Las funciones Pro permanecen desbloqueadas permanentemente."
+  }
+}
