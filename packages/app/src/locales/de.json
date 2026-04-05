@@ -1,36 +1,617 @@
 {
   "about": {
-    "description": "Visueller DOM-Inspektor und KI-Prompt-Generator. Elemente ausw\u00e4hlen, Styles visuell anpassen, pr\u00e4zise KI-Prompts f\u00fcr Cursor, Claude Code, Codex und mehr generieren.",
-    "website": "Website",
+    "description": "Visueller DOM-Inspektor und KI-Prompt-Generator. Elemente auswählen, Styles visuell anpassen, präzise KI-Prompts für Cursor, Claude Code, Codex und mehr generieren.",
+    "website": "Webseite",
     "support": "Hilfecenter",
     "privacy": "Datenschutzrichtlinie",
     "terms": "Nutzungsbedingungen",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. Alle Rechte vorbehalten."
+    "copyright": "© 2025 hooosberg. Alle Rechte vorbehalten.",
+    "descFeatures": "Präzise Elementauswahl mit CSS-Selektoren • Nachverfolgung von Stiländerungen (vorher/nachher) • Tags in natürlicher Sprache • Sofortiges visuelles Feedback mit Rückgängig/Wiederholen • Funktioniert mit Cursor, Claude Code, Codex, Copilot und mehr",
+    "descPrivacy": "Lokal zuerst, vollständige Privatsphäre. Die gesamte Inspektion und Prompt-Erstellung erfolgt lokal auf Ihrem Mac.",
+    "version": "Version {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
     "title": "Alle Funktionen freischalten",
-    "subtitle": "Exportieren Sie pr\u00e4zise KI-Prompts f\u00fcr jede inspizierte Seite. Einmaliger Kauf, unbegrenzte Pr\u00e4zision.",
+    "subtitle": "Exportieren Sie präzise KI-Prompts für jede inspizierte Seite. Einmaliger Kauf, unbegrenzte Präzision.",
     "lifetimeBadge": "Lebenslange Lizenz",
     "priceValue": "$19.99",
     "benefitExportTitle": "Unbegrenzter Seitenexport",
     "benefitExportDesc": "Exportieren Sie Prompts mit Selektoren, Style-Diffs und Annotationen in einer strukturierten Ausgabe.",
     "benefitPrecisionTitle": "Style-Diff-Tracking",
-    "benefitPrecisionDesc": "Jede CSS-Anpassung automatisch als Vorher/Nachher erfasst \u2014 width: 200px \u2192 300px. Glasklar f\u00fcr KI.",
-    "benefitTagsTitle": "Nat\u00fcrlichsprachige Tags",
-    "benefitTagsDesc": "Elemente annotieren: \u201eButtonfarbe zu dunkel\u201c, \u201eAbstand zu gro\u00df\u201c. Die KI versteht Ihre Designabsicht.",
-    "benefitFutureTitle": "Alle zuk\u00fcnftigen Pro-Funktionen",
-    "benefitFutureDesc": "Einmaliger Kauf f\u00fcr alle aktuellen und zuk\u00fcnftigen Pro-Funktionen. Ohne Abo.",
+    "benefitPrecisionDesc": "Jede CSS-Anpassung automatisch als Vorher/Nachher erfasst — width: 200px → 300px. Glasklar für KI.",
+    "benefitTagsTitle": "Natürlichsprachige Tags",
+    "benefitTagsDesc": "Elemente annotieren: „Buttonfarbe zu dunkel“, „Abstand zu groß“. Die KI versteht Ihre Designabsicht.",
+    "benefitFutureTitle": "Alle zukünftigen Pro-Funktionen",
+    "benefitFutureDesc": "Einmaliger Kauf für alle aktuellen und zukünftigen Pro-Funktionen. Ohne Abo.",
     "unlockNow": "Auf Pro upgraden",
     "cancel": "Abbrechen",
-    "purchasing": "Kauf l\u00e4uft...",
+    "purchasing": "Kauf läuft...",
     "purchaseFailed": "Kauf fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "purchaseCancelled": "Kauf wurde abgebrochen.",
     "restorePurchase": "Kauf wiederherstellen",
     "restoring": "Wiederherstellung...",
-    "restoreNotFound": "Kein fr\u00fcherer Kauf gefunden.",
+    "restoreNotFound": "Kein früherer Kauf gefunden.",
     "restoreFailed": "Wiederherstellung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "ctaNote": "Einmalige Zahlung. Keine Abonnementgeb\u00fchren. Pro-Funktionen bleiben dauerhaft freigeschaltet."
+    "ctaNote": "Einmalige Zahlung. Keine Abonnementgebühren. Pro-Funktionen bleiben dauerhaft freigeschaltet."
+  },
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "UI visuell feinjustieren, präzise Prompts für Vibe Coding erzeugen"
+  },
+  "topbar": {
+    "refresh": "Aktualisieren",
+    "load": "Laden",
+    "urlPlaceholder": "Localhost-URL eingeben oder lokales HTML öffnen",
+    "addressLabel": "Seitenadresse",
+    "settings": "Einstellungen",
+    "connected": "Verbunden",
+    "connecting": "Verbindung wird hergestellt",
+    "disconnected": "Nicht verbunden",
+    "hideToolbar": "Werkzeugleiste ausblenden",
+    "showToolbar": "Werkzeugleiste einblenden",
+    "disconnect": "Trennen"
+  },
+  "onboarding": {
+    "chooseTitle": "Wählen Sie, wie Sie starten möchten",
+    "chooseDesc": "Verwenden Sie einen lokalen Dev-Server oder öffnen Sie direkt eine statische HTML-Datei.",
+    "serverMode": "Servermodus",
+    "serverDesc": "Ihr Projekt läuft bereits auf localhost",
+    "serverFoot": "Geführte Einrichtung in 3 Schritten",
+    "htmlMode": "HTML-Modus",
+    "htmlDesc": "Eine lokale HTML-Datei öffnen und sofort inspizieren",
+    "htmlFoot": "Datei auswählen und starten",
+    "htmlTitle": "HTML-Modus",
+    "htmlGuide": "Ideal für Einzelseiten, statische Exporte und lokale Prototypen. Öffnen Sie eine Datei direkt oder setzen Sie über den Verlauf fort.",
+    "htmlGuideTitle": "Lokales HTML direkt öffnen",
+    "htmlGuideBody": "Sie müssen keinen Dev-Server starten. Wählen Sie einfach eine HTML-Datei aus und DOMPrompter lädt sie direkt zur Inspektion in die Arbeitsfläche.",
+    "htmlHistory": "Letzter Verlauf",
+    "htmlHistoryEmpty": "Zuletzt wurden keine HTML-Dateien geöffnet.",
+    "htmlOpenAction": "HTML-Datei öffnen",
+    "htmlRecentAction": "Erneut öffnen",
+    "serverTitle": "Servermodus",
+    "serverGuide": "Starten Sie Ihr Webprojekt unter der Standard-Debug-URL und laden Sie es dann über die Adressleiste oben.",
+    "aiPrompt": "KI-Setup-Prompt kopieren",
+    "aiPromptDesc": "Dieser Prompt konzentriert sich nur auf den Start der Web-App, die Vereinheitlichung der URL und die verpflichtende Verifizierung durch den Assistenten.",
+    "copyPrompt": "Prompt kopieren",
+    "copied": "Kopiert",
+    "startServer": "Dev-Server starten",
+    "startServerDesc": "Führen Sie npm run dev im Projektverzeichnis aus und stellen Sie sicher, dass die ausgegebene localhost-Adresse der Standard-Debug-URL entspricht.",
+    "copyCommand": "Befehl kopieren",
+    "loadPage": "Seite laden",
+    "loadPageDesc": "Wenn das Skript korrekt angepasst wurde, sollte die Standardadresse unten sofort funktionieren. Andernfalls ändern Sie die Adresse in der oberen Leiste.",
+    "topBarHint": "Sie müssen die Adresse nicht mehr im Assistenten eingeben. Verwenden Sie die obere Adressleiste zum Aktualisieren, schnellen Anpassen und Neuladen.",
+    "loadPreset": "Standardadresse laden",
+    "loadButton": "Seite laden",
+    "exit": "Beenden",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "aiSetupPrompt": "Ich verwende DOMPrompter, um ein Webprojekt zu debuggen. Bitte passen Sie die Startskripte des Projekts an die Standard-Debug-URL von DOMPrompter an, damit ich direkt auf „Laden“ klicken kann, ohne eine URL manuell zu kopieren und einzufügen.\n\nIdentifizieren Sie zunächst, um welche Art von Webprojekt es sich handelt (React / Vue / Svelte / Next.js / statisches HTML / anderes Frontend-Projekt), und konzentrieren Sie sich dann nur auf ein Ziel: Die Webseite muss im Browser korrekt starten. Ändern Sie möglichst nur die Skripte in package.json und nicht die Geschäftslogik.\n\nZiel:\n- Die Seite soll direkt unter {{defaultUrl}} geöffnet werden können\n- Die Standard-URL in Schritt 3 von DOMPrompter soll erfolgreich geladen werden\n- Nach Ihren Änderungen müssen Sie das Projekt selbst starten und verifizieren\n\nAnforderungen:\n\n1. Skriptanpassung\n- Stellen Sie sicher, dass ein dev-Skript vorhanden ist\n- Der Dev-Server muss auf localhost lauschen\n- Vereinheitlichen Sie die finale URL möglichst auf {{defaultUrl}}\n- Für Vite ist vite --host localhost --port 5173 akzeptabel\n- Für Next.js ist next dev -H localhost -p 5173 akzeptabel\n- Für reines HTML ohne package.json erstellen Sie bitte eine package.json und fügen \"dev\": \"npx serve . -l 5173\" hinzu\n\n2. Einschränkungen\n- Ändern Sie keine Geschäftslogik\n- Behalten Sie alle vorhandenen Skripte bei\n- Wenn serve oder andere notwendige Abhängigkeiten fehlen, installieren Sie sie\n- Konzentrieren Sie sich nur auf das Web-Debugging. Behandeln Sie weder Electron noch Desktop-Workflows oder Remote-Debugging-Ports\n\n3. Erforderliche Verifizierung\n- Führen Sie npm run dev aus (oder den entsprechenden Befehl Ihres Paketmanagers)\n- Bestätigen Sie, dass im Terminal eine localhost-URL ausgegeben wird\n- Prüfen Sie möglichst, ob die finale URL genau {{defaultUrl}} ist\n- Beenden Sie den Prozess erst, wenn Sie bestätigt haben, dass er fehlerfrei startet\n\n4. Die finale Ausgabe muss enthalten\n- Den erkannten Typ des Webprojekts\n- Die von Ihnen geänderten Skripte\n- Die endgültige URL, die direkt geöffnet werden kann\n- Ihr Verifizierungsergebnis\n- Falls {{defaultUrl}} nicht möglich ist, erklären Sie warum und nennen Sie die exakte funktionierende Fallback-URL\n\nBeginnen Sie jetzt direkt mit Analyse und Änderungen. Die Aufgabe ist erst abgeschlossen, nachdem Sie selbst verifiziert haben, dass die Web-App erfolgreich startet.",
+    "philosophy": {
+      "eyebrow": "Zwischen KI und Code",
+      "title": "Visuelle Feinanpassungen in Anweisungen verwandeln, die KI präzise ausführen kann",
+      "body": "DOMPrompter ist ein visueller Assistent zwischen KI und Produktionscode. Er schreibt Quellcode nicht selbst um. Stattdessen hilft er Ihnen, Ziele zu markieren, Parameteränderungen festzuhalten und strukturierte Prompts zusammenzustellen, die KI korrekt umsetzen kann.",
+      "flow": {
+        "mark": "Markieren",
+        "tune": "Feinjustieren",
+        "generate": "Erzeugen",
+        "handToAi": "An KI übergeben"
+      },
+      "footerLead": "Präzise auswählen, präzise beschreiben und dann an die KI übergeben.",
+      "footerBody": "Das Seiten-Overlay liefert unmittelbares Feedback. Die Werkbank hält den Zustand dauerhaft fest. So bleibt der Workflow leicht, schnell und vertrauenswürdig.",
+      "modeHint": "Wählen Sie, wie Sie beginnen möchten",
+      "serverBadge": "Empfohlen",
+      "htmlBadge": "Statische Seite"
+    }
+  },
+  "panel": {
+    "ready": "Bereit zur Inspektion",
+    "readyDesc": "Fahren Sie über ein Element auf der Seite und klicken Sie es an, um seine Styles in die Werkbank zu übernehmen."
+  },
+  "toast": {
+    "settingsSoon": "Das Einstellungsfenster kommt in der nächsten Phase",
+    "connected": "Mit der Seite verbunden",
+    "htmlOpened": "Lokales HTML geöffnet",
+    "pageRefreshed": "Seite aktualisiert",
+    "connectionFailed": "Verbindung fehlgeschlagen",
+    "loadFailed": "Seite konnte nicht geladen werden",
+    "debuggerFailed": "Debugger konnte nicht verbunden werden",
+    "htmlFailed": "HTML-Datei konnte nicht geöffnet werden",
+    "tagRemoved": "Tag entfernt",
+    "promptCopied": "Seiten-Prompt kopiert",
+    "noPrompt": "Es ist noch kein Seiten-Prompt verfügbar",
+    "elementCssCopied": "Element-CSS kopiert"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "appearance": "Darstellung",
+    "language": "Sprache",
+    "shortcuts": "Kurzbefehle",
+    "license": "Lizenz",
+    "about": "Über",
+    "theme": "Thema",
+    "themeLight": "Hell",
+    "themeDark": "Dunkel",
+    "themeAuto": "Automatisch",
+    "accent": "Akzentfarbe",
+    "glassOpacity": "Glas-Deckkraft",
+    "close": "Schließen",
+    "currentPlan": "Aktueller Plan",
+    "free": "Kostenlos",
+    "pro": "Pro",
+    "buyPro": "Pro kaufen",
+    "restore": "Kauf wiederherstellen"
+  },
+  "license": {
+    "promoTitle": "DOMPrompter Pro freischalten",
+    "promoDesc": "Holen Sie das Maximum aus Ihrem visuellen Inspektions-Workflow heraus. Exportieren Sie vollständige Seiten-Prompts, verfolgen Sie jede Stiländerung und annotieren Sie in natürlicher Sprache.",
+    "benefitExport": "Unbegrenzter Export von Seiten-Prompts",
+    "benefitDiff": "Nachverfolgung von Stiländerungen (vorher/nachher)",
+    "benefitTags": "Tags und Anmerkungen in natürlicher Sprache",
+    "benefitFuture": "Alle zukünftigen Pro-Funktionen inklusive",
+    "upgradeCta": "Auf Pro upgraden — $19.99",
+    "ctaNote": "Einmalige Zahlung. Kein Abo. Pro-Funktionen bleiben dauerhaft freigeschaltet.",
+    "proThanks": "Danke, dass Sie DOMPrompter unterstützen! Alle Pro-Funktionen sind freigeschaltet. Ihr einmaliger Kauf deckt auch jede zukünftige Pro-Funktion ab, die wir hinzufügen.",
+    "purchase": "Pro kaufen",
+    "restore": "Kauf wiederherstellen",
+    "processing": "Wird verarbeitet..."
+  },
+  "shortcuts": {
+    "openSettings": "Einstellungen öffnen",
+    "openHtml": "HTML-Datei öffnen",
+    "reload": "Seite neu laden",
+    "forceReload": "Neu laden erzwingen",
+    "toggleToolbar": "Werkzeugleiste umschalten",
+    "copyPrompt": "Seiten-Prompt kopieren",
+    "copyCss": "Element-CSS kopieren",
+    "focusAddress": "Adressleiste fokussieren",
+    "newWindow": "Neues Fenster",
+    "selectParent": "Elternelement auswählen",
+    "selectChild": "Kindelement auswählen",
+    "escape": "Schließen / Auswahl aufheben"
+  },
+  "common": {
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "collapse": "Einklappen",
+    "expand": "Ausklappen",
+    "tip": "Tipp"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "Alle",
+      "top": "Oben",
+      "right": "Rechts",
+      "bottom": "Unten",
+      "left": "Links"
+    },
+    "spacing": {
+      "allSides": "alle Seiten",
+      "topSide": "oben",
+      "rightSide": "rechts",
+      "bottomSide": "unten",
+      "leftSide": "links"
+    },
+    "sections": {
+      "size": {
+        "title": "Größe",
+        "hint": "Legen Sie zuerst die Maße des Containers fest und verfeinern Sie dann die innere Struktur."
+      },
+      "padding": {
+        "title": "Innenabstand",
+        "hint": "Der Innenabstand ist meist der schnellste Weg, den inneren Freiraum eines Containers anzupassen."
+      },
+      "margin": {
+        "title": "Außenabstand",
+        "hint": "Der Abstand zwischen Modulen entsteht meist über den Außenabstand."
+      },
+      "layout": {
+        "title": "Layout",
+        "hint": "Nutzen Sie Display, Gap und Ausrichtung, um strukturelle Änderungen schnell zu erkennen."
+      },
+      "position": {
+        "title": "Position",
+        "hint": "Halten Sie das Layout zunächst stabil und nutzen Sie Positionierung und Ebenen erst für präzise Korrekturen."
+      },
+      "border": {
+        "title": "Rahmen & Radius",
+        "hint": "Rahmen, Eckenradius und Schatten bestimmen den visuellen Charakter des Containers."
+      },
+      "background": {
+        "title": "Hintergrund",
+        "hint": "Hintergrundfarbe und Deckkraft eignen sich ideal, um Hierarchien schnell zu testen."
+      },
+      "overflow": {
+        "title": "Überlauf & Zuschnitt",
+        "hint": "Hilfreich beim Umgang mit Zuschnitt, Scrollen und Mediencontainern."
+      },
+      "typography": {
+        "title": "Typografie",
+        "hint": "Feinjustieren Sie Text mit Schriftgröße, Zeilenhöhe, Gewichtung und Ausrichtung."
+      },
+      "image": {
+        "title": "Bild",
+        "hint": "Beginnen Sie bei Bildern mit Anpassungsmodus, Radius und Größe."
+      }
+    },
+    "options": {
+      "display": {
+        "block": "Block"
+      },
+      "align": {
+        "start": "Start",
+        "center": "Mitte",
+        "end": "Ende",
+        "spaceBetween": "Zwischenraum",
+        "stretch": "Strecken"
+      },
+      "position": {
+        "static": "Statisch",
+        "relative": "Relativ",
+        "absolute": "Absolut",
+        "fixed": "Fixiert"
+      },
+      "overflow": {
+        "visible": "Sichtbar",
+        "hidden": "Ausgeblendet",
+        "auto": "Scrollbar"
+      },
+      "textAlign": {
+        "left": "Links",
+        "center": "Mitte",
+        "right": "Rechts"
+      },
+      "objectFit": {
+        "cover": "Füllen",
+        "contain": "Einpassen",
+        "fill": "Strecken"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "Breite",
+        "helperText": "Passen Sie die endgültige Breite des Containers an. Praktisch für Karten, Panels und Medienbereiche mit fester Größe.",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "Höhe",
+        "helperText": "Passen Sie die endgültige Höhe des Containers an. Ideal für Titelbereiche, Karten und Medienrahmen.",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "Passen Sie den oberen Abstand zwischen Inhalt und Containerrahmen an.",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "Passen Sie den inneren Freiraum auf der rechten Seite des Containers an.",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "Passen Sie den unteren Innenabstand an, damit der Block optisch stabiler wirkt.",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "Passen Sie den inneren Freiraum auf der linken Seite des Containers an.",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "Passen Sie den äußeren Abstand zum darüberliegenden Element an.",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "Passen Sie den äußeren Abstand auf der rechten Seite an.",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "Passen Sie den vertikalen Abstand zum nächsten Element an.",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "Passen Sie den äußeren Abstand auf der linken Seite an.",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "Anzeige",
+        "helperText": "Wechseln Sie den Layoutmodus des Containers. Ausrichtung und Gap funktionieren wirklich nur in Flex oder Grid."
+      },
+      "gap": {
+        "label": "Gap",
+        "helperText": "Passen Sie den Abstand zwischen Kindelementen an. Funktioniert nur in Flex oder Grid.",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "Hauptachse",
+        "helperText": "Steuern Sie, wie Kindelemente entlang der Hauptachse verteilt werden."
+      },
+      "alignItems": {
+        "label": "Querachse",
+        "helperText": "Steuern Sie, wie Kindelemente entlang der Querachse ausgerichtet werden."
+      },
+      "position": {
+        "label": "Positionsmodus",
+        "helperText": "Schalten Sie das Element auf relative, absolute oder feste Positionierung um."
+      },
+      "top": {
+        "label": "Versatz oben",
+        "helperText": "Justieren Sie den oberen Versatz eines positionierten Elements fein nach.",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "Versatz links",
+        "helperText": "Justieren Sie den linken Versatz eines positionierten Elements fein nach.",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "Z-Index",
+        "helperText": "Steuern Sie die Stapelreihenfolge für Overlays, Modale und dekorative Ebenen.",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "Transformation",
+        "helperText": "Verwenden Sie translate und verwandte Transformationen für feine Bewegungen, ohne den Layoutfluss zu zerstören.",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "Rahmen",
+        "helperText": "Steuern Sie Stärke, Farbe und Linienart für Karten, Eingaben und Schaltflächen.",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "Radius",
+        "helperText": "Passen Sie den Eckenradius für Karten, Panels und Schaltflächen an."
+      },
+      "boxShadow": {
+        "label": "Schatten",
+        "helperText": "Nutzen Sie Schatten, um Tiefe und visuelle Ebenen zu erzeugen.",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "Hintergrund",
+        "helperText": "Passen Sie die Hintergrundfarbe an, um Hierarchie und Hervorhebung zu erkunden."
+      },
+      "opacity": {
+        "label": "Deckkraft",
+        "helperText": "Verringern Sie die Deckkraft für deaktivierte Zustände, Overlays und weichere Ebenen."
+      },
+      "overflow": {
+        "label": "Überlauf",
+        "helperText": "Steuern Sie, ob überlaufender Inhalt sichtbar bleibt, ausgeblendet wird oder scrollbar wird."
+      },
+      "fontSize": {
+        "label": "Schriftgröße",
+        "helperText": "Passen Sie die Textgröße für Titel, Untertitel und Fließtext an."
+      },
+      "lineHeight": {
+        "label": "Zeilenhöhe",
+        "helperText": "Passen Sie den vertikalen Abstand zwischen Zeilen für Rhythmus und Lesbarkeit an.",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "Stärke",
+        "helperText": "Ändern Sie die Schriftstärke, um Text stärker zu betonen oder weicher wirken zu lassen.",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "Schriftfamilie",
+        "helperText": "Wechseln Sie die Schriftfamilie, um Tonalität schnell zu vergleichen.",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "Textfarbe",
+        "helperText": "Passen Sie die Textfarbe für Hierarchie, Branding und sekundäre Texte an."
+      },
+      "textAlign": {
+        "label": "Ausrichtung",
+        "helperText": "Ändern Sie die Ausrichtung des gesamten Textblocks."
+      },
+      "objectFit": {
+        "label": "Anpassungsmodus",
+        "helperText": "Steuern Sie, ob das Bild den Container füllt, eingepasst wird oder sich streckt."
+      },
+      "imageWidth": {
+        "helperText": "Passen Sie die endgültige Breite des Bildes oder Medienrahmens an.",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "Passen Sie die endgültige Höhe des Bildes oder Medienrahmens an.",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "Machen Sie die Ecken von Titelbildern und Avataren weicher."
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "Element auswählen",
+      "selectOn": "Elementauswahl aktivieren",
+      "selectOff": "Elementauswahl deaktivieren und echte Klicks wiederherstellen",
+      "selectActive": "Auswahl aktiv",
+      "interactive": "Interaktiv",
+      "syncing": "Synchronisiert",
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "reset": "Zurücksetzen"
+    },
+    "empty": {
+      "interactiveTitle": "Interaktiver Modus",
+      "interactiveDesc": "Sie können jetzt frei mit der Seite interagieren. Klicken Sie oben erneut auf „Interaktiv“, um zur Elementauswahl zurückzukehren."
+    },
+    "element": {
+      "containerName": "Container",
+      "elementName": "Element",
+      "copyTitle": "{{name}} zum Kopieren anklicken"
+    },
+    "sections": {
+      "labels": "Tag-Intention",
+      "labelsHint": "Schreiben Sie hier die wichtigste Anweisung für die KI hinein. Diese Tags sind Intentionen, nicht nur Notizen.",
+      "quick": "Schnellaktionen",
+      "quickHint": "Bringen Sie das Element zuerst mit semantischen Aktionen in die Nähe des Ziels und verfeinern Sie dann unten die Rohwerte.",
+      "precision": "Präzise Steuerung",
+      "precisionHint": "Wenn die Schnellaktionen nahe genug dran sind, verfeinern Sie hier jede Eigenschaft.",
+      "assist": "Zusatzinfos",
+      "assistHint": "Behalten Sie Kontextnotizen und Vorschauen hier, damit der eigentliche Bearbeitungsfluss fokussiert bleibt.",
+      "cssVariables": "CSS-Variablen"
+    },
+    "helper": {
+      "browseTitle": "Echte Interaktion",
+      "browseDesc": "Die Elementauswahl ist derzeit deaktiviert. Sie können auf die echte Seite klicken und mit ihr interagieren, damit Menüs, Popovers und Dropdowns sich natürlich öffnen.",
+      "contextTitle": "Kontextbezogene Feinabstimmung",
+      "contextDesc": "Bewegen Sie den Mauszeiger über eine beliebige Parameterkarte und die Arbeitsfläche hebt passende Bereiche für Margin, Padding oder Typografie hervor, damit Sie die Struktur wie einen Bauplan lesen können.",
+      "innerChild": "seine Kindelemente",
+      "innerChildWithClass": "Kindelemente in {{className}}",
+      "paddingCentered": "Dieser Knoten ist ein zentrierter Flex-Container. Wenn Sie {{field}} ändern, verändert sich die Größe der inneren Box, aber der Inhalt bleibt zentriert. Wenn Sie den mittleren Inhaltsblock verschieben möchten, passen Sie zuerst die Layout-Ausrichtung an oder wählen Sie weiter {{childTargetName}} aus, um dort Margin oder Padding anzupassen.",
+      "marginCentered": "Dieser Knoten verwendet ein zentriertes Flex-Layout. Der äußere Margin beeinflusst hauptsächlich den Abstand zu Geschwisterknoten, nicht den zentrierten Inhalt selbst. Um den mittleren Textblock anzupassen, ändern Sie zuerst die Layout-Ausrichtung oder wählen Sie {{childTargetName}} aus und passen dort den Margin an.",
+      "sizeCentered": "Dieser Knoten ist ein zentrierter Flex-Container. Wenn Sie Breite oder Höhe anpassen, ändert sich die Box, aber der Inhalt bleibt entlang der Hauptachse {{justifyContent}} und der Querachse {{alignItems}} zentriert. Wenn der Inhalt oben, links oder an einer Kante sitzen soll, ändern Sie zuerst die Layout-Ausrichtung.",
+      "gapUnavailable": "Dieser Knoten ist weder ein Flex- noch ein Grid-Container. Ein gesetzter Gap erzeugt daher nicht den erwarteten Abstandseffekt. Wechseln Sie zuerst Anzeige auf Flex oder Grid oder wählen Sie den tatsächlichen Eltern-Container aus, der das Layout der Kinder steuert."
+    },
+    "insight": {
+      "layoutTitle": "Layout-Einblick",
+      "flexCentered": "Die aktuelle Auswahl ist ein zentrierter Flex-Container (Hauptachse {{justifyContent}}, Querachse {{alignItems}}). Änderungen an Padding und Größe halten den Inhalt oft weiter zentriert. Wenn Sie den inneren Inhalt verschieben möchten, passen Sie zuerst die Layout-Ausrichtung an oder wählen Sie weiter ein Kindelement aus.",
+      "grid": "Dieser Knoten ist ein Grid-Container. Konzentrieren Sie sich zuerst auf Gap, Padding und Größe. Wenn ein einzelner Kinderblock falsch sitzt, müssen Sie meistens dieses Kindelement auswählen statt nur den äußeren Container zu bearbeiten.",
+      "parent": "Dieser Knoten ist ein Eltern-Container. Änderungen an Padding, Breite oder Höhe beeinflussen die innere Struktur, verschieben den Kindinhalt aber nicht immer direkt. Wenn Sie einen bestimmten Text- oder Bildblock anpassen möchten, wählen Sie das Kindelement direkt aus."
+    },
+    "active": {
+      "labels": "Formulieren Sie hier zuerst das Ziel in natürlicher Sprache, dem die KI folgen soll, bevor Sie Zahlen feinjustieren.",
+      "size": "Verwenden Sie zuerst die schnellen Karten für Breite und Höhe, um sich dem Ziel anzunähern, und verfeinern Sie dann unten.",
+      "padding": "Nutzen Sie die schnellen Padding-Steuerungen, um den inneren Freiraum des Containers festzulegen, und verfeinern Sie danach Seite für Seite.",
+      "margin": "Nutzen Sie die schnellen Margin-Steuerungen, um die Modulangstände grob auszurichten, bevor Sie einzelne Seiten präzise bearbeiten.",
+      "alignmentTitle": "Ausrichtung",
+      "layout": "Wechseln Sie zum Bereich Layout und konzentrieren Sie sich zuerst auf die Ausrichtung entlang der Haupt- und Querachse.",
+      "gapShortcut": "Dieses Objekt hat mehrere sichtbare Kindelemente, daher wird Gap im Layout-Bereich als vereinheitlichte Abstandskontrolle angeboten.",
+      "gap": "Gap erscheint im Layout-Bereich. Es funktioniert nur dann wie erwartet, wenn der Container echte Kindelemente und einen aktiven Layoutmodus hat.",
+      "position": "Die Positionssteuerungen befinden sich im Präzisionsbereich für Korrekturen bei top, left und z-index.",
+      "border": "Rahmen, Radius und Schatten formen gemeinsam die Wirkung der Komponente. Darum lohnt es sich, sie zusammen zu prüfen.",
+      "background": "Hintergrundfarbe und Deckkraft liegen hier für schnelle Anpassungen von Hierarchie und Betonung.",
+      "shadow": "Schatten sollte meist zusammen mit Radius geprüft werden, damit die visuelle Veredelung stabil bleibt.",
+      "typography": "Die Typografie-Steuerungen sind hier gebündelt, damit Sie Größe, Zeilenhöhe, Gewichtung und Ausrichtung durchgehend anpassen können.",
+      "overflow": "Nutzen Sie diesen Bereich, wenn Sie Zuschnitt oder Scrollverhalten steuern müssen.",
+      "image": "Der Bildmodus bündelt Anpassungsmodus, Größe und Radius an einer Stelle, damit Vergleiche leichter fallen."
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "Flex aktivieren",
+        "description": "Schalten Sie den Container zuerst auf Flex und fahren Sie dann mit Ausrichtung und Abstandsanpassungen fort."
+      },
+      "alignCenter": {
+        "label": "Inhalt zentrieren",
+        "description": "Setzen Sie beide Achsen zurück auf Mitte, um den standardmäßig zentrierten Zustand schnell wiederherzustellen."
+      },
+      "spaceBetween": {
+        "label": "Zwischenraum verteilen",
+        "description": "Verteilen Sie Elemente an beide Enden der Hauptachse. Ideal für Titelleisten, Button-Reihen und Werkzeugleisten."
+      },
+      "centerText": {
+        "label": "Text zentrieren",
+        "description": "Stellen Sie die Textausrichtung auf Mitte. Ideal für Überschriften und kurze Textblöcke."
+      },
+      "imageCover": {
+        "label": "Container füllen",
+        "description": "Setzen Sie object-fit auf cover, damit das Bild den Container zuerst füllt."
+      },
+      "imageContain": {
+        "label": "Ganzes Bild zeigen",
+        "description": "Setzen Sie object-fit auf contain, damit das gesamte Bild sichtbar bleibt."
+      },
+      "increasePadding": {
+        "label": "Padding erhöhen",
+        "description": "Fügen Sie auf allen Seiten gleichzeitig {{quickStep}}px Freiraum hinzu."
+      },
+      "increaseGap": {
+        "label": "Gap erhöhen",
+        "description": "Erhöhen Sie den Abstand zwischen Kindelementen um {{quickStep}}px."
+      }
+    },
+    "quick": {
+      "step": "Schritt",
+      "decrease": "Verringern",
+      "increase": "Erhöhen",
+      "decreaseWithStep": "{{step}}px verringern",
+      "increaseWithStep": "{{step}}px erhöhen",
+      "increased": "erhöht",
+      "decreased": "verringert",
+      "layout": {
+        "title": "Schnellkarte Layout",
+        "hint": "Wechseln Sie zuerst zwischen Block, Flex und Grid und nutzen Sie dann das Pad, um Inhalte nach oben, unten, links, rechts oder in die Mitte zu schieben.",
+        "modeTitle": "Layoutmodus",
+        "modeDescription": "Die Anzeige wurde auf {{display}} umgestellt. Verwenden Sie weiter das Pad, um Inhalte nach oben, unten, links, rechts oder in die Mitte zu schieben.",
+        "positionTitle": "Inhaltsposition",
+        "positionDescription": "Der Containerinhalt befindet sich jetzt bei {{slot}}."
+      },
+      "spacing": {
+        "title": "Schnellanpassung Abstand",
+        "hint": "Wählen Sie zuerst Padding oder Margin und dann eine Richtung. Die Mitte bedeutet alle Seiten gleichzeitig.",
+        "currentPadding": "Aktuelles Schnellziel: Padding",
+        "currentMargin": "Aktuelles Schnellziel: Margin",
+        "paddingActionTitle": "Padding-Schnellaktion",
+        "marginActionTitle": "Margin-Schnellaktion",
+        "adjusted": "{{side}} wurde um {{value}}px {{direction}}. Unten können Sie mit feineren Einzelwerten fortfahren."
+      },
+      "cards": {
+        "width": "Die Breite ist bei Karten, Panels und Bildrahmen meist der erste sinnvolle Regler.",
+        "height": "Ideal, um Titelbereiche, Karten oder Bildzonen schnell zu strecken.",
+        "gap": "Erhöhen oder verringern Sie direkt den Abstand zwischen den Kindelementen im Container.",
+        "radius": "Macht die Kanten von Karten, Panels und Bildern weicher.",
+        "objectFit": "Wechseln Sie schnell zwischen einem füllenden und einem vollständig eingepassten Bildzuschnitt.",
+        "opacity": "Praktisch für gedämpfte Zustände, Overlays und weichere Ebenen.",
+        "fontSize": "Ein schneller Hierarchie-Regler für Überschriften und Fließtext."
+      }
+    },
+    "direction": {
+      "topLeft": "Oben links",
+      "top": "Oben",
+      "topRight": "Oben rechts",
+      "left": "Links",
+      "center": "Mitte",
+      "right": "Rechts",
+      "bottomLeft": "Unten links",
+      "bottom": "Unten",
+      "bottomRight": "Unten rechts"
+    },
+    "slot": {
+      "topLeft": "oben links",
+      "top": "oben",
+      "topRight": "oben rechts",
+      "left": "links",
+      "center": "mittig",
+      "right": "rechts",
+      "bottomLeft": "unten links",
+      "bottom": "unten",
+      "bottomRight": "unten rechts"
+    },
+    "editor": {
+      "textContent": "Textinhalt",
+      "textPlaceholder": "Neuen Text eingeben",
+      "imageUrl": "Bild-URL",
+      "altText": "Alt-Text",
+      "altPlaceholder": "Bildbeschreibung"
+    },
+    "labels": {
+      "description": "Beschreiben Sie hier das Ziel für die KI in natürlicher Sprache, nicht mit exakten Zahlen. Nutzen Sie es, um gewünschte Wirkung, Struktur und Einschränkungen zu formulieren.",
+      "placeholder": "Änderungsnotiz eingeben…",
+      "placeholderConfirm": "Änderungsnotiz eingeben und Enter drücken…",
+      "delete": "Tag löschen"
+    },
+    "snapshot": {
+      "layout": "Layout-Schnappschuss",
+      "visual": "Visueller Schnappschuss",
+      "typography": "Typografie-Schnappschuss",
+      "position": "Positions-Schnappschuss"
+    },
+    "export": {
+      "sectionTitle": "Prompt exportieren",
+      "sectionHint": "Hier werden die strukturierten Anpassungen und Tag-Intentionen der aktuellen Seite gesammelt, damit Sie sie direkt in Codex oder andere KI-Coding-Tools einfügen können.",
+      "kicker": "Prompt auf Seitenebene",
+      "title": "Finales Feintuning-Briefing für KI-Coding-Tools",
+      "summary": "{{elementCount}} Elemente gesammelt / {{modifiedCount}} strukturierte Anpassungen / {{tagCount}} Tag-Gruppen",
+      "copyTitle": "Die vollständige Feintuning-Zusammenfassung und Tags der aktuellen Seitensitzung kopieren",
+      "copyButton": "Prompt exportieren",
+      "copied": "Seiten-Prompt kopiert",
+      "empty": "Es wurden noch keine Änderungen auf Seitenebene gesammelt. Passen Sie weiter Elemente auf der Arbeitsfläche an und DOMPrompter erstellt daraus automatisch einen Seiten-Prompt."
+    },
+    "field": {
+      "scrubTitle": "{{label}}. Ziehen Sie nach links oder rechts, um den Wert zu ändern; mit den Pfeiltasten justieren Sie fein nach, mit Shift beschleunigen Sie."
+    }
   }
 }

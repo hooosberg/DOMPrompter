@@ -1,36 +1,617 @@
 {
   "about": {
-    "description": "Inspector DOM visual y generador de prompts IA. Selecciona elementos, ajusta estilos visualmente, genera prompts IA precisos para Cursor, Claude Code, Codex y m\u00e1s.",
+    "description": "Inspector DOM visual y generador de prompts IA. Selecciona elementos, ajusta estilos visualmente, genera prompts IA precisos para Cursor, Claude Code, Codex y más.",
     "website": "Sitio web",
     "support": "Centro de soporte",
-    "privacy": "Pol\u00edtica de privacidad",
-    "terms": "T\u00e9rminos de servicio",
+    "privacy": "Política de privacidad",
+    "terms": "Términos de servicio",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. Todos los derechos reservados."
+    "copyright": "© 2025 hooosberg. Todos los derechos reservados.",
+    "descFeatures": "Selección precisa de elementos con selectores CSS • Seguimiento de diferencias de estilo (antes/después) • Etiquetas en lenguaje natural • Feedback visual inmediato con deshacer/rehacer • Funciona con Cursor, Claude Code, Codex, Copilot y más",
+    "descPrivacy": "Prioridad local y privacidad total. Toda la inspección y generación de prompts se realiza localmente en tu Mac.",
+    "version": "Versión {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
     "title": "Desbloquea todo el poder",
-    "subtitle": "Exporta prompts IA precisos para cada p\u00e1gina que inspeccionas. Una compra, precisi\u00f3n ilimitada.",
+    "subtitle": "Exporta prompts IA precisos para cada página que inspeccionas. Una compra, precisión ilimitada.",
     "lifetimeBadge": "Licencia de por vida",
     "priceValue": "$19.99",
-    "benefitExportTitle": "Exportaci\u00f3n ilimitada de prompts",
+    "benefitExportTitle": "Exportación ilimitada de prompts",
     "benefitExportDesc": "Exporta prompts combinando selectores, diferencias de estilo y anotaciones en una salida estructurada.",
     "benefitPrecisionTitle": "Seguimiento de diferencias de estilo",
-    "benefitPrecisionDesc": "Cada ajuste CSS registrado autom\u00e1ticamente antes/despu\u00e9s \u2014 width: 200px \u2192 300px. Claro para la IA.",
+    "benefitPrecisionDesc": "Cada ajuste CSS registrado automáticamente antes/después — width: 200px → 300px. Claro para la IA.",
     "benefitTagsTitle": "Tags en lenguaje natural",
-    "benefitTagsDesc": "Anota elementos con intenci\u00f3n: \u201ccolor del bot\u00f3n muy oscuro\u201d, \u201cespaciado muy amplio\u201d. La IA entiende tu dise\u00f1o.",
+    "benefitTagsDesc": "Anota elementos con intención: “color del botón muy oscuro”, “espaciado muy amplio”. La IA entiende tu diseño.",
     "benefitFutureTitle": "Todas las futuras funciones Pro",
-    "benefitFutureDesc": "Compra \u00fanica para todas las funciones Pro actuales y futuras. Sin suscripci\u00f3n.",
+    "benefitFutureDesc": "Compra única para todas las funciones Pro actuales y futuras. Sin suscripción.",
     "unlockNow": "Actualizar a Pro",
     "cancel": "Cancelar",
     "purchasing": "Comprando...",
-    "purchaseFailed": "La compra fall\u00f3. Int\u00e9ntalo de nuevo.",
+    "purchaseFailed": "La compra falló. Inténtalo de nuevo.",
     "purchaseCancelled": "La compra fue cancelada.",
     "restorePurchase": "Restaurar compra",
     "restoring": "Restaurando...",
-    "restoreNotFound": "No se encontr\u00f3 ninguna compra anterior.",
-    "restoreFailed": "La restauraci\u00f3n fall\u00f3. Int\u00e9ntalo de nuevo.",
-    "ctaNote": "Pago \u00fanico. Sin tarifas de suscripci\u00f3n. Las funciones Pro permanecen desbloqueadas permanentemente."
+    "restoreNotFound": "No se encontró ninguna compra anterior.",
+    "restoreFailed": "La restauración falló. Inténtalo de nuevo.",
+    "ctaNote": "Pago único. Sin tarifas de suscripción. Las funciones Pro permanecen desbloqueadas permanentemente."
+  },
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "Ajusta visualmente tu UI y genera prompts precisos para Vibe Coding"
+  },
+  "topbar": {
+    "refresh": "Actualizar",
+    "load": "Cargar",
+    "urlPlaceholder": "Introduce una URL localhost o abre un HTML local",
+    "addressLabel": "Dirección de la página",
+    "settings": "Configuración",
+    "connected": "Conectado",
+    "connecting": "Conectando",
+    "disconnected": "Sin conexión",
+    "hideToolbar": "Ocultar barra de herramientas",
+    "showToolbar": "Mostrar barra de herramientas",
+    "disconnect": "Desconectar"
+  },
+  "onboarding": {
+    "chooseTitle": "Elige cómo quieres empezar",
+    "chooseDesc": "Usa un servidor de desarrollo local o abre directamente un archivo HTML estático.",
+    "serverMode": "Modo servidor",
+    "serverDesc": "Tu proyecto ya se está ejecutando en localhost",
+    "serverFoot": "Configuración guiada en 3 pasos",
+    "htmlMode": "Modo HTML",
+    "htmlDesc": "Abre un archivo HTML local e inspecciónalo al instante",
+    "htmlFoot": "Selecciona un archivo para empezar",
+    "htmlTitle": "Modo HTML",
+    "htmlGuide": "Ideal para páginas de un solo archivo, exportaciones estáticas y prototipos locales. Abre un archivo directamente o continúa desde el historial reciente.",
+    "htmlGuideTitle": "Abrir HTML local directamente",
+    "htmlGuideBody": "No necesitas iniciar un servidor de desarrollo primero. Elige un archivo HTML y DOMPrompter lo cargará directamente en el lienzo para inspeccionarlo.",
+    "htmlHistory": "Historial reciente",
+    "htmlHistoryEmpty": "No se han abierto archivos HTML recientemente.",
+    "htmlOpenAction": "Abrir archivo HTML",
+    "htmlRecentAction": "Reabrir",
+    "serverTitle": "Modo servidor",
+    "serverGuide": "Inicia tu proyecto web en la URL de depuración predeterminada y luego cárgalo desde la barra de direcciones superior.",
+    "aiPrompt": "Copiar prompt de configuración para IA",
+    "aiPromptDesc": "Este prompt se centra únicamente en iniciar la app web, unificar la URL y exigir que el asistente la verifique.",
+    "copyPrompt": "Copiar prompt",
+    "copied": "Copiado",
+    "startServer": "Inicia tu servidor de desarrollo",
+    "startServerDesc": "Ejecuta npm run dev en el directorio del proyecto y confirma que la URL localhost final coincide con la URL de depuración predeterminada.",
+    "copyCommand": "Copiar comando",
+    "loadPage": "Carga tu página",
+    "loadPageDesc": "Si el script se adaptó correctamente, la dirección predeterminada de abajo debería funcionar al instante. Si no, edita la dirección en la barra superior.",
+    "topBarHint": "Ya no necesitas escribir la dirección dentro del asistente. Usa la barra de direcciones superior para actualizar, editar rápidamente y recargar.",
+    "loadPreset": "Cargar dirección predeterminada",
+    "loadButton": "Cargar página",
+    "exit": "Salir",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "aiSetupPrompt": "Estoy usando DOMPrompter para depurar un proyecto web. Por favor, adapta los scripts de arranque del proyecto a la URL de depuración predeterminada de DOMPrompter para que pueda hacer clic en Cargar directamente sin copiar y pegar manualmente una URL.\n\nPrimero identifica qué tipo de proyecto web es este (React / Vue / Svelte / Next.js / HTML estático / otro proyecto frontend) y luego céntrate solo en un objetivo: hacer que la página web se inicie correctamente en el navegador. Da prioridad a cambiar solo los scripts de package.json y no modifiques la lógica de negocio.\n\nObjetivo:\n- La página debe poder abrirse directamente en {{defaultUrl}}\n- La URL predeterminada del paso 3 de DOMPrompter debe cargarse correctamente\n- Después de hacer cambios, debes ejecutar el proyecto y verificarlo tú mismo\n\nRequisitos:\n\n1. Adaptación de scripts\n- Asegúrate de que exista un script dev\n- El servidor de desarrollo debe escuchar en localhost\n- Da prioridad a unificar la URL final en {{defaultUrl}}\n- Para Vite, vite --host localhost --port 5173 es aceptable\n- Para Next.js, next dev -H localhost -p 5173 es aceptable\n- Para HTML puro sin package.json, crea uno y añade \"dev\": \"npx serve . -l 5173\"\n\n2. Restricciones\n- No modifiques la lógica de negocio\n- Conserva todos los demás scripts existentes\n- Si falta serve o cualquier otra dependencia necesaria, instálala\n- Céntrate solo en la depuración web. No manejes Electron, flujos de escritorio ni puertos de depuración remota\n\n3. Verificación obligatoria\n- Ejecuta npm run dev (o el comando equivalente de tu gestor de paquetes)\n- Confirma que el terminal muestra una URL localhost\n- Si es posible, confirma que la URL final es exactamente {{defaultUrl}}\n- Detén el proceso solo después de verificar que arranca sin errores\n\n4. La salida final debe incluir\n- El tipo de proyecto web detectado\n- Los scripts que modificaste\n- La URL final que puede abrirse directamente\n- El resultado de tu verificación\n- Si {{defaultUrl}} no es posible, explica por qué y proporciona la URL alternativa exacta que funciona\n\nEmpieza el análisis y realiza los cambios ahora. La tarea solo estará completa cuando hayas verificado tú mismo que la app web arranca correctamente.",
+    "philosophy": {
+      "eyebrow": "Entre la IA y el código",
+      "title": "Convierte ajustes visuales en instrucciones que la IA puede ejecutar con precisión",
+      "body": "DOMPrompter es un asistente visual entre la IA y el código de producción. No reescribe archivos fuente por sí mismo. Te ayuda a marcar objetivos, registrar cambios de parámetros y construir prompts estructurados que la IA puede aplicar correctamente.",
+      "flow": {
+        "mark": "Marcar",
+        "tune": "Ajustar",
+        "generate": "Generar",
+        "handToAi": "Entregar a la IA"
+      },
+      "footerLead": "Selecciona con precisión, describe con precisión y luego entrégaselo a la IA.",
+      "footerBody": "La superposición de la página se encarga del feedback inmediato. El banco de trabajo se encarga del estado persistente. Eso mantiene el flujo ligero, rápido y fiable.",
+      "modeHint": "Elige cómo quieres empezar",
+      "serverBadge": "Recomendado",
+      "htmlBadge": "Página estática"
+    }
+  },
+  "panel": {
+    "ready": "Listo para inspeccionar",
+    "readyDesc": "Pasa el cursor y haz clic en un elemento de la página para llevar sus estilos al banco de trabajo."
+  },
+  "toast": {
+    "settingsSoon": "El panel de configuración llegará en la próxima fase",
+    "connected": "Conectado a la página",
+    "htmlOpened": "HTML local abierto",
+    "pageRefreshed": "Página actualizada",
+    "connectionFailed": "La conexión falló",
+    "loadFailed": "La página no pudo cargarse",
+    "debuggerFailed": "No se pudo conectar el depurador",
+    "htmlFailed": "No se pudo abrir el archivo HTML",
+    "tagRemoved": "Etiqueta eliminada",
+    "promptCopied": "Prompt de página copiado",
+    "noPrompt": "Todavía no hay un prompt a nivel de página disponible",
+    "elementCssCopied": "CSS del elemento copiado"
+  },
+  "settings": {
+    "title": "Configuración",
+    "appearance": "Apariencia",
+    "language": "Idioma",
+    "shortcuts": "Atajos",
+    "license": "Licencia",
+    "about": "Acerca de",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeAuto": "Automático",
+    "accent": "Color de acento",
+    "glassOpacity": "Opacidad del vidrio",
+    "close": "Cerrar",
+    "currentPlan": "Plan actual",
+    "free": "Gratis",
+    "pro": "Pro",
+    "buyPro": "Comprar Pro",
+    "restore": "Restaurar compra"
+  },
+  "license": {
+    "promoTitle": "Desbloquea DOMPrompter Pro",
+    "promoDesc": "Saca el máximo partido a tu flujo de inspección visual. Exporta prompts de página completa, registra cada cambio de estilo y anota con lenguaje natural.",
+    "benefitExport": "Exportación ilimitada de prompts de página",
+    "benefitDiff": "Seguimiento de diferencias de estilo (antes/después)",
+    "benefitTags": "Etiquetas y anotaciones en lenguaje natural",
+    "benefitFuture": "Incluye todas las futuras funciones Pro",
+    "upgradeCta": "Actualizar a Pro — $19.99",
+    "ctaNote": "Pago único. Sin suscripción. Las funciones Pro quedan desbloqueadas permanentemente.",
+    "proThanks": "Gracias por apoyar DOMPrompter. Todas las funciones Pro están desbloqueadas. Tu compra única cubre también todas las futuras funciones Pro que añadamos.",
+    "purchase": "Comprar Pro",
+    "restore": "Restaurar compra",
+    "processing": "Procesando..."
+  },
+  "shortcuts": {
+    "openSettings": "Abrir configuración",
+    "openHtml": "Abrir archivo HTML",
+    "reload": "Recargar página",
+    "forceReload": "Forzar recarga",
+    "toggleToolbar": "Alternar barra de herramientas",
+    "copyPrompt": "Copiar prompt de página",
+    "copyCss": "Copiar CSS del elemento",
+    "focusAddress": "Enfocar barra de direcciones",
+    "newWindow": "Nueva ventana",
+    "selectParent": "Seleccionar elemento padre",
+    "selectChild": "Seleccionar elemento hijo",
+    "escape": "Cerrar / Deseleccionar"
+  },
+  "common": {
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "collapse": "Contraer",
+    "expand": "Expandir",
+    "tip": "Consejo"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "Todo",
+      "top": "Arriba",
+      "right": "Derecha",
+      "bottom": "Abajo",
+      "left": "Izquierda"
+    },
+    "spacing": {
+      "allSides": "todos los lados",
+      "topSide": "arriba",
+      "rightSide": "derecha",
+      "bottomSide": "abajo",
+      "leftSide": "izquierda"
+    },
+    "sections": {
+      "size": {
+        "title": "Tamaño",
+        "hint": "Fija primero las dimensiones del contenedor y luego afina la estructura interna."
+      },
+      "padding": {
+        "title": "Padding",
+        "hint": "El padding suele ser la forma más rápida de ajustar el espacio interior de un contenedor."
+      },
+      "margin": {
+        "title": "Margen",
+        "hint": "La separación entre módulos normalmente proviene del margen."
+      },
+      "layout": {
+        "title": "Diseño",
+        "hint": "Usa display, gap y alineación para observar rápidamente los cambios estructurales."
+      },
+      "position": {
+        "title": "Posición",
+        "hint": "Mantén primero estable el diseño y usa posicionamiento y apilado para ajustes precisos."
+      },
+      "border": {
+        "title": "Borde y radio",
+        "hint": "Los bordes, el radio de esquina y las sombras definen la sensación visual del contenedor."
+      },
+      "background": {
+        "title": "Fondo",
+        "hint": "El color de fondo y la opacidad son ideales para probar rápidamente la jerarquía."
+      },
+      "overflow": {
+        "title": "Desbordamiento y recorte",
+        "hint": "Útil al manejar recortes, desplazamiento y contenedores multimedia."
+      },
+      "typography": {
+        "title": "Tipografía",
+        "hint": "Afina el texto con tamaño de fuente, altura de línea, peso y alineación."
+      },
+      "image": {
+        "title": "Imagen",
+        "hint": "Para imágenes, empieza por el modo de ajuste, el radio y el tamaño."
+      }
+    },
+    "options": {
+      "display": {
+        "block": "Block"
+      },
+      "align": {
+        "start": "Inicio",
+        "center": "Centro",
+        "end": "Final",
+        "spaceBetween": "Espacio entre",
+        "stretch": "Estirar"
+      },
+      "position": {
+        "static": "Estática",
+        "relative": "Relativa",
+        "absolute": "Absoluta",
+        "fixed": "Fija"
+      },
+      "overflow": {
+        "visible": "Visible",
+        "hidden": "Oculto",
+        "auto": "Desplazable"
+      },
+      "textAlign": {
+        "left": "Izquierda",
+        "center": "Centro",
+        "right": "Derecha"
+      },
+      "objectFit": {
+        "cover": "Cubrir",
+        "contain": "Contener",
+        "fill": "Estirar"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "Ancho",
+        "helperText": "Ajusta el ancho final del contenedor. Útil para tarjetas, paneles y áreas multimedia de tamaño fijo.",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "Alto",
+        "helperText": "Ajusta la altura final del contenedor. Ideal para áreas de título, tarjetas y marcos multimedia.",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "Ajusta el espacio superior entre el contenido y el borde del contenedor.",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "Ajusta el espacio interior del lado derecho del contenedor.",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "Ajusta el espacio interior inferior para que el bloque se sienta más sólido.",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "Ajusta el espacio interior del lado izquierdo del contenedor.",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "Ajusta la distancia exterior respecto al elemento superior.",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "Ajusta la distancia exterior del lado derecho.",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "Ajusta el espacio vertical respecto al siguiente elemento.",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "Ajusta la distancia exterior del lado izquierdo.",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "Display",
+        "helperText": "Cambia el modo de diseño del contenedor. La alineación y el gap solo funcionan de verdad en Flex o Grid."
+      },
+      "gap": {
+        "label": "Gap",
+        "helperText": "Ajusta el espacio entre elementos hijos. Solo funciona en Flex o Grid.",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "Eje principal",
+        "helperText": "Controla cómo se distribuyen los elementos hijos a lo largo del eje principal."
+      },
+      "alignItems": {
+        "label": "Eje cruzado",
+        "helperText": "Controla cómo se alinean los elementos hijos en el eje cruzado."
+      },
+      "position": {
+        "label": "Modo de posición",
+        "helperText": "Cambia el elemento a posicionamiento relativo, absoluto o fijo."
+      },
+      "top": {
+        "label": "Desplazamiento superior",
+        "helperText": "Ajusta con precisión el desplazamiento superior de un elemento posicionado.",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "Desplazamiento izquierdo",
+        "helperText": "Ajusta con precisión el desplazamiento izquierdo de un elemento posicionado.",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "Z-Index",
+        "helperText": "Controla el orden de apilado para overlays, modales y capas decorativas.",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "Transformación",
+        "helperText": "Usa translate y transformaciones relacionadas para movimientos sutiles sin romper el flujo.",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "Borde",
+        "helperText": "Controla el grosor, el color y el estilo de línea para tarjetas, inputs y botones.",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "Radio",
+        "helperText": "Ajusta el radio de las esquinas para tarjetas, paneles y botones."
+      },
+      "boxShadow": {
+        "label": "Sombra",
+        "helperText": "Usa la sombra para crear elevación y profundidad.",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "Fondo",
+        "helperText": "Ajusta el color de fondo para explorar jerarquía y énfasis."
+      },
+      "opacity": {
+        "label": "Opacidad",
+        "helperText": "Reduce la opacidad para estados deshabilitados, overlays y capas suavizadas."
+      },
+      "overflow": {
+        "label": "Desbordamiento",
+        "helperText": "Controla si el contenido desbordado sigue visible, se oculta o se vuelve desplazable."
+      },
+      "fontSize": {
+        "label": "Tamaño de fuente",
+        "helperText": "Ajusta el tamaño del texto para títulos, subtítulos y cuerpo de texto."
+      },
+      "lineHeight": {
+        "label": "Altura de línea",
+        "helperText": "Ajusta el espaciado vertical entre líneas para mejorar ritmo y legibilidad.",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "Peso",
+        "helperText": "Cambia el peso del texto para enfatizarlo o suavizarlo.",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "Familia tipográfica",
+        "helperText": "Cambia la familia tipográfica para comparar rápidamente el tono visual.",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "Color del texto",
+        "helperText": "Ajusta el color del texto para la jerarquía, la marca y el contenido secundario."
+      },
+      "textAlign": {
+        "label": "Alineación",
+        "helperText": "Cambia la alineación del bloque de texto completo."
+      },
+      "objectFit": {
+        "label": "Modo de ajuste",
+        "helperText": "Controla si la imagen cubre, encaja o se estira dentro del contenedor."
+      },
+      "imageWidth": {
+        "helperText": "Ajusta el ancho final de la imagen o del marco multimedia.",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "Ajusta la altura final de la imagen o del marco multimedia.",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "Suaviza las esquinas de imágenes de portada y avatares."
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "Seleccionar elemento",
+      "selectOn": "Activar selección de elementos",
+      "selectOff": "Desactivar selección y restaurar clics reales",
+      "selectActive": "Seleccionando",
+      "interactive": "Interactivo",
+      "syncing": "Sincronizando",
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "reset": "Restablecer"
+    },
+    "empty": {
+      "interactiveTitle": "Modo interactivo",
+      "interactiveDesc": "Ahora puedes interactuar libremente con la página. Vuelve a pulsar «Interactivo» arriba para regresar a la selección de elementos."
+    },
+    "element": {
+      "containerName": "Contenedor",
+      "elementName": "Elemento",
+      "copyTitle": "Haz clic para copiar {{name}}"
+    },
+    "sections": {
+      "labels": "Intención de etiquetas",
+      "labelsHint": "Escribe aquí la instrucción prioritaria para la IA. Estas etiquetas expresan intención, no solo notas.",
+      "quick": "Acciones rápidas",
+      "quickHint": "Acerca primero el elemento al objetivo con acciones semánticas y luego afina los valores concretos abajo.",
+      "precision": "Controles de precisión",
+      "precisionHint": "Cuando las acciones rápidas ya estén cerca, afina aquí cada propiedad.",
+      "assist": "Información de apoyo",
+      "assistHint": "Guarda aquí notas de contexto y vistas previas para que el flujo principal de edición siga enfocado.",
+      "cssVariables": "Variables CSS"
+    },
+    "helper": {
+      "browseTitle": "Interacción real",
+      "browseDesc": "La selección de elementos está desactivada en este momento. Puedes hacer clic e interactuar con la página real para que menús, popovers y desplegables se abran de forma natural.",
+      "contextTitle": "Ajuste contextual",
+      "contextDesc": "Pasa el cursor sobre cualquier tarjeta de parámetros y el lienzo resaltará las regiones correspondientes de margen, padding o tipografía para que puedas leer la estructura como un plano.",
+      "innerChild": "sus elementos hijos",
+      "innerChildWithClass": "elementos hijos dentro de {{className}}",
+      "paddingCentered": "Este nodo es un contenedor Flex centrado. Cambiar {{field}} altera el tamaño de la caja interior, pero el contenido sigue centrado. Si quieres mover el bloque de contenido central, ajusta primero la alineación del diseño o sigue seleccionando {{childTargetName}} para retocar margen o padding.",
+      "marginCentered": "Este nodo usa un diseño Flex centrado. El margen exterior afecta sobre todo a la distancia respecto a nodos hermanos, no al contenido centrado en sí. Para ajustar el bloque central de texto, cambia primero la alineación del diseño o selecciona {{childTargetName}} y ajusta allí el margen.",
+      "sizeCentered": "Este nodo es un contenedor Flex centrado. Ajustar el ancho o la altura cambia la caja, pero el contenido sigue centrado con eje principal {{justifyContent}} y eje cruzado {{alignItems}}. Si quieres que el contenido quede arriba, a la izquierda o alineado a un borde, cambia primero la alineación del diseño.",
+      "gapUnavailable": "Este nodo no es un contenedor Flex ni Grid, así que definir un gap no producirá el efecto de separación que esperas. Cambia primero Display a Flex o Grid, o selecciona el contenedor padre real que controla el diseño de los hijos."
+    },
+    "insight": {
+      "layoutTitle": "Lectura de diseño",
+      "flexCentered": "La selección actual es un contenedor Flex centrado (eje principal {{justifyContent}}, eje cruzado {{alignItems}}). Los cambios de padding y tamaño suelen mantener el contenido centrado. Si quieres mover el contenido interior, ajusta primero la alineación del diseño o sigue seleccionando un elemento hijo.",
+      "grid": "Este nodo es un contenedor Grid. Céntrate primero en gap, padding y tamaño. Si un bloque hijo concreto está mal colocado, normalmente debes seleccionar ese hijo en lugar de editar solo el contenedor exterior.",
+      "parent": "Este nodo es un contenedor padre. Cambiar su padding, ancho o alto afecta a la estructura interna, pero no siempre mueve directamente el contenido hijo. Si quieres retocar un bloque concreto de texto o imagen, selecciona directamente el elemento hijo."
+    },
+    "active": {
+      "labels": "Escribe primero aquí el objetivo en lenguaje natural que quieres que siga la IA antes de afinar cifras.",
+      "size": "Usa primero las tarjetas rápidas de ancho y alto para acercarte al objetivo y luego afina abajo.",
+      "padding": "Usa los controles rápidos de padding para establecer el espacio interior del contenedor y luego afina lado por lado.",
+      "margin": "Usa los controles rápidos de margen para orientar la separación entre módulos antes de los ajustes precisos en un solo lado.",
+      "alignmentTitle": "Alineación",
+      "layout": "Salta a la sección Diseño y céntrate primero en la alineación del eje principal y del eje cruzado.",
+      "gapShortcut": "Este objeto tiene varios hijos visibles, así que Gap aparece como control unificado de separación en la sección Diseño.",
+      "gap": "Gap aparece en la sección Diseño. Solo funciona como esperas cuando el contenedor tiene hijos reales y un modo de diseño activo.",
+      "position": "Los controles de posición están en la sección de precisión para correcciones de top, left y z-index.",
+      "border": "Borde, radio y sombra trabajan juntos para definir la sensación del componente, así que conviene revisarlos en conjunto.",
+      "background": "Aquí viven el color de fondo y la opacidad para ajustar rápidamente jerarquía y énfasis.",
+      "shadow": "La sombra suele revisarse junto con el radio para conseguir un acabado visual estable.",
+      "typography": "Los controles tipográficos están agrupados aquí para que puedas ajustar de forma continua tamaño, altura de línea, peso y alineación.",
+      "overflow": "Usa esta zona cuando necesites controlar recorte o comportamiento de desplazamiento.",
+      "image": "El modo de imagen mantiene el modo de ajuste, el tamaño y el radio en un solo lugar para facilitar comparaciones."
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "Activar Flex",
+        "description": "Cambia primero el contenedor a Flex y luego continúa con los ajustes de alineación y separación."
+      },
+      "alignCenter": {
+        "label": "Centrar contenido",
+        "description": "Devuelve ambos ejes al centro para restaurar rápidamente el estado centrado estándar."
+      },
+      "spaceBetween": {
+        "label": "Espacio entre",
+        "description": "Distribuye los elementos hacia ambos extremos del eje principal. Ideal para barras de título, filas de botones y barras de herramientas."
+      },
+      "centerText": {
+        "label": "Centrar texto",
+        "description": "Cambia la alineación del texto al centro. Ideal para títulos y bloques de texto cortos."
+      },
+      "imageCover": {
+        "label": "Llenar contenedor",
+        "description": "Cambia object-fit a cover para que la imagen llene primero el contenedor."
+      },
+      "imageContain": {
+        "label": "Mostrar imagen completa",
+        "description": "Cambia object-fit a contain para que la imagen completa siga visible."
+      },
+      "increasePadding": {
+        "label": "Aumentar padding",
+        "description": "Añade {{quickStep}}px de aire en todos los lados de una vez."
+      },
+      "increaseGap": {
+        "label": "Aumentar gap",
+        "description": "Aumenta la separación entre elementos hijos en {{quickStep}}px."
+      }
+    },
+    "quick": {
+      "step": "Paso",
+      "decrease": "Reducir",
+      "increase": "Aumentar",
+      "decreaseWithStep": "Reducir {{step}}px",
+      "increaseWithStep": "Aumentar {{step}}px",
+      "increased": "aumentado",
+      "decreased": "reducido",
+      "layout": {
+        "title": "Tarjeta rápida de diseño",
+        "hint": "Cambia primero entre Block, Flex y Grid y luego usa el panel para empujar el contenido arriba, abajo, izquierda, derecha o al centro.",
+        "modeTitle": "Modo de diseño",
+        "modeDescription": "Display se ha cambiado a {{display}}. Sigue usando el panel para mover el contenido arriba, abajo, izquierda, derecha o al centro.",
+        "positionTitle": "Posición del contenido",
+        "positionDescription": "El contenido del contenedor ahora está situado en {{slot}}."
+      },
+      "spacing": {
+        "title": "Ajuste rápido de espaciado",
+        "hint": "Elige primero padding o margen y después una dirección. El centro significa todos los lados a la vez.",
+        "currentPadding": "Objetivo rápido actual: Padding",
+        "currentMargin": "Objetivo rápido actual: Margen",
+        "paddingActionTitle": "Acción rápida de padding",
+        "marginActionTitle": "Acción rápida de margen",
+        "adjusted": "{{side}} se ha {{direction}} en {{value}}px. Puedes seguir con ajustes finos de valor único más abajo."
+      },
+      "cards": {
+        "width": "El ancho suele ser lo primero que conviene ajustar en tarjetas, paneles y marcos de imagen.",
+        "height": "Ideal para estirar rápidamente áreas de título, tarjetas o zonas de imagen.",
+        "gap": "Aumenta o reduce directamente el espacio entre los elementos hijos del contenedor.",
+        "radius": "Suaviza los bordes de tarjetas, paneles e imágenes.",
+        "objectFit": "Cambia rápidamente el comportamiento del recorte de imagen entre llenar y encajar por completo en el contenedor.",
+        "opacity": "Útil para estados atenuados, overlays y suavizados.",
+        "fontSize": "Un control rápido de jerarquía para encabezados y texto de cuerpo."
+      }
+    },
+    "direction": {
+      "topLeft": "Arriba izquierda",
+      "top": "Arriba",
+      "topRight": "Arriba derecha",
+      "left": "Izquierda",
+      "center": "Centro",
+      "right": "Derecha",
+      "bottomLeft": "Abajo izquierda",
+      "bottom": "Abajo",
+      "bottomRight": "Abajo derecha"
+    },
+    "slot": {
+      "topLeft": "arriba a la izquierda",
+      "top": "arriba",
+      "topRight": "arriba a la derecha",
+      "left": "izquierda",
+      "center": "centro",
+      "right": "derecha",
+      "bottomLeft": "abajo a la izquierda",
+      "bottom": "abajo",
+      "bottomRight": "abajo a la derecha"
+    },
+    "editor": {
+      "textContent": "Contenido de texto",
+      "textPlaceholder": "Introduce el nuevo texto",
+      "imageUrl": "URL de la imagen",
+      "altText": "Texto alternativo",
+      "altPlaceholder": "descripción de la imagen"
+    },
+    "labels": {
+      "description": "Escribe aquí el objetivo para la IA en lenguaje natural, no cifras exactas. Úsalo para describir el efecto deseado, la estructura y las restricciones.",
+      "placeholder": "Introduce una nota de cambio…",
+      "placeholderConfirm": "Introduce una nota de cambio y pulsa Enter…",
+      "delete": "Eliminar etiqueta"
+    },
+    "snapshot": {
+      "layout": "Instantánea de diseño",
+      "visual": "Instantánea visual",
+      "typography": "Instantánea tipográfica",
+      "position": "Instantánea de posición"
+    },
+    "export": {
+      "sectionTitle": "Exportar prompt",
+      "sectionHint": "Aquí se reúnen los ajustes estructurados y la intención de las etiquetas de la página actual para que puedas pegarlos directamente en Codex u otras herramientas de código con IA.",
+      "kicker": "Prompt a nivel de página",
+      "title": "Brief final de ajuste para herramientas de código con IA",
+      "summary": "{{elementCount}} elementos recopilados / {{modifiedCount}} ajustes estructurados / {{tagCount}} grupos de etiquetas",
+      "copyTitle": "Copiar el resumen completo de ajustes y etiquetas de la sesión actual de la página",
+      "copyButton": "Exportar prompt",
+      "copied": "Prompt de página copiado",
+      "empty": "Aún no se han recopilado ediciones a nivel de página. Sigue ajustando elementos en el lienzo y DOMPrompter montará un prompt de página por ti."
+    },
+    "field": {
+      "scrubTitle": "{{label}}. Arrastra a izquierda o derecha para cambiar el valor; usa las flechas para ajustar con precisión y Shift para acelerar."
+    }
   }
 }

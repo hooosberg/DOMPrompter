@@ -86,7 +86,7 @@
   },
   "masReview": {
     "productId": "com.domprompter.app.pro.lifetime",
-    "supportUrl": "https://hooosberg.github.io/DOMPrompter/support.html",
-    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/privacy.html"
+    "supportUrl": "https://hooosberg.github.io/DOMPrompter/pages/support.html",
+    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/pages/privacy.html"
   }
 }

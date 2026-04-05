@@ -60,11 +60,32 @@ function mergeInlineStyleText(currentText: string, patch: Record<string, string>
     .join(' ')
 }
 
-function buildElementPickerScript(bindingName: string): string {
+const OVERLAY_LABEL_TRANSLATIONS: Record<string, Record<string, string>> = {
+  en:      { labels: 'Tags', gap: 'Gap', position: 'Position', layout: 'Align', typography: 'Font', image: 'Fill', radius: 'Radius', padding: 'Padding', margin: 'Margin' },
+  zh:      { labels: '标签', gap: '间距', position: '定位', layout: '对齐', typography: '字号', image: '填充', radius: '圆角', padding: '内距', margin: '外距' },
+  'zh-TW': { labels: '標籤', gap: '間距', position: '定位', layout: '對齊', typography: '字號', image: '填充', radius: '圓角', padding: '內距', margin: '外距' },
+  de:      { labels: 'Tags', gap: 'Abstand', position: 'Position', layout: 'Ausricht.', typography: 'Schrift', image: 'Füllung', radius: 'Radius', padding: 'Innen', margin: 'Außen' },
+  es:      { labels: 'Etiqu.', gap: 'Espacio', position: 'Posición', layout: 'Alinear', typography: 'Fuente', image: 'Relleno', radius: 'Radio', padding: 'Relleno', margin: 'Margen' },
+  fr:      { labels: 'Tags', gap: 'Écart', position: 'Position', layout: 'Aligner', typography: 'Police', image: 'Remplir', radius: 'Rayon', padding: 'Intér.', margin: 'Extér.' },
+  it:      { labels: 'Tag', gap: 'Spazio', position: 'Posizione', layout: 'Allinea', typography: 'Caratt.', image: 'Riemp.', radius: 'Raggio', padding: 'Interno', margin: 'Esterno' },
+  pt:      { labels: 'Tags', gap: 'Espaço', position: 'Posição', layout: 'Alinhar', typography: 'Fonte', image: 'Preencher', radius: 'Raio', padding: 'Interno', margin: 'Externo' },
+  ru:      { labels: 'Теги', gap: 'Зазор', position: 'Позиция', layout: 'Выровн.', typography: 'Шрифт', image: 'Запол.', radius: 'Радиус', padding: 'Внутр.', margin: 'Внешн.' },
+  ar:      { labels: 'وسوم', gap: 'فجوة', position: 'موضع', layout: 'محاذاة', typography: 'خط', image: 'ملء', radius: 'نصف قطر', padding: 'داخلي', margin: 'خارجي' },
+  ja:      { labels: 'タグ', gap: '間隔', position: '位置', layout: '配置', typography: '文字', image: '塗り', radius: '角丸', padding: '内側', margin: '外側' },
+  ko:      { labels: '태그', gap: '간격', position: '위치', layout: '정렬', typography: '글꼴', image: '채우기', radius: '반경', padding: '안쪽', margin: '바깥' },
+}
+
+function getOverlayLabels(language: string): Record<string, string> {
+  return OVERLAY_LABEL_TRANSLATIONS[language] || OVERLAY_LABEL_TRANSLATIONS.en
+}
+
+function buildElementPickerScript(bindingName: string, language: string = 'en'): string {
+  const overlayLabels = getOverlayLabels(language)
   return `(() => {
     const binding = ${JSON.stringify(bindingName)};
     const stateKey = ${JSON.stringify(ELEMENT_PICKER_STATE)};
     const runtimeVersion = ${JSON.stringify(ELEMENT_PICKER_RUNTIME_VERSION)};
+    const overlayLabels = ${JSON.stringify(overlayLabels)};
     const doc = document;
     const win = window;
 
@@ -357,34 +378,34 @@ function buildElementPickerScript(bindingName: string): string {
       const buildShortcutConfigs = (profile, styles) => {
         const configs = [];
         if (profile.preset === 'container') {
-          configs.push({ id: 'labels', label: '标签', property: 'labels' });
+          configs.push({ id: 'labels', label: overlayLabels.labels, property: 'labels' });
           if (profile.supportsGapShortcut || hasGapValue(styles)) {
-            configs.push({ id: 'gap', label: '间距', property: 'gap' });
+            configs.push({ id: 'gap', label: overlayLabels.gap, property: 'gap' });
           }
           if (profile.supportsPositionSection) {
-            configs.push({ id: 'position', label: '定位', property: 'position' });
+            configs.push({ id: 'position', label: overlayLabels.position, property: 'position' });
           }
           return configs.slice(0, 3);
         }
         if (profile.preset === 'container' && profile.supportsGap) {
-          configs.push({ id: 'gap', label: '间距', property: 'gap' });
+          configs.push({ id: 'gap', label: overlayLabels.gap, property: 'gap' });
         }
         if (profile.supportsLayout) {
-          configs.push({ id: 'layout', label: '对齐', property: 'layout' });
+          configs.push({ id: 'layout', label: overlayLabels.layout, property: 'layout' });
         }
         if (profile.preset === 'text' && profile.supportsTypography) {
-          configs.push({ id: 'typography', label: '字号', property: 'typography' });
+          configs.push({ id: 'typography', label: overlayLabels.typography, property: 'typography' });
         }
         if (profile.supportsMedia) {
-          configs.push({ id: 'image', label: '填充', property: 'image' });
-          configs.push({ id: 'radius', label: '圆角', property: 'border' });
+          configs.push({ id: 'image', label: overlayLabels.image, property: 'image' });
+          configs.push({ id: 'radius', label: overlayLabels.radius, property: 'border' });
         }
         if (profile.supportsPosition) {
-          configs.push({ id: 'position', label: '定位', property: 'position' });
+          configs.push({ id: 'position', label: overlayLabels.position, property: 'position' });
         }
         if (profile.density === 'tight') {
-          if (profile.supportsPadding) configs.push({ id: 'padding', label: '内距', property: 'padding' });
-          if (profile.supportsMargin) configs.push({ id: 'margin', label: '外距', property: 'margin' });
+          if (profile.supportsPadding) configs.push({ id: 'padding', label: overlayLabels.padding, property: 'padding' });
+          if (profile.supportsMargin) configs.push({ id: 'margin', label: overlayLabels.margin, property: 'margin' });
         }
 
         const maxCount = profile.density === 'roomy' ? 4 : (profile.density === 'compact' ? 3 : 2);
@@ -1616,6 +1637,7 @@ function buildElementPickerScript(bindingName: string): string {
 
 export class CDPHelper {
   private nativeInspectMode = false
+  language = 'en'
 
   constructor(private transport: ICDPTransport) { }
 
@@ -1658,7 +1680,7 @@ export class CDPHelper {
 
     this.nativeInspectMode = false
     await this.addBinding(ELEMENT_PICKER_BINDING)
-    await this.evaluate(buildElementPickerScript(ELEMENT_PICKER_BINDING), true)
+    await this.evaluate(buildElementPickerScript(ELEMENT_PICKER_BINDING, this.language), true)
   }
 
   async stopInspectMode(): Promise<void> {
@@ -1862,6 +1884,48 @@ export class CDPHelper {
 
   async getMatchedStylesForNode(nodeId: number): Promise<any> {
     return this.transport.send('CSS.getMatchedStylesForNode', { nodeId })
+  }
+
+  async getAncestorPath(nodeId: number, maxDepth: number = 5): Promise<string[]> {
+    const objectId = await this.resolveNode(nodeId)
+
+    try {
+      const result = await this.callFunctionOn(
+        objectId,
+        `function(maxDepth) {
+          const buildLabel = (el) => {
+            const tag = el.tagName.toLowerCase();
+            if (el.id) return tag + '#' + el.id;
+            if (el.classList && el.classList.length > 0) {
+              return tag + '.' + Array.from(el.classList).join('.');
+            }
+            return tag;
+          };
+          const nthLabel = (el) => {
+            const parent = el.parentElement;
+            if (!parent) return '';
+            const siblings = Array.from(parent.children).filter(
+              (s) => s.tagName === el.tagName
+            );
+            if (siblings.length <= 1) return '';
+            return ':nth-child(' + (siblings.indexOf(el) + 1) + ')';
+          };
+          const path = [];
+          let current = this.parentElement;
+          for (let i = 0; i < maxDepth && current && current !== document.documentElement; i++) {
+            path.unshift(buildLabel(current) + nthLabel(current));
+            current = current.parentElement;
+          }
+          return path;
+        }`,
+        [maxDepth],
+      )
+      return Array.isArray(result?.result?.value) ? result.result.value : []
+    } catch {
+      return []
+    } finally {
+      await this.releaseObject(objectId).catch(() => {})
+    }
   }
 
   async getInlineStylesForNode(nodeId: number): Promise<any> {

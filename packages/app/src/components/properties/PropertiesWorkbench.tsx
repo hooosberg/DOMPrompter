@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react'
-import { BASE_PROPERTY_SECTIONS, IMAGE_SECTION, TYPOGRAPHY_SECTION } from '../../config/propertySections'
+import { useTranslation } from 'react-i18next'
+import { createBasePropertySections, createImageSection, createTypographySection } from '../../config/propertySections'
 import { useStyleBinding, type GlobalHistoryCommitInfo } from '../../hooks/useStyleBinding'
 import type { ActiveEditProperty, CanvasTool, ElementCapabilityProfile, ElementTag, ExportPromptSummaryMeta, InspectedElement, OverlayNudgeChange, PersistedStyleHistoryState, PropertyFieldConfig, PropertySectionConfig } from '../../types'
 import { FieldControl } from './FieldControl'
 
 const SNAPSHOT_SECTIONS = [
-  { title: '布局快照', keys: ['width', 'height', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left'] },
-  { title: '视觉快照', keys: ['background-color', 'color', 'opacity', 'border', 'border-radius', 'box-shadow'] },
-  { title: '排版快照', keys: ['font-size', 'font-weight', 'font-family', 'line-height', 'text-align'] },
-  { title: '定位快照', keys: ['display', 'position', 'top', 'right', 'bottom', 'left', 'z-index', 'transform', 'overflow', 'object-fit'] },
+  { key: 'layout', keys: ['width', 'height', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left'] },
+  { key: 'visual', keys: ['background-color', 'color', 'opacity', 'border', 'border-radius', 'box-shadow'] },
+  { key: 'typography', keys: ['font-size', 'font-weight', 'font-family', 'line-height', 'text-align'] },
+  { key: 'position', keys: ['display', 'position', 'top', 'right', 'bottom', 'left', 'z-index', 'transform', 'overflow', 'object-fit'] },
 ]
 
-const TOOL_ITEMS: Array<{ tool: Exclude<CanvasTool, 'browse'>; icon: string; label: string }> = [
-  { tool: 'select', icon: '↖', label: '选择' },
+const TOOL_ITEMS: Array<{ tool: Exclude<CanvasTool, 'browse'>; icon: string; labelKey: string }> = [
+  { tool: 'select', icon: '↖', labelKey: 'workbench.toolbar.select' },
 ]
 
 interface RecommendedAction {
@@ -236,12 +237,12 @@ function buildLayoutAlignmentPatch(
   return nextPatch
 }
 
-function getSpacingSideLabel(side: SpacingSide) {
-  if (side === 'all') return '四边'
-  if (side === 'top') return '上边'
-  if (side === 'right') return '右边'
-  if (side === 'bottom') return '下边'
-  return '左边'
+function getSpacingSideLabel(side: SpacingSide, t: ReturnType<typeof useTranslation>['t']) {
+  if (side === 'all') return t('properties.spacing.allSides')
+  if (side === 'top') return t('properties.spacing.topSide')
+  if (side === 'right') return t('properties.spacing.rightSide')
+  if (side === 'bottom') return t('properties.spacing.bottomSide')
+  return t('properties.spacing.leftSide')
 }
 
 function getFieldValue(fieldKey: string, styles: Record<string, string>) {
@@ -364,17 +365,17 @@ function supportsImageEditing(element: InspectedElement) {
   return element.tagName === 'img'
 }
 
-function getDefaultHelperText(activeTool: CanvasTool) {
+function getDefaultHelperText(activeTool: CanvasTool, t: ReturnType<typeof useTranslation>['t']) {
   if (activeTool === 'browse') {
     return {
-      title: '真实交互',
-      description: '当前已关闭元素拾取。你可以直接点击和操作真实页面，让弹窗、菜单和下拉面板自然展开。',
+      title: t('workbench.helper.browseTitle'),
+      description: t('workbench.helper.browseDesc'),
     }
   }
 
   return {
-    title: '上下文微调',
-    description: '把鼠标移到任意参数卡片上，画布会高亮对应的 Margin、Padding 或排版区域，帮助你像看建筑图纸一样理解结构。',
+    title: t('workbench.helper.contextTitle'),
+    description: t('workbench.helper.contextDesc'),
   }
 }
 
@@ -383,6 +384,7 @@ function getContextualFieldHelper(
   styles: Record<string, string>,
   element: InspectedElement,
   fallbackDescription: string,
+  t: ReturnType<typeof useTranslation>['t'],
 ) {
   const display = styles.display || 'block'
   const justifyContent = styles['justify-content'] || 'normal'
@@ -391,51 +393,51 @@ function getContextualFieldHelper(
   const isGridContainer = ['grid', 'inline-grid'].includes(display)
   const isCenteringContainer = isFlexContainer && (justifyContent === 'center' || alignItems === 'center')
   const childTargetName = element.classNames[0]
-    ? `${element.classNames[0]} 内部的子元素`
-    : '内部子元素'
+    ? t('workbench.helper.innerChildWithClass', { className: element.classNames[0] })
+    : t('workbench.helper.innerChild')
 
   if (field.focusKey === 'padding' && isCenteringContainer) {
-    return `当前节点是一个 Flex 居中容器。修改 ${field.label} 会改变容器内盒尺寸，但子内容仍会保持居中，所以视觉上不像直接把内容往下推。若你的目标是移动中间这块内容，请优先调整“布局”里的主轴对齐，或者继续选中 ${childTargetName} 去调 margin / padding。`
+    return t('workbench.helper.paddingCentered', { field: field.label, childTargetName })
   }
 
   if (field.focusKey === 'margin' && isCenteringContainer) {
-    return `当前节点通过 Flex 居中排版。外层 margin 主要影响这个容器与外部兄弟节点的距离，不会像内部偏移那样直接推动中间内容。想微调中间文案块，优先改布局对齐，或者选中 ${childTargetName} 再调 margin。`
+    return t('workbench.helper.marginCentered', { childTargetName })
   }
 
   if (field.focusKey === 'size' && isCenteringContainer) {
-    return `当前节点是一个 Flex 居中容器。调整宽高会改变容器包围盒，但内部内容仍会按主轴 ${justifyContent}、交叉轴 ${alignItems} 继续居中。若你想让内容靠上、靠左或贴边，优先修改“布局”里的主轴/交叉轴。`
+    return t('workbench.helper.sizeCentered', { justifyContent, alignItems })
   }
 
   if (field.focusKey === 'gap' && !isFlexContainer && !isGridContainer) {
-    return '当前节点不是 Flex 或 Grid 容器，Gap 即使写入样式也不会产生你期待的子元素间距效果。先把“显示方式”切到 Flex / Grid，或选中真正承载子元素布局的父容器。'
+    return t('workbench.helper.gapUnavailable')
   }
 
   return fallbackDescription
 }
 
-function getLayoutInsight(styles: Record<string, string>, element: InspectedElement) {
+function getLayoutInsight(styles: Record<string, string>, element: InspectedElement, t: ReturnType<typeof useTranslation>['t']) {
   const display = styles.display || 'block'
   const justifyContent = styles['justify-content'] || 'normal'
   const alignItems = styles['align-items'] || 'normal'
 
   if (['flex', 'inline-flex'].includes(display) && (justifyContent === 'center' || alignItems === 'center')) {
     return {
-      title: '布局洞察',
-      description: `当前选中的是一个 Flex 居中容器（主轴 ${justifyContent}，交叉轴 ${alignItems}）。这类节点改 padding / 宽高时，内容通常仍会保持居中；如果你的目标是移动中间内容位置，优先改“布局”里的对齐，或者继续选中内部子元素。`,
+      title: t('workbench.insight.layoutTitle'),
+      description: t('workbench.insight.flexCentered', { justifyContent, alignItems }),
     }
   }
 
   if (['grid', 'inline-grid'].includes(display)) {
     return {
-      title: '布局洞察',
-      description: '当前节点是 Grid 容器。优先关注 gap、padding 和宽高；如果某个子块位置不对，通常需要选中子元素本身，而不是只改外层容器。',
+      title: t('workbench.insight.layoutTitle'),
+      description: t('workbench.insight.grid'),
     }
   }
 
   if (hasNestedMarkup(element)) {
     return {
-      title: '布局洞察',
-      description: '当前节点是父容器。改它的 padding / width / height 会影响内部结构，但不一定直接改变子内容的相对站位；如果你想微调具体文案块或图片块，继续点选内部子元素会更直接。',
+      title: t('workbench.insight.layoutTitle'),
+      description: t('workbench.insight.parent'),
     }
   }
 
@@ -502,6 +504,7 @@ function getRecommendedActions(
   styles: Record<string, string>,
   capabilityProfile: ElementCapabilityProfile,
   quickStep: number,
+  t: ReturnType<typeof useTranslation>['t'],
 ): RecommendedAction[] {
   const display = styles.display || 'block'
   const isFlexContainer = ['flex', 'inline-flex'].includes(display)
@@ -513,8 +516,8 @@ function getRecommendedActions(
   if (preset === 'container' && !isLayoutContainer) {
     actions.push({
       id: 'enable-flex',
-      label: '启用 Flex',
-      description: '先把容器切到 Flex，再继续做对齐和间距微调。',
+      label: t('workbench.recommended.enableFlex.label'),
+      description: t('workbench.recommended.enableFlex.description'),
       patch: { display: 'flex' },
       focusKey: 'layout',
     })
@@ -523,15 +526,15 @@ function getRecommendedActions(
   if (preset === 'container' && isLayoutContainer) {
     actions.push({
       id: 'align-center',
-      label: '让内容居中',
-      description: '把主轴和交叉轴都切回居中，快速恢复标准居中态。',
+      label: t('workbench.recommended.alignCenter.label'),
+      description: t('workbench.recommended.alignCenter.description'),
       patch: { 'justify-content': 'center', 'align-items': 'center' },
       focusKey: 'layout',
     })
     actions.push({
       id: 'space-between',
-      label: '两端排布',
-      description: '把主轴分布切到两端，适合标题条、按钮条和工具栏。',
+      label: t('workbench.recommended.spaceBetween.label'),
+      description: t('workbench.recommended.spaceBetween.description'),
       patch: { 'justify-content': 'space-between' },
       focusKey: 'layout',
     })
@@ -540,8 +543,8 @@ function getRecommendedActions(
   if (preset === 'text' && !hasNestedMarkup(element)) {
     actions.push({
       id: 'center-text',
-      label: '文字居中',
-      description: '把文本对齐方式切到居中，适合标题和短文案块。',
+      label: t('workbench.recommended.centerText.label'),
+      description: t('workbench.recommended.centerText.description'),
       patch: { 'text-align': 'center' },
       focusKey: 'typography',
     })
@@ -550,15 +553,15 @@ function getRecommendedActions(
   if (preset === 'image') {
     actions.push({
       id: 'image-cover',
-      label: '填满容器',
-      description: '将 object-fit 切到 cover，让图片优先铺满容器。',
+      label: t('workbench.recommended.imageCover.label'),
+      description: t('workbench.recommended.imageCover.description'),
       patch: { 'object-fit': 'cover' },
       focusKey: 'image',
     })
     actions.push({
       id: 'image-contain',
-      label: '完整显示',
-      description: '将 object-fit 切到 contain，让图片完整地留在容器里。',
+      label: t('workbench.recommended.imageContain.label'),
+      description: t('workbench.recommended.imageContain.description'),
       patch: { 'object-fit': 'contain' },
       focusKey: 'image',
     })
@@ -573,8 +576,8 @@ function getRecommendedActions(
 
     actions.push({
       id: 'increase-padding',
-      label: '增加内边距',
-      description: `四边同时增加 ${quickStep}px 留白，快速拉开内容呼吸感。`,
+      label: t('workbench.recommended.increasePadding.label'),
+      description: t('workbench.recommended.increasePadding.description', { quickStep }),
       patch: {
         'padding-top': formatPx(paddingTop + quickStep),
         'padding-right': formatPx(paddingRight + quickStep),
@@ -587,8 +590,8 @@ function getRecommendedActions(
     if (capabilityProfile.supportsGap && isLayoutContainer) {
       actions.push({
         id: 'increase-gap',
-        label: '增加间距',
-        description: `把容器内子元素之间的 gap 增加 ${quickStep}px。`,
+        label: t('workbench.recommended.increaseGap.label'),
+        description: t('workbench.recommended.increaseGap.description', { quickStep }),
         patch: { gap: formatPx(gapValue + quickStep) },
         focusKey: 'gap',
       })
@@ -644,96 +647,97 @@ function getFieldVisibility(
 function getActivePropertyTarget(
   property: ActiveEditProperty,
   capabilityProfile: ElementCapabilityProfile,
+  t: ReturnType<typeof useTranslation>['t'],
 ): ActivePropertyTarget {
   switch (property) {
     case 'labels':
       return {
         section: 'labels',
-        title: '标签意图',
-        description: '这里写的是给 AI 的自然语言目标。先明确对象想达到什么效果，再继续做数值微调。',
+        title: t('workbench.sections.labels'),
+        description: t('workbench.active.labels'),
       }
     case 'size':
       return {
         section: 'quick',
-        title: '尺寸',
-        description: '先用宽高快捷卡把外轮廓推到接近目标，再到下方尺寸字段做精细值修正。',
+        title: t('properties.sections.size.title'),
+        description: t('workbench.active.size'),
       }
     case 'padding':
       return {
         section: 'quick',
-        title: '内边距',
-        description: '内边距快捷盘会优先出现，适合先把容器内部留白拉到位，再逐边微调。',
+        title: t('properties.sections.padding.title'),
+        description: t('workbench.active.padding'),
       }
     case 'margin':
       return {
         section: 'quick',
-        title: '外边距',
-        description: '外边距快捷盘适合先做模块间距的大方向调整，再到精确控制区修正单边数值。',
+        title: t('properties.sections.margin.title'),
+        description: t('workbench.active.margin'),
       }
     case 'layout':
       return {
         section: 'precision',
-        subsectionTitle: '布局',
-        title: '对齐',
-        description: '这里会带你到布局小节，优先看主轴对齐和交叉轴这些真正决定工具栏排布的位置。',
+        subsectionTitle: t('properties.sections.layout.title'),
+        title: t('workbench.active.alignmentTitle'),
+        description: t('workbench.active.layout'),
       }
     case 'gap':
       return {
         section: 'precision',
-        subsectionTitle: '布局',
-        title: '间距',
+        subsectionTitle: t('properties.sections.layout.title'),
+        title: t('properties.fields.gap.label'),
         description: capabilityProfile.supportsGapShortcut
-          ? '当前对象有多个可见子元素，Gap 字段会作为统一间距入口显示在布局小节里。'
-          : 'Gap 会在布局小节里显示；只有容器存在真实子项并启用布局模式时，它才会产生你期待的效果。',
+          ? t('workbench.active.gapShortcut')
+          : t('workbench.active.gap'),
       }
     case 'position':
       return {
         section: 'precision',
-        subsectionTitle: '定位',
-        title: '定位',
-        description: '定位相关控制放在精确控制区，适合做 top / left / z-index 这类高精度修正。',
+        subsectionTitle: t('properties.sections.position.title'),
+        title: t('properties.sections.position.title'),
+        description: t('workbench.active.position'),
       }
     case 'border':
       return {
         section: 'precision',
-        subsectionTitle: '边框与圆角',
-        title: '边框与圆角',
-        description: '边框、圆角和投影会一起影响组件气质，适合在同一组字段里联动观察。',
+        subsectionTitle: t('properties.sections.border.title'),
+        title: t('properties.sections.border.title'),
+        description: t('workbench.active.border'),
       }
     case 'background':
       return {
         section: 'precision',
-        subsectionTitle: '背景',
-        title: '背景',
-        description: '背景色和透明度都在这里，适合快速调整层级感和视觉强弱。',
+        subsectionTitle: t('properties.sections.background.title'),
+        title: t('properties.sections.background.title'),
+        description: t('workbench.active.background'),
       }
     case 'shadow':
       return {
         section: 'precision',
-        subsectionTitle: '边框与圆角',
-        title: '投影',
-        description: '投影与圆角通常要联动观察，这里更适合做稳定的视觉精修。',
+        subsectionTitle: t('properties.sections.border.title'),
+        title: t('properties.fields.boxShadow.label'),
+        description: t('workbench.active.shadow'),
       }
     case 'typography':
       return {
         section: 'precision',
-        subsectionTitle: '文字',
-        title: '文字',
-        description: '文字控制集中在这里，适合连续调整字号、行高、字重和对齐。',
+        subsectionTitle: t('properties.sections.typography.title'),
+        title: t('properties.sections.typography.title'),
+        description: t('workbench.active.typography'),
       }
     case 'overflow':
       return {
         section: 'precision',
-        subsectionTitle: '滚动与裁切',
-        title: '滚动与裁切',
-        description: '需要控制内容裁切或滚动时，优先看这里的 overflow 相关设置。',
+        subsectionTitle: t('properties.sections.overflow.title'),
+        title: t('properties.sections.overflow.title'),
+        description: t('workbench.active.overflow'),
       }
     case 'image':
       return {
         section: 'precision',
-        subsectionTitle: '图片',
-        title: '图片',
-        description: '图片模式会把填充方式、尺寸和圆角放在同一区域，方便一起比对。',
+        subsectionTitle: t('properties.sections.image.title'),
+        title: t('properties.sections.image.title'),
+        description: t('workbench.active.image'),
       }
   }
 }
@@ -806,6 +810,7 @@ function QuickStepSelector({
   step: number
   onChange: (step: number) => void
 }) {
+  const { t } = useTranslation()
   const [draftValue, setDraftValue] = useState(String(step))
 
   useEffect(() => {
@@ -814,7 +819,7 @@ function QuickStepSelector({
 
   return (
     <div className="quick-step-selector">
-      <span className="quick-step-label">步进</span>
+      <span className="quick-step-label">{t('workbench.quick.step')}</span>
       <div className="quick-step-editor">
         <input
           className="quick-step-input"
@@ -900,6 +905,7 @@ function QuickLayoutCard({
   onSetDisplay: (display: string) => void
   onAlign: (slot: DirectionalPadSlot) => void
 }) {
+  const { t } = useTranslation()
   const display = styles.display || 'block'
   const displayKey = ['flex', 'inline-flex'].includes(display)
     ? 'flex'
@@ -911,13 +917,13 @@ function QuickLayoutCard({
   return (
     <div className="quick-system-card">
       <div className="quick-system-card-header">
-        <div className="control-section-title" title="先切换块 / Flex / Grid，再用九宫格把内容快速推到不同位置。">布局快捷卡</div>
+        <div className="control-section-title" title={t('workbench.quick.layout.hint')}>{t('workbench.quick.layout.title')}</div>
         <span className="quick-system-card-value">{displayKey.toUpperCase()}</span>
       </div>
 
       <div className="quick-segmented">
         {[
-          { label: '块', value: 'block' },
+          { label: t('properties.options.display.block'), value: 'block' },
           { label: 'Flex', value: 'flex' },
           { label: 'Grid', value: 'grid' },
         ].map((item) => (
@@ -938,15 +944,15 @@ function QuickLayoutCard({
         activeSlot={activeSlot}
         onSelect={onAlign}
         items={[
-          { slot: 'top-left', label: '左上' },
-          { slot: 'top', label: '上' },
-          { slot: 'top-right', label: '右上' },
-          { slot: 'left', label: '左' },
-          { slot: 'center', label: '中' },
-          { slot: 'right', label: '右' },
-          { slot: 'bottom-left', label: '左下' },
-          { slot: 'bottom', label: '下' },
-          { slot: 'bottom-right', label: '右下' },
+          { slot: 'top-left', label: t('workbench.direction.topLeft') },
+          { slot: 'top', label: t('workbench.direction.top') },
+          { slot: 'top-right', label: t('workbench.direction.topRight') },
+          { slot: 'left', label: t('workbench.direction.left') },
+          { slot: 'center', label: t('workbench.direction.center') },
+          { slot: 'right', label: t('workbench.direction.right') },
+          { slot: 'bottom-left', label: t('workbench.direction.bottomLeft') },
+          { slot: 'bottom', label: t('workbench.direction.bottom') },
+          { slot: 'bottom-right', label: t('workbench.direction.bottomRight') },
         ]}
       />
     </div>
@@ -972,22 +978,23 @@ function QuickSpacingPad({
   onSideChange: (side: SpacingSide) => void
   onAdjust: (delta: number) => void
 }) {
+  const { t } = useTranslation()
   const currentSummary = side === 'all'
     ? buildSpacingSummary(styles, target)
     : styles[`${target}-${side}`] || '0px'
 
   const sideItems: Array<{ side: SpacingSide; label: string }> = [
-    { side: 'all', label: '全' },
-    { side: 'top', label: '上' },
-    { side: 'right', label: '右' },
-    { side: 'bottom', label: '下' },
-    { side: 'left', label: '左' },
+    { side: 'all', label: t('properties.sides.allShort') },
+    { side: 'top', label: t('properties.sides.top') },
+    { side: 'right', label: t('properties.sides.right') },
+    { side: 'bottom', label: t('properties.sides.bottom') },
+    { side: 'left', label: t('properties.sides.left') },
   ]
 
   return (
     <div className="quick-system-card quick-spacing-card">
       <div className="quick-system-card-header">
-        <div className="control-section-title" title="先选内边距或外边距，再点方向。中心表示四边一起调整。">边距快捷调节</div>
+        <div className="control-section-title" title={t('workbench.quick.spacing.hint')}>{t('workbench.quick.spacing.title')}</div>
         <div className="quick-system-card-meta">
           <strong className="quick-spacing-value">{currentSummary}</strong>
           <span className="quick-step-mini">{step}px</span>
@@ -1003,13 +1010,13 @@ function QuickSpacingPad({
               className={`quick-segmented-option ${target === item ? 'active' : ''}`}
               onClick={() => onTargetChange(item)}
             >
-              {item === 'padding' ? '内边距' : '外边距'}
+              {item === 'padding' ? t('properties.sections.padding.title') : t('properties.sections.margin.title')}
             </button>
           ))}
         </div>
       ) : (
         <div className="quick-system-card-chip">
-          {availableTargets[0] === 'padding' ? '当前快捷调节：内边距' : '当前快捷调节：外边距'}
+          {availableTargets[0] === 'padding' ? t('workbench.quick.spacing.currentPadding') : t('workbench.quick.spacing.currentMargin')}
         </div>
       )}
 
@@ -1033,10 +1040,10 @@ function QuickSpacingPad({
 
       <div className="quick-spacing-actions">
         <button type="button" className="quick-spacing-action" onClick={() => onAdjust(-step)}>
-          减少 {step}px
+          {t('workbench.quick.decreaseWithStep', { step })}
         </button>
         <button type="button" className="quick-spacing-action primary" onClick={() => onAdjust(step)}>
-          增加 {step}px
+          {t('workbench.quick.increaseWithStep', { step })}
         </button>
       </div>
     </div>
@@ -1051,6 +1058,7 @@ function QuickAdjustCard({
   onDecrease,
   onIncrease,
 }: QuickAdjustCardConfig) {
+  const { t } = useTranslation()
   return (
     <div className="quick-system-card quick-adjust-card">
       <div className="quick-system-card-header">
@@ -1062,8 +1070,8 @@ function QuickAdjustCard({
       </div>
 
       <div className="quick-adjust-actions">
-        <button type="button" className="quick-spacing-action" onClick={onDecrease}>减少</button>
-        <button type="button" className="quick-spacing-action primary" onClick={onIncrease}>增加</button>
+        <button type="button" className="quick-spacing-action" onClick={onDecrease}>{t('workbench.quick.decrease')}</button>
+        <button type="button" className="quick-spacing-action primary" onClick={onIncrease}>{t('workbench.quick.increase')}</button>
       </div>
     </div>
   )
@@ -1090,6 +1098,7 @@ function SectionBlock({
   sectionRef?: Ref<HTMLElement>
   children: ReactNode
 }) {
+  const { t } = useTranslation()
   const resolvedOpen = collapsible ? Boolean(open) : true
 
   return (
@@ -1107,7 +1116,7 @@ function SectionBlock({
             title={hint}
           >
             <span className="control-section-title">{title}</span>
-            <span className="control-section-toggle-meta">{resolvedOpen ? '收起' : '展开'}</span>
+            <span className="control-section-toggle-meta">{resolvedOpen ? t('common.collapse') : t('common.expand')}</span>
           </button>
         ) : (
           <div className="control-section-title" title={hint}>{title}</div>
@@ -1176,6 +1185,7 @@ function TextContentEditor({
   value: string
   onCommit: (value: string) => void
 }) {
+  const { t } = useTranslation()
   const [draftValue, setDraftValue] = useState(value)
   const [isFocused, setIsFocused] = useState(false)
 
@@ -1187,11 +1197,11 @@ function TextContentEditor({
 
   return (
     <label className="control-card control-card-wide">
-      <span className="control-card-label">文案内容</span>
+      <span className="control-card-label">{t('workbench.editor.textContent')}</span>
       <textarea
         className="control-textarea"
         value={draftValue}
-        placeholder="输入新的文案"
+        placeholder={t('workbench.editor.textPlaceholder')}
         onFocus={() => setIsFocused(true)}
         onChange={(event) => {
           const nextValue = event.target.value
@@ -1265,6 +1275,7 @@ function LabelSection({
   onUpsertTag: (element: InspectedElement, text: string, tagId?: string) => void
   onDeleteTag: (tagId: string) => void
 }) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const elementTags = tags.filter((tag) =>
@@ -1284,16 +1295,16 @@ function LabelSection({
     <div className="label-section">
       <div className="label-section-header">
         <span className="label-section-icon">🏷</span>
-        <span className="label-section-title">标签意图</span>
+        <span className="label-section-title">{t('workbench.sections.labels')}</span>
       </div>
-      <div className="label-section-desc">这里写给 AI 的是自然语言目标，不是精确数值。用它描述这个对象想达到的效果、结构意图和实现约束。</div>
+      <div className="label-section-desc">{t('workbench.labels.description')}</div>
       {elementTags.map((tag) => (
         <div key={tag.id} className="label-item">
           <input
             type="text"
             className="label-input"
             defaultValue={tag.text}
-            placeholder="输入修改意见…"
+            placeholder={t('workbench.labels.placeholder')}
             onBlur={(e) => {
               const val = e.target.value.trim()
               if (val) {
@@ -1310,7 +1321,7 @@ function LabelSection({
             type="button"
             className="label-delete-btn"
             onClick={() => onDeleteTag(tag.id)}
-            title="删除标签"
+            title={t('workbench.labels.delete')}
           >×</button>
         </div>
       ))}
@@ -1320,7 +1331,7 @@ function LabelSection({
             ref={inputRef}
             type="text"
             className="label-input"
-            placeholder="输入修改意见，回车确认…"
+            placeholder={t('workbench.labels.placeholderConfirm')}
             onBlur={(e) => handleConfirmAdd(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -1396,6 +1407,7 @@ export function PropertiesWorkbench({
   canExportPrompt: boolean
   onCopyExportPrompt: () => Promise<void> | void
 }) {
+  const { t } = useTranslation()
   const {
     draftStyles,
     pendingField,
@@ -1415,7 +1427,7 @@ export function PropertiesWorkbench({
     onPersistedStyleHistoryChange,
     onGlobalHistoryCommit,
   })
-  const [helperState, setHelperState] = useState<{ title: string; description: string }>(() => getDefaultHelperText(activeTool))
+  const [helperState, setHelperState] = useState<{ title: string; description: string }>(() => getDefaultHelperText(activeTool, t))
   const [copiedSelector, setCopiedSelector] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [quickStep, setQuickStep] = useState<number>(8)
@@ -1432,6 +1444,8 @@ export function PropertiesWorkbench({
     assist: false,
     'css-vars': false,
   })
+  const typographySection = useMemo(() => createTypographySection(t), [t])
+  const imageSection = useMemo(() => createImageSection(t), [t])
   const preset = useMemo(() => getElementPreset(element, draftStyles), [element, draftStyles])
   const capabilityProfile = useMemo(
     () => buildElementCapabilityProfile(element, draftStyles),
@@ -1440,7 +1454,7 @@ export function PropertiesWorkbench({
   const elementDisplayName = useMemo(() => getElementDisplayName(element), [element])
 
   const sections = useMemo<PropertySectionConfig[]>(() => {
-    const nextSections = BASE_PROPERTY_SECTIONS
+    const nextSections = createBasePropertySections(t)
       .map((section) => ({
         ...section,
         fields: section.fields.filter((field) => getFieldVisibility(field, draftStyles, capabilityProfile)),
@@ -1448,22 +1462,22 @@ export function PropertiesWorkbench({
       .filter((section) => section.fields.length > 0)
 
     if (supportsTypography(element)) {
-      nextSections.push(TYPOGRAPHY_SECTION)
+      nextSections.push(typographySection)
     }
     if (supportsImageEditing(element)) {
-      nextSections.push(IMAGE_SECTION)
+      nextSections.push(imageSection)
     }
     return nextSections
-  }, [capabilityProfile, draftStyles, element])
+  }, [capabilityProfile, draftStyles, element, imageSection, t, typographySection])
 
   useEffect(() => {
-    setHelperState(getDefaultHelperText(activeTool))
-  }, [activeTool, element.backendNodeId])
+    setHelperState(getDefaultHelperText(activeTool, t))
+  }, [activeTool, element.backendNodeId, t])
 
   const handleFieldActiveChange = (field: PropertyFieldConfig | null) => {
     if (!field || !field.focusKey) {
       onActiveEditPropertyChange(null)
-      setHelperState(getDefaultHelperText(activeTool))
+      setHelperState(getDefaultHelperText(activeTool, t))
       return
     }
 
@@ -1474,13 +1488,14 @@ export function PropertiesWorkbench({
         field,
         draftStyles,
         element,
-        field.helperText || getDefaultHelperText(activeTool).description,
+        field.helperText || getDefaultHelperText(activeTool, t).description,
+        t,
       ),
     })
   }
   const activePropertyTarget = useMemo(
-    () => (activeEditProperty ? getActivePropertyTarget(activeEditProperty, capabilityProfile) : null),
-    [activeEditProperty, capabilityProfile],
+    () => (activeEditProperty ? getActivePropertyTarget(activeEditProperty, capabilityProfile, t) : null),
+    [activeEditProperty, capabilityProfile, t],
   )
   const textPreview = useMemo(() => element.textContentPreview || '', [element.textContentPreview])
   const metricSummary = useMemo(() => {
@@ -1501,7 +1516,7 @@ export function PropertiesWorkbench({
     ]
     return items
   }, [capabilityProfile, draftStyles, element.boxModel])
-  const layoutInsight = useMemo(() => getLayoutInsight(draftStyles, element), [draftStyles, element])
+  const layoutInsight = useMemo(() => getLayoutInsight(draftStyles, element, t), [draftStyles, element, t])
   const recommendedFields = useMemo(() => {
     const fieldMap = new Map<string, PropertyFieldConfig>()
     sections.forEach((section) => {
@@ -1517,8 +1532,8 @@ export function PropertiesWorkbench({
   }, [capabilityProfile, compact, draftStyles, element, sections])
   const recommendedFieldKeySet = useMemo(() => new Set(recommendedFields.map((field) => field.key)), [recommendedFields])
   const recommendedActions = useMemo(
-    () => getRecommendedActions(element, draftStyles, capabilityProfile, quickStep),
-    [capabilityProfile, draftStyles, element, quickStep],
+    () => getRecommendedActions(element, draftStyles, capabilityProfile, quickStep, t),
+    [capabilityProfile, draftStyles, element, quickStep, t],
   )
   const availableSpacingTargets = useMemo<SpacingTarget[]>(() => {
     const targets: SpacingTarget[] = []
@@ -1534,11 +1549,11 @@ export function PropertiesWorkbench({
       }))
       .filter((section) => {
         if (section.fields.length > 0) return true
-        if (section.title === TYPOGRAPHY_SECTION.title && supportsTypography(element)) return true
-        if (section.title === IMAGE_SECTION.title && supportsImageEditing(element)) return true
+        if (section.title === typographySection.title && supportsTypography(element)) return true
+        if (section.title === imageSection.title && supportsImageEditing(element)) return true
         return false
       })
-  ), [element, recommendedFieldKeySet, sections])
+  ), [element, imageSection.title, recommendedFieldKeySet, sections, typographySection.title])
   const hasCssVariables = Object.keys(element.cssVariables).length > 0
   const isSectionExpanded = useCallback((key: string, defaultValue = false) => (
     expandedSections[key] ?? defaultValue
@@ -1638,7 +1653,7 @@ export function PropertiesWorkbench({
 
   const resetHelperState = () => {
     onActiveEditPropertyChange(null)
-    setHelperState(getDefaultHelperText(activeTool))
+    setHelperState(getDefaultHelperText(activeTool, t))
   }
 
   const activateQuickHelper = (
@@ -1664,16 +1679,20 @@ export function PropertiesWorkbench({
     updateStyles(patch, `quick-spacing:${quickSpacingTarget}:${quickSpacingSide}:${delta > 0 ? 'plus' : 'minus'}`)
     onActiveEditPropertyChange(quickSpacingTarget)
     setHelperState({
-      title: `${quickSpacingTarget === 'padding' ? '内边距' : '外边距'}快捷操作`,
-      description: `${getSpacingSideLabel(quickSpacingSide)}已${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)}px。你也可以继续在下方参数区做更精细的单值微调。`,
+      title: quickSpacingTarget === 'padding' ? t('workbench.quick.spacing.paddingActionTitle') : t('workbench.quick.spacing.marginActionTitle'),
+      description: t('workbench.quick.spacing.adjusted', {
+        side: getSpacingSideLabel(quickSpacingSide, t),
+        direction: delta > 0 ? t('workbench.quick.increased') : t('workbench.quick.decreased'),
+        value: Math.abs(delta),
+      }),
     })
   }
 
   const handleQuickLayoutDisplay = (display: string) => {
     updateStyles({ display }, `quick-layout:display:${display}`)
     activateQuickHelper(
-      '布局模式',
-      `显示方式已切到 ${display.toUpperCase()}。继续用方向盘可以把内容快速推到上、下、左、右或中心。`,
+      t('workbench.quick.layout.modeTitle'),
+      t('workbench.quick.layout.modeDescription', { display: display.toUpperCase() }),
       'layout',
     )
   }
@@ -1681,20 +1700,20 @@ export function PropertiesWorkbench({
   const handleQuickLayoutAlign = (slot: DirectionalPadSlot) => {
     const patch = buildLayoutAlignmentPatch(draftStyles, slot)
     const slotLabelMap: Record<DirectionalPadSlot, string> = {
-      'top-left': '左上角',
-      top: '上方',
-      'top-right': '右上角',
-      left: '左侧',
-      center: '中心',
-      right: '右侧',
-      'bottom-left': '左下角',
-      bottom: '下方',
-      'bottom-right': '右下角',
+      'top-left': t('workbench.slot.topLeft'),
+      top: t('workbench.slot.top'),
+      'top-right': t('workbench.slot.topRight'),
+      left: t('workbench.slot.left'),
+      center: t('workbench.slot.center'),
+      right: t('workbench.slot.right'),
+      'bottom-left': t('workbench.slot.bottomLeft'),
+      bottom: t('workbench.slot.bottom'),
+      'bottom-right': t('workbench.slot.bottomRight'),
     }
     updateStyles(patch, `quick-layout:align:${slot}`)
     activateQuickHelper(
-      '内容站位',
-      `已把容器内容切到${slotLabelMap[slot]}。`,
+      t('workbench.quick.layout.positionTitle'),
+      t('workbench.quick.layout.positionDescription', { slot: slotLabelMap[slot] }),
       'layout',
     )
   }
@@ -1708,9 +1727,9 @@ export function PropertiesWorkbench({
     if (capabilityProfile.supportsSize) {
       nextCards.push({
         id: 'quick-width',
-        title: '宽度',
+        title: t('properties.fields.width.label'),
         value: widthBase > 0 ? formatPx(widthBase) : (draftStyles.width || 'auto'),
-        description: '卡片、面板和图像框最常先调宽度。',
+        description: t('workbench.quick.cards.width'),
         focusKey: 'size',
         stepLabel: `${quickStep}px`,
         onDecrease: () => updateStyles(buildNudgedPxPatch(draftStyles, 'width', -quickStep, widthBase), 'quick-adjust:width:minus'),
@@ -1719,9 +1738,9 @@ export function PropertiesWorkbench({
 
       nextCards.push({
         id: 'quick-height',
-        title: '高度',
+        title: t('properties.fields.height.label'),
         value: heightBase > 0 ? formatPx(heightBase) : (draftStyles.height || 'auto'),
-        description: '适合快速拉高标题区、卡片或图片区。',
+        description: t('workbench.quick.cards.height'),
         focusKey: 'size',
         stepLabel: `${quickStep}px`,
         onDecrease: () => updateStyles(buildNudgedPxPatch(draftStyles, 'height', -quickStep, heightBase), 'quick-adjust:height:minus'),
@@ -1733,9 +1752,9 @@ export function PropertiesWorkbench({
       const gapBase = parseNumericToken(getFieldValue('gap', draftStyles) || '0px') || 0
       nextCards.push({
         id: 'quick-gap',
-        title: '间距',
+        title: t('properties.fields.gap.label'),
         value: formatPx(gapBase),
-        description: '直接增减容器里子元素之间的空隙。',
+        description: t('workbench.quick.cards.gap'),
         focusKey: 'gap',
         stepLabel: `${quickStep}px`,
         onDecrease: () => updateStyles({ gap: formatPx(Math.max(0, gapBase - quickStep)) }, 'quick-adjust:gap:minus'),
@@ -1747,9 +1766,9 @@ export function PropertiesWorkbench({
       const radiusBase = parseNumericToken(draftStyles['border-radius'] || '0px') || 0
       nextCards.push({
         id: 'quick-radius',
-        title: '圆角',
+        title: t('properties.fields.borderRadius.label'),
         value: formatPx(radiusBase),
-        description: '让卡片、面板和图片边缘更柔和。',
+        description: t('workbench.quick.cards.radius'),
         focusKey: 'border',
         stepLabel: `${quickStep}px`,
         onDecrease: () => updateStyles({ 'border-radius': formatPx(Math.max(0, radiusBase - quickStep)) }, 'quick-adjust:radius:minus'),
@@ -1760,9 +1779,9 @@ export function PropertiesWorkbench({
     if (capabilityProfile.supportsMedia) {
       nextCards.push({
         id: 'quick-object-fit',
-        title: '填充方式',
+        title: t('properties.fields.objectFit.label'),
         value: draftStyles['object-fit'] || 'cover',
-        description: '在铺满和完整显示之间快速切换图片裁切方式。',
+        description: t('workbench.quick.cards.objectFit'),
         focusKey: 'image',
         onDecrease: () => updateStyles({ 'object-fit': 'contain' }, 'quick-adjust:object-fit:contain'),
         onIncrease: () => updateStyles({ 'object-fit': 'cover' }, 'quick-adjust:object-fit:cover'),
@@ -1772,9 +1791,9 @@ export function PropertiesWorkbench({
     const opacityBase = parseNumericToken(draftStyles.opacity || '1') ?? 1
     nextCards.push({
       id: 'quick-opacity',
-      title: '透明度',
+      title: t('properties.fields.opacity.label'),
       value: formatOpacity(opacityBase),
-      description: '适合做弱化态、叠层和柔和感。',
+      description: t('workbench.quick.cards.opacity'),
       focusKey: 'background',
       stepLabel: '0.05',
       onDecrease: () => updateStyles({ opacity: formatOpacity(opacityBase - 0.05) }, 'quick-adjust:opacity:minus'),
@@ -1786,9 +1805,9 @@ export function PropertiesWorkbench({
       const fontStep = Math.max(1, Math.round(quickStep / 4))
       nextCards.push({
         id: 'quick-font-size',
-        title: '字号',
+        title: t('properties.fields.fontSize.label'),
         value: formatPx(fontSizeBase),
-        description: '标题和正文最常用的快速层级控制。',
+        description: t('workbench.quick.cards.fontSize'),
         focusKey: 'typography',
         stepLabel: `${fontStep}px`,
         onDecrease: () => updateStyles({ 'font-size': formatPx(Math.max(0, fontSizeBase - fontStep)) }, 'quick-adjust:font-size:minus'),
@@ -1797,7 +1816,7 @@ export function PropertiesWorkbench({
     }
 
     return nextCards.slice(0, compact ? 4 : 6)
-  }, [capabilityProfile, compact, draftStyles, element, preset, quickStep, updateStyles])
+  }, [capabilityProfile, compact, draftStyles, element, preset, quickStep, t, updateStyles])
 
   return (
     <div className="workbench-shell">
@@ -1815,17 +1834,17 @@ export function PropertiesWorkbench({
                       onToolChange(activeTool === 'select' ? 'browse' : 'select')
                     }
                   }}
-                  aria-label={item.label}
-                  title={activeTool === 'select' ? '关闭元素选择，恢复真实点击' : '开启元素选择'}
+                  aria-label={t(item.labelKey)}
+                  title={activeTool === 'select' ? t('workbench.toolbar.selectOff') : t('workbench.toolbar.selectOn')}
                 >
                   <span className="panel-tool-icon">{item.icon}</span>
-                  <span className="panel-tool-text">{activeTool === 'select' ? '选择中' : '可交互'}</span>
+                  <span className="panel-tool-text">{activeTool === 'select' ? t('workbench.toolbar.selectActive') : t('workbench.toolbar.interactive')}</span>
                 </button>
               ))}
             </div>
 
             <div className="panel-toolbar-trailing">
-              <span className={`element-sync ${pendingField ? 'visible' : ''}`} title={pendingField || ''}>同步中</span>
+              <span className={`element-sync ${pendingField ? 'visible' : ''}`} title={pendingField || ''}>{t('workbench.toolbar.syncing')}</span>
               <div className="history-cluster">
                 <button
                   type="button"
@@ -1836,7 +1855,7 @@ export function PropertiesWorkbench({
                   disabled={!globalCanUndo}
                 >
                   <span>↶</span>
-                  <span>撤销</span>
+                  <span>{t('workbench.toolbar.undo')}</span>
                 </button>
                 <button
                   type="button"
@@ -1847,7 +1866,7 @@ export function PropertiesWorkbench({
                   disabled={!globalCanRedo}
                 >
                   <span>↷</span>
-                  <span>前进</span>
+                  <span>{t('workbench.toolbar.redo')}</span>
                 </button>
                 <button
                   type="button"
@@ -1858,7 +1877,7 @@ export function PropertiesWorkbench({
                   disabled={!globalCanReset}
                 >
                   <span>⟲</span>
-                  <span>复位</span>
+                  <span>{t('workbench.toolbar.reset')}</span>
                 </button>
               </div>
             </div>
@@ -1866,16 +1885,16 @@ export function PropertiesWorkbench({
 
           <div className="element-header">
             <div className="element-header-main">
-              <span className="element-header-kicker">{preset === 'container' ? '容器名称' : '元素名称'}</span>
+              <span className="element-header-kicker">{preset === 'container' ? t('workbench.element.containerName') : t('workbench.element.elementName')}</span>
               <div className="element-header-actions">
                 <button
                   type="button"
                   className="element-selector-button"
                   onClick={() => void handleCopyElementName()}
-                  title={`点击复制 ${elementDisplayName}`}
+                  title={t('workbench.element.copyTitle', { name: elementDisplayName })}
                 >
                   <span className="element-selector-name">{elementDisplayName}</span>
-                  <span className="element-selector-copy">{copiedSelector ? '已复制' : '复制'}</span>
+                  <span className="element-selector-copy">{copiedSelector ? t('common.copied') : t('common.copy')}</span>
                 </button>
               </div>
               {preset !== 'container' && (
@@ -1888,8 +1907,8 @@ export function PropertiesWorkbench({
         </div>
 
         <SectionBlock
-          title="标签意图"
-          hint="这里直接写给 AI 你想怎么改这个元素。标签是高优先级意图，不只是备注。"
+          title={t('workbench.sections.labels')}
+          hint={t('workbench.sections.labelsHint')}
           compact={compact}
           active={activePropertyTarget?.section === 'labels'}
           sectionRef={labelSectionRef}
@@ -1914,8 +1933,8 @@ export function PropertiesWorkbench({
         </div>
 
         <SectionBlock
-          title="快捷操作"
-          hint="先用语义化动作和方向卡把对象推到接近目标，再到后面的原始参数区做精修。"
+          title={t('workbench.sections.quick')}
+          hint={t('workbench.sections.quickHint')}
           compact={compact}
           active={activePropertyTarget?.section === 'quick'}
           sectionRef={quickSectionRef}
@@ -1942,7 +1961,7 @@ export function PropertiesWorkbench({
 
           {preset === 'container' && (
             <div
-              onMouseEnter={() => activateQuickHelper('布局快捷卡', '先切块 / Flex / Grid，再用方向盘把内容推到上、下、左、右或居中。', 'layout')}
+              onMouseEnter={() => activateQuickHelper(t('workbench.quick.layout.title'), t('workbench.quick.layout.hint'), 'layout')}
               onMouseLeave={resetHelperState}
             >
               <QuickLayoutCard
@@ -1955,7 +1974,7 @@ export function PropertiesWorkbench({
 
           {availableSpacingTargets.length > 0 && (
             <div
-              onMouseEnter={() => activateQuickHelper('边距快捷调节', '先选内边距或外边距，再点方向。中心表示四边一起调整。', quickSpacingTarget)}
+              onMouseEnter={() => activateQuickHelper(t('workbench.quick.spacing.title'), t('workbench.quick.spacing.hint'), quickSpacingTarget)}
               onMouseLeave={resetHelperState}
             >
               <QuickSpacingPad
@@ -1987,8 +2006,8 @@ export function PropertiesWorkbench({
         </SectionBlock>
 
         <SectionBlock
-          title="精确控制"
-          hint="快捷操作把对象推进到目标附近后，在这里做逐项精修。"
+          title={t('workbench.sections.precision')}
+          hint={t('workbench.sections.precisionHint')}
           compact={compact}
           active={activePropertyTarget?.section === 'precision'}
           collapsible
@@ -2036,7 +2055,7 @@ export function PropertiesWorkbench({
                   </div>
                 )}
 
-                {section.title === TYPOGRAPHY_SECTION.title && supportsTypography(element) && (
+                {section.title === typographySection.title && supportsTypography(element) && (
                   <div className="control-grid precision-editor">
                     <TextContentEditor
                       value={element.textContent}
@@ -2045,18 +2064,18 @@ export function PropertiesWorkbench({
                   </div>
                 )}
 
-                {section.title === IMAGE_SECTION.title && supportsImageEditing(element) && (
+                {section.title === imageSection.title && supportsImageEditing(element) && (
                   <div className="control-grid two-col image-attr-grid precision-editor">
                     <AttributeEditor
-                      label="图片地址"
+                      label={t('workbench.editor.imageUrl')}
                       value={element.attributes.src || ''}
                       placeholder="https://..."
                       onCommit={(nextValue) => updateAttribute('src', nextValue)}
                     />
                     <AttributeEditor
-                      label="替代文本"
+                      label={t('workbench.editor.altText')}
                       value={element.attributes.alt || ''}
-                      placeholder="image description"
+                      placeholder={t('workbench.editor.altPlaceholder')}
                       onCommit={(nextValue) => updateAttribute('alt', nextValue)}
                     />
                   </div>
@@ -2067,8 +2086,8 @@ export function PropertiesWorkbench({
         </SectionBlock>
 
         <SectionBlock
-          title="辅助信息"
-          hint="上下文说明和预览集中放在这里，避免打断主编辑流程。"
+          title={t('workbench.sections.assist')}
+          hint={t('workbench.sections.assistHint')}
           compact={compact}
           active={activePropertyTarget?.section === 'assist'}
           collapsible
@@ -2096,19 +2115,19 @@ export function PropertiesWorkbench({
 
         {SNAPSHOT_SECTIONS.map((section) => (
           <SnapshotSection
-            key={section.title}
-            title={section.title}
+            key={section.key}
+            title={t(`workbench.snapshot.${section.key}`)}
             keys={section.keys}
             styles={draftStyles}
             compact={compact}
-            open={isSectionExpanded(`snapshot:${section.title}`)}
-            onToggle={() => toggleSection(`snapshot:${section.title}`)}
+            open={isSectionExpanded(`snapshot:${section.key}`)}
+            onToggle={() => toggleSection(`snapshot:${section.key}`)}
           />
         ))}
 
         {hasCssVariables && (
           <SectionBlock
-            title="CSS 变量"
+            title={t('workbench.sections.cssVariables')}
             compact={compact}
             collapsible
             open={isSectionExpanded('css-vars')}
@@ -2139,24 +2158,23 @@ export function PropertiesWorkbench({
           </div>
         )}
         <SectionBlock
-          title="导出提示词"
-          hint="这里汇总当前页面里所有结构化微调和标签意图，适合直接复制给 Codex 等 AI 编程工具。"
+          title={t('workbench.export.sectionTitle')}
+          hint={t('workbench.export.sectionHint')}
           compact={compact}
         >
           <div className="export-preview-card">
             <div className="export-preview-header">
               <div className="export-preview-title-group">
-                <div className="export-preview-kicker">页面级提示词</div>
-                <div className="export-preview-title">面向 AI 编程工具的最终微调说明</div>
+                <div className="export-preview-kicker">{t('workbench.export.kicker')}</div>
+                <div className="export-preview-title">{t('workbench.export.title')}</div>
               </div>
               <div className="export-summary-meta">
-                已收集 {exportSummaryMeta.elementCount} 个元素 / {exportSummaryMeta.modifiedCount} 组结构化微调 / {exportSummaryMeta.tagCount} 组标签
+                {t('workbench.export.summary', {
+                  elementCount: exportSummaryMeta.elementCount,
+                  modifiedCount: exportSummaryMeta.modifiedCount,
+                  tagCount: exportSummaryMeta.tagCount,
+                })}
               </div>
-            </div>
-            <div className="export-preview-guide">
-              <span>先看对象身份：selector、类型和节点身份告诉 AI 要改的是谁。</span>
-              <span>结构化微调 = Inspector 记录的最终具体数值，负责说明这个对象最后要改成什么值。</span>
-              <span>标签意图 = 你直接写给 AI 的自然语言要求，负责补充目标、约束和想达到的效果。</span>
             </div>
             <pre className={`export-preview-body ${canExportPrompt ? '' : 'empty'}`}>{exportPromptPreview}</pre>
           </div>
@@ -2166,9 +2184,9 @@ export function PropertiesWorkbench({
             className="panel-export-button"
             onClick={() => void handleCopyPrompt()}
             disabled={!canExportPrompt}
-            title="复制当前页面会话内的全部微调摘要和标签"
+            title={t('workbench.export.copyTitle')}
           >
-            {copiedPrompt ? '已复制页面级修改提示词' : '导出修改提示词'}
+            {copiedPrompt ? t('workbench.export.copied') : t('workbench.export.copyButton')}
           </button>
         </SectionBlock>
       </div>

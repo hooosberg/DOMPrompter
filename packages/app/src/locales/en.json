@@ -49,7 +49,24 @@
     "loadButton": "Load Page",
     "exit": "Exit",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "aiSetupPrompt": "I am using DOMPrompter to debug a web project. Please adapt the project's startup scripts to DOMPrompter's default debugging URL so I can click Load directly without manually copying and pasting a URL.\n\nFirst identify what kind of web project this is (React / Vue / Svelte / Next.js / static HTML / other frontend project), then only focus on one goal: make the webpage start in the browser correctly. Prefer changing only package.json scripts and do not modify business logic.\n\nGoal:\n- The page should open directly at {{defaultUrl}}\n- The default URL in step 3 of DOMPrompter should load successfully\n- After making changes, you must run the project and verify it yourself\n\nRequirements:\n\n1. Script adaptation\n- Ensure a dev script exists\n- The dev server must listen on localhost\n- Prefer unifying the final URL to {{defaultUrl}}\n- For Vite, vite --host localhost --port 5173 is acceptable\n- For Next.js, next dev -H localhost -p 5173 is acceptable\n- For pure HTML without package.json, create one and add \"dev\": \"npx serve . -l 5173\"\n\n2. Constraints\n- Do not modify business logic\n- Preserve all existing scripts\n- If serve or any other required dependency is missing, install it\n- Only focus on web debugging. Do not handle Electron, desktop workflows, or remote debugging ports\n\n3. Required verification\n- Run npm run dev (or the equivalent package manager command)\n- Confirm the terminal prints a localhost URL\n- Prefer confirming that the final URL is exactly {{defaultUrl}}\n- Stop the process only after verifying it starts without errors\n\n4. Final output must include\n- The detected web project type\n- The scripts you changed\n- The final URL that can be opened directly\n- Your verification result\n- If {{defaultUrl}} is not possible, explain why and provide the exact working fallback URL\n\nStart the analysis and make the changes now. The task is only complete after you verify that the web app starts successfully.",
+    "philosophy": {
+      "eyebrow": "Between AI And Code",
+      "title": "Turn visual tweaks into instructions AI can execute precisely",
+      "body": "DOMPrompter is a visual assistant between AI and production code. It does not rewrite source files itself. It helps you mark targets, record parameter changes, and assemble structured prompts that AI can apply correctly.",
+      "flow": {
+        "mark": "Mark",
+        "tune": "Tune",
+        "generate": "Generate",
+        "handToAi": "Hand To AI"
+      },
+      "footerLead": "Select precisely, describe precisely, then hand it to AI.",
+      "footerBody": "The page overlay is responsible for immediate feedback. The workbench is responsible for durable state. That keeps the workflow light, fast, and trustworthy.",
+      "modeHint": "Choose how you want to begin",
+      "serverBadge": "Recommended",
+      "htmlBadge": "Static Page"
+    }
   },
   "panel": {
     "ready": "Ready to inspect",
@@ -66,7 +83,8 @@
     "htmlFailed": "Failed to open HTML file",
     "tagRemoved": "Tag removed",
     "promptCopied": "Page prompt copied",
-    "noPrompt": "No page-level prompt is available yet"
+    "noPrompt": "No page-level prompt is available yet",
+    "elementCssCopied": "Element CSS copied"
   },
   "settings": {
     "title": "Settings",
@@ -111,7 +129,8 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. All rights reserved."
+    "copyright": "\u00a9 2025 hooosberg. All rights reserved.",
+    "version": "Version {{version}}"
   },
   "shortcuts": {
     "openSettings": "Open Settings",
@@ -151,5 +170,253 @@
     "restoreNotFound": "No previous purchase found.",
     "restoreFailed": "Restore failed. Please try again.",
     "ctaNote": "One-time payment. No subscription fees. Pro features stay unlocked permanently."
+  },
+  "common": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "tip": "Tip"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "All",
+      "top": "Top",
+      "right": "Right",
+      "bottom": "Bottom",
+      "left": "Left"
+    },
+    "spacing": {
+      "allSides": "all sides",
+      "topSide": "top",
+      "rightSide": "right",
+      "bottomSide": "bottom",
+      "leftSide": "left"
+    },
+    "sections": {
+      "size": { "title": "Size", "hint": "Lock in the container dimensions first, then fine-tune the internal structure." },
+      "padding": { "title": "Padding", "hint": "Padding is usually the fastest way to tune a container's internal breathing room." },
+      "margin": { "title": "Margin", "hint": "The spacing between modules usually comes from margin." },
+      "layout": { "title": "Layout", "hint": "Use display, gap, and alignment to observe structural changes quickly." },
+      "position": { "title": "Position", "hint": "Keep layout stable first; use positioning and stacking for precise tweaks." },
+      "border": { "title": "Border & Radius", "hint": "Borders, corner radius, and shadows define the container's visual feel." },
+      "background": { "title": "Background", "hint": "Background color and opacity are great for testing hierarchy quickly." },
+      "overflow": { "title": "Overflow & Clipping", "hint": "Useful when handling clipping, scrolling, and media containers." },
+      "typography": { "title": "Typography", "hint": "Fine-tune type with font size, line height, weight, and alignment." },
+      "image": { "title": "Image", "hint": "For images, start with fit mode, radius, and size." }
+    },
+    "options": {
+      "display": { "block": "Block" },
+      "align": { "start": "Start", "center": "Center", "end": "End", "spaceBetween": "Space Between", "stretch": "Stretch" },
+      "position": { "static": "Static", "relative": "Relative", "absolute": "Absolute", "fixed": "Fixed" },
+      "overflow": { "visible": "Visible", "hidden": "Hidden", "auto": "Scrollable" },
+      "textAlign": { "left": "Left", "center": "Center", "right": "Right" },
+      "objectFit": { "cover": "Cover", "contain": "Contain", "fill": "Fill" }
+    },
+    "fields": {
+      "width": { "label": "Width", "helperText": "Adjust the final width of the container. Useful for cards, panels, and fixed-size media areas.", "placeholder": "320px / auto" },
+      "height": { "label": "Height", "helperText": "Adjust the final height of the container. Great for title areas, cards, and media frames.", "placeholder": "200px / auto" },
+      "paddingTop": { "helperText": "Adjust the top space between the content and the container border.", "placeholder": "16px" },
+      "paddingRight": { "helperText": "Adjust the right-side breathing room inside the container.", "placeholder": "16px" },
+      "paddingBottom": { "helperText": "Adjust the bottom inner space to make the block feel more grounded.", "placeholder": "16px" },
+      "paddingLeft": { "helperText": "Adjust the left-side breathing room inside the container.", "placeholder": "16px" },
+      "marginTop": { "helperText": "Adjust the external distance from the element above.", "placeholder": "24px" },
+      "marginRight": { "helperText": "Adjust the external distance on the right side.", "placeholder": "0px" },
+      "marginBottom": { "helperText": "Adjust the vertical gap to the next element.", "placeholder": "24px" },
+      "marginLeft": { "helperText": "Adjust the external distance on the left side.", "placeholder": "0px" },
+      "display": { "label": "Display", "helperText": "Switch the container's layout mode. Alignment and gap only truly work in Flex or Grid." },
+      "gap": { "label": "Gap", "helperText": "Adjust the spacing between child elements. Only works in Flex or Grid.", "placeholder": "16px" },
+      "justifyContent": { "label": "Main Axis", "helperText": "Control how children are distributed along the main axis." },
+      "alignItems": { "label": "Cross Axis", "helperText": "Control how children align along the cross axis." },
+      "position": { "label": "Position Mode", "helperText": "Switch the element to relative, absolute, or fixed positioning." },
+      "top": { "label": "Top Offset", "helperText": "Fine-tune the top offset on a positioned element.", "placeholder": "12px" },
+      "left": { "label": "Left Offset", "helperText": "Fine-tune the left offset on a positioned element.", "placeholder": "12px" },
+      "zIndex": { "label": "Z-Index", "helperText": "Control stacking order for overlays, modals, and decorative layers.", "placeholder": "10" },
+      "transform": { "label": "Transform", "helperText": "Use translate and related transforms for subtle movement without breaking flow.", "placeholder": "translate(10px, 5px)" },
+      "border": { "label": "Border", "helperText": "Control thickness, color, and line style for cards, inputs, and buttons.", "placeholder": "1px solid rgba(255,255,255,.12)" },
+      "borderRadius": { "label": "Radius", "helperText": "Adjust corner radius for cards, panels, and buttons." },
+      "boxShadow": { "label": "Shadow", "helperText": "Use shadow to create elevation and depth.", "placeholder": "0 10px 30px rgba(0,0,0,.18)" },
+      "backgroundColor": { "label": "Background", "helperText": "Adjust the background color to explore hierarchy and emphasis." },
+      "opacity": { "label": "Opacity", "helperText": "Lower opacity for disabled states, overlays, and softened layers." },
+      "overflow": { "label": "Overflow", "helperText": "Control whether overflowing content remains visible, gets hidden, or becomes scrollable." },
+      "fontSize": { "label": "Font Size", "helperText": "Adjust the text size for titles, subtitles, and body copy." },
+      "lineHeight": { "label": "Line Height", "helperText": "Adjust vertical spacing between lines for rhythm and readability.", "placeholder": "1.5 / 24px" },
+      "fontWeight": { "label": "Weight", "helperText": "Change the text weight to emphasize or soften copy.", "placeholder": "400 / 600" },
+      "fontFamily": { "label": "Font Family", "helperText": "Swap the font family to compare tone quickly.", "placeholder": "Georgia, serif" },
+      "color": { "label": "Text Color", "helperText": "Adjust the text color for hierarchy, branding, and secondary copy." },
+      "textAlign": { "label": "Alignment", "helperText": "Change the layout direction of the full text block." },
+      "objectFit": { "label": "Fit Mode", "helperText": "Control whether the image covers, fits, or stretches inside the container." },
+      "imageWidth": { "helperText": "Adjust the final width of the image or media frame.", "placeholder": "320px / auto" },
+      "imageHeight": { "helperText": "Adjust the final height of the image or media frame.", "placeholder": "240px / auto" },
+      "imageBorderRadius": { "helperText": "Soften the image corners for covers and avatars." }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "Select Element",
+      "selectOn": "Enable element picking",
+      "selectOff": "Disable element picking and restore real clicks",
+      "selectActive": "Selecting",
+      "interactive": "Interactive",
+      "syncing": "Syncing",
+      "undo": "Undo",
+      "redo": "Redo",
+      "reset": "Reset"
+    },
+    "empty": {
+      "interactiveTitle": "Interactive Mode",
+      "interactiveDesc": "You can freely interact with the page now. Click “Interactive” above again to switch back to element selection."
+    },
+    "element": {
+      "containerName": "Container",
+      "elementName": "Element",
+      "copyTitle": "Click to copy {{name}}"
+    },
+    "sections": {
+      "labels": "Tag Intent",
+      "labelsHint": "Write the high-priority instruction for AI here. These tags are intent, not just notes.",
+      "quick": "Quick Actions",
+      "quickHint": "Push the element near the target with semantic actions first, then fine-tune raw values below.",
+      "precision": "Precision Controls",
+      "precisionHint": "After quick actions get close, refine each property here.",
+      "assist": "Support Info",
+      "assistHint": "Keep context notes and previews here so the main editing flow stays focused.",
+      "cssVariables": "CSS Variables"
+    },
+    "helper": {
+      "browseTitle": "Real Interaction",
+      "browseDesc": "Element picking is currently off. You can click and interact with the real page so menus, popovers, and dropdowns open naturally.",
+      "contextTitle": "Contextual Tuning",
+      "contextDesc": "Hover any parameter card and the canvas will highlight matching margin, padding, or typography regions so you can read structure like a blueprint.",
+      "innerChild": "its child elements",
+      "innerChildWithClass": "child elements inside {{className}}",
+      "paddingCentered": "This node is a centered Flex container. Changing {{field}} alters the inner box size, but the content still stays centered. If you want to move the middle content block, adjust layout alignment first or keep selecting {{childTargetName}} to tweak margin or padding.",
+      "marginCentered": "This node uses centered Flex layout. Outer margin mostly affects the distance to sibling nodes, not the centered content itself. To tweak the middle copy block, change layout alignment first or select {{childTargetName}} and adjust margin there.",
+      "sizeCentered": "This node is a centered Flex container. Adjusting width or height changes the box, but the content still stays centered with main axis {{justifyContent}} and cross axis {{alignItems}}. If you want the content to sit top, left, or edge-aligned, change layout alignment first.",
+      "gapUnavailable": "This node is not a Flex or Grid container, so setting gap will not create the spacing effect you expect. Switch Display to Flex or Grid first, or select the actual parent container that owns the child layout."
+    },
+    "insight": {
+      "layoutTitle": "Layout Insight",
+      "flexCentered": "The current selection is a centered Flex container (main axis {{justifyContent}}, cross axis {{alignItems}}). Padding and size changes often keep the content centered. If you want to move the inner content, adjust layout alignment first or continue selecting a child element.",
+      "grid": "This node is a Grid container. Focus on gap, padding, and size first. If one child block is misplaced, you usually need to select that child instead of only editing the outer container.",
+      "parent": "This node is a parent container. Changing its padding, width, or height affects the inner structure, but does not always directly move the child content. If you want to tweak a specific text or image block, select the child element directly."
+    },
+    "active": {
+      "labels": "Write the natural-language goal you want AI to follow before refining numbers.",
+      "size": "Use the quick width and height cards to get close first, then fine-tune below.",
+      "padding": "Use quick padding controls to establish the container's internal breathing room, then refine side by side.",
+      "margin": "Use quick margin controls to set module spacing directionally before precise single-side edits.",
+      "alignmentTitle": "Alignment",
+      "layout": "Jump to the Layout section and focus on main-axis and cross-axis alignment first.",
+      "gapShortcut": "This object has multiple visible children, so Gap is exposed as the unified spacing control in the Layout section.",
+      "gap": "Gap appears in the Layout section. It only works as expected when the container has real children and an active layout mode.",
+      "position": "Position controls live in the precision section for top, left, and z-index style corrections.",
+      "border": "Border, radius, and shadow work together to shape the component's feel, so it helps to inspect them together.",
+      "background": "Background color and opacity live here for quick hierarchy and emphasis tuning.",
+      "shadow": "Shadow usually needs to be reviewed together with radius for stable visual polish.",
+      "typography": "Typography controls are grouped here so you can adjust size, line height, weight, and alignment continuously.",
+      "overflow": "Use this area when you need to control clipping or scrolling behavior.",
+      "image": "Image mode keeps fit mode, size, and radius in one place so comparisons are easier."
+    },
+    "recommended": {
+      "enableFlex": { "label": "Enable Flex", "description": "Switch the container to Flex first, then continue with alignment and spacing adjustments." },
+      "alignCenter": { "label": "Center Content", "description": "Set both axes back to center to restore the standard centered state quickly." },
+      "spaceBetween": { "label": "Space Between", "description": "Spread items to both ends of the main axis. Great for title bars, button rows, and toolbars." },
+      "centerText": { "label": "Center Text", "description": "Switch text alignment to center. Great for headings and short text blocks." },
+      "imageCover": { "label": "Fill Container", "description": "Switch object-fit to cover so the image fills the container first." },
+      "imageContain": { "label": "Show Full Image", "description": "Switch object-fit to contain so the full image remains visible." },
+      "increasePadding": { "label": "Increase Padding", "description": "Add {{quickStep}}px of breathing room on all sides at once." },
+      "increaseGap": { "label": "Increase Gap", "description": "Increase the gap between child elements by {{quickStep}}px." }
+    },
+    "quick": {
+      "step": "Step",
+      "decrease": "Decrease",
+      "increase": "Increase",
+      "decreaseWithStep": "Decrease {{step}}px",
+      "increaseWithStep": "Increase {{step}}px",
+      "increased": "increased",
+      "decreased": "decreased",
+      "layout": {
+        "title": "Layout Quick Card",
+        "hint": "Switch between Block, Flex, and Grid first, then use the pad to push content top, bottom, left, right, or center.",
+        "modeTitle": "Layout Mode",
+        "modeDescription": "Display has been switched to {{display}}. Keep using the pad to push content to top, bottom, left, right, or center.",
+        "positionTitle": "Content Position",
+        "positionDescription": "The container content is now positioned at {{slot}}."
+      },
+      "spacing": {
+        "title": "Spacing Quick Adjust",
+        "hint": "Choose padding or margin first, then choose a direction. The center means all sides together.",
+        "currentPadding": "Current quick target: Padding",
+        "currentMargin": "Current quick target: Margin",
+        "paddingActionTitle": "Padding Quick Action",
+        "marginActionTitle": "Margin Quick Action",
+        "adjusted": "{{side}} has been {{direction}} by {{value}}px. You can continue with fine-grained single-value edits below."
+      },
+      "cards": {
+        "width": "Width is usually the first thing to tune for cards, panels, and image frames.",
+        "height": "Great for quickly stretching title areas, cards, or image zones.",
+        "gap": "Directly increase or decrease the space between child elements in the container.",
+        "radius": "Softens the edges of cards, panels, and images.",
+        "objectFit": "Quickly switch the image crop behavior between filling and fully fitting the container.",
+        "opacity": "Useful for muted states, overlays, and softening.",
+        "fontSize": "A fast hierarchy control for headings and body copy."
+      }
+    },
+    "direction": {
+      "topLeft": "Top Left",
+      "top": "Top",
+      "topRight": "Top Right",
+      "left": "Left",
+      "center": "Center",
+      "right": "Right",
+      "bottomLeft": "Bottom Left",
+      "bottom": "Bottom",
+      "bottomRight": "Bottom Right"
+    },
+    "slot": {
+      "topLeft": "top left",
+      "top": "top",
+      "topRight": "top right",
+      "left": "left",
+      "center": "center",
+      "right": "right",
+      "bottomLeft": "bottom left",
+      "bottom": "bottom",
+      "bottomRight": "bottom right"
+    },
+    "editor": {
+      "textContent": "Text Content",
+      "textPlaceholder": "Enter new copy",
+      "imageUrl": "Image URL",
+      "altText": "Alt Text",
+      "altPlaceholder": "image description"
+    },
+    "field": {
+      "scrubTitle": "{{label}}. Drag left or right to change the value; use arrow keys to nudge, Shift to accelerate."
+    },
+    "labels": {
+      "description": "Write the natural-language goal for AI here, not precise numbers. Use it to describe the intended effect, structure, and constraints.",
+      "placeholder": "Enter a change note…",
+      "placeholderConfirm": "Enter a change note and press Enter…",
+      "delete": "Delete tag"
+    },
+    "snapshot": {
+      "layout": "Layout Snapshot",
+      "visual": "Visual Snapshot",
+      "typography": "Typography Snapshot",
+      "position": "Position Snapshot"
+    },
+    "export": {
+      "sectionTitle": "Export Prompt",
+      "sectionHint": "This gathers the structured tweaks and tag intent for the current page so you can paste them directly into Codex or other AI coding tools.",
+      "kicker": "Page-Level Prompt",
+      "title": "Final tuning brief for AI coding tools",
+      "summary": "{{elementCount}} elements collected / {{modifiedCount}} structured tweaks / {{tagCount}} tag groups",
+      "copyTitle": "Copy the complete tuning summary and tags for the current page session",
+      "copyButton": "Export Prompt",
+      "copied": "Page prompt copied",
+      "empty": "No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you."
+    }
   }
 }

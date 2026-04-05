@@ -1,42 +1,31 @@
 import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
+import { normalizeAppLanguage, SUPPORTED_APP_LANGUAGES } from './shared/languages'
 
-import ar from './locales/ar.json'
-import de from './locales/de.json'
-import en from './locales/en.json'
-import es from './locales/es.json'
-import fr from './locales/fr.json'
-import it from './locales/it.json'
-import ja from './locales/ja.json'
-import ko from './locales/ko.json'
-import pt from './locales/pt.json'
-import ru from './locales/ru.json'
-import zh from './locales/zh.json'
-import zhTW from './locales/zh-TW.json'
+const localeModules = import.meta.glob<{ default: Record<string, unknown> }>('./locales/*.json', { eager: true })
+
+const resources = Object.fromEntries(
+  Object.entries(localeModules)
+    .map(([path, module]) => {
+      const locale = path.match(/\/([^/]+)\.json$/)?.[1]
+      if (!locale) return null
+      return [locale, { translation: module.default }] as const
+    })
+    .filter((entry): entry is readonly [string, { translation: Record<string, unknown> }] => entry !== null),
+)
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      en: { translation: en },
-      zh: { translation: zh },
-      'zh-TW': { translation: zhTW },
-      ja: { translation: ja },
-      ko: { translation: ko },
-      fr: { translation: fr },
-      de: { translation: de },
-      es: { translation: es },
-      pt: { translation: pt },
-      it: { translation: it },
-      ru: { translation: ru },
-      ar: { translation: ar },
-    },
+    resources,
     fallbackLng: 'en',
+    supportedLngs: SUPPORTED_APP_LANGUAGES,
     detection: {
       order: ['localStorage', 'navigator'],
       lookupLocalStorage: 'domprompter-language',
+      convertDetectedLanguage: (language) => normalizeAppLanguage(language),
     },
     interpolation: {
       escapeValue: false,

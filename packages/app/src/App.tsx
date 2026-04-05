@@ -5,6 +5,7 @@ import { PaywallDialog } from './components/PaywallDialog'
 import { Settings } from './components/Settings'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
 import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
+import { normalizeAppLanguage, RTL_APP_LANGUAGES } from './shared/languages'
 import { LicenseManager } from './services/LicenseManager'
 import { buildStyleHistorySlotKey, undoPersistedHistory, redoPersistedHistory, resetPersistedHistory, computeStyleDiffFromHistory } from './styleHistory'
 import type {
@@ -30,7 +31,6 @@ import './App.css'
 const APP_NAME = 'DOMPrompter'
 const DEFAULT_WORKBENCH_WIDTH = 320
 const DEFAULT_URL = 'http://localhost:5173'
-const EMPTY_EXPORT_PROMPT_PREVIEW = 'No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you.'
 const RECENT_HTML_FILES_STORAGE_KEY = 'domprompter:recent-html-files'
 const MAX_RECENT_HTML_FILES = 4
 
@@ -139,6 +139,43 @@ function getElementPresetForExport(element: InspectedElement): ElementPreset {
   return 'container'
 }
 
+const IDENTITY_ATTR_KEYS = [
+  'aria-label', 'aria-description', 'aria-describedby', 'aria-labelledby',
+  'title', 'alt', 'role', 'type', 'name', 'placeholder', 'href', 'src',
+  'data-testid', 'data-id', 'data-key', 'data-name', 'data-type',
+  'data-action', 'data-value', 'data-target', 'data-view', 'data-tab',
+  'data-section', 'data-engine', 'data-tool', 'data-page', 'data-state',
+  'for', 'action', 'method', 'value',
+]
+
+function buildIdentityHints(element: InspectedElement): Record<string, string> {
+  const hints: Record<string, string> = {}
+
+  if (element.id) {
+    hints.id = element.id
+  }
+
+  if (element.classNames.length > 1) {
+    hints.classes = element.classNames.join(' ')
+  }
+
+  for (const key of IDENTITY_ATTR_KEYS) {
+    const value = element.attributes[key]
+    if (value) {
+      hints[key] = value.slice(0, 120)
+    }
+  }
+
+  // Collect any data-* attributes not in the predefined list
+  for (const [key, value] of Object.entries(element.attributes)) {
+    if (key.startsWith('data-') && !hints[key] && value) {
+      hints[key] = value.slice(0, 120)
+    }
+  }
+
+  return hints
+}
+
 function buildLedgerEntry(
   element: InspectedElement,
   styleDiff: Record<string, string> = {},
@@ -150,6 +187,9 @@ function buildLedgerEntry(
     displayName: buildElementSelector(element),
     tagName: element.tagName.toLowerCase(),
     preset: getElementPresetForExport(element),
+    textPreview: (element.textContentPreview || '').slice(0, 80),
+    identityHints: buildIdentityHints(element),
+    ancestorPath: element.ancestorPath || [],
     boxModel: {
       width: element.boxModel ? Math.round(element.boxModel.width) : null,
       height: element.boxModel ? Math.round(element.boxModel.height) : null,
@@ -215,6 +255,9 @@ function buildPageExportElements(
         displayName: ledgerEntry?.displayName || fallbackTarget?.selector || `backendNode:${backendNodeId}`,
         tagName: ledgerEntry?.tagName || 'element',
         preset: ledgerEntry?.preset || 'container',
+        textPreview: ledgerEntry?.textPreview || '',
+        identityHints: ledgerEntry?.identityHints || {},
+        ancestorPath: ledgerEntry?.ancestorPath || [],
         boxModel,
         styleDiff: ledgerEntry?.styleDiff || {},
         updatedAt: ledgerEntry?.updatedAt || fallbackUpdatedAt,
@@ -254,6 +297,7 @@ function buildTagFromElement(element: InspectedElement, text: string): ElementTa
 
 export default function App() {
   const { t, i18n } = useTranslation()
+  const emptyExportPromptPreview = t('workbench.export.empty')
   const workbenchRef = useRef<HTMLElement | null>(null)
   const addressBarRef = useRef<HTMLInputElement | null>(null)
   const shortcutActionsRef = useRef({
@@ -319,7 +363,7 @@ export default function App() {
     void (async () => {
       const nextSettings: AppSettings = {
         theme: await window.electronAPI.settings.get('theme').catch(() => DEFAULT_SETTINGS.theme),
-        language: await window.electronAPI.settings.get('language').catch(() => DEFAULT_SETTINGS.language),
+        language: normalizeAppLanguage(await window.electronAPI.settings.get('language').catch(() => DEFAULT_SETTINGS.language)),
       }
       const nextLicenseStatus = await LicenseManager.getStatus().catch(() => DEFAULT_LICENSE_STATUS)
 
@@ -339,6 +383,7 @@ export default function App() {
     const root = document.documentElement
     root.dataset.theme = settings.theme
     root.lang = settings.language
+    root.dir = RTL_APP_LANGUAGES.has(settings.language) ? 'rtl' : 'ltr'
   }, [settings])
 
   useEffect(() => {
@@ -951,7 +996,7 @@ export default function App() {
   const canExportPrompt = exportSummaryMeta.elementCount > 0
   const exportPromptPreview = useMemo(() => {
     if (!canExportPrompt) {
-      return EMPTY_EXPORT_PROMPT_PREVIEW
+      return emptyExportPromptPreview
     }
 
     return buildPageExportPrompt({
@@ -964,7 +1009,7 @@ export default function App() {
       targetUrl: url,
       pageContext: previewPageContext,
     })
-  }, [canExportPrompt, element, exportSummaryMeta, pageExportElements, pageTitle, pageUrl, previewPageContext, url])
+  }, [canExportPrompt, element, emptyExportPromptPreview, exportSummaryMeta, pageExportElements, pageTitle, pageUrl, previewPageContext, url])
 
   const connectToTarget = useCallback(async (rawTarget: string, successMessage: string) => {
     if (!rawTarget.trim()) return false
@@ -1217,8 +1262,8 @@ export default function App() {
   const handleCopyElementCSS = useCallback(async () => {
     if (!element) return
     const css = await window.electronAPI.generateCSS(element)
-    await copyText(css, 'Element CSS copied')
-  }, [copyText, element])
+    await copyText(css, t('toast.elementCssCopied'))
+  }, [copyText, element, t])
 
   const handleThemeChange = useCallback((theme: AppSettings['theme']) => {
     setSettings((current) => ({ ...current, theme }))
@@ -1487,10 +1532,42 @@ export default function App() {
         {showWorkbench && (
           <aside ref={workbenchRef} className="right-panel">
             {!element ? (
-              <div className="panel-empty panel-empty-live">
-                <div className="icon">DOM</div>
-                <h4>{t('panel.ready')}</h4>
-                <p>{t('panel.readyDesc')}</p>
+              <div className="workbench-shell">
+                <div className="workbench-scroll-content">
+                  <div className="workbench-sticky-header">
+                    <div className="panel-toolbar-row">
+                      <div className="panel-toolbelt">
+                        <button
+                          type="button"
+                          className={`panel-tool-btn ${activeTool === 'select' ? 'active' : ''}`}
+                          onClick={() => setActiveTool(activeTool === 'select' ? 'browse' : 'select')}
+                          title={activeTool === 'select' ? t('workbench.toolbar.selectOff') : t('workbench.toolbar.selectOn')}
+                        >
+                          <span className="panel-tool-icon">↖</span>
+                          <span className="panel-tool-text">{activeTool === 'select' ? t('workbench.toolbar.selectActive') : t('workbench.toolbar.interactive')}</span>
+                        </button>
+                      </div>
+                      <div className="panel-toolbar-trailing">
+                        <div className="history-cluster">
+                          <button type="button" className="history-action" onClick={() => void handleGlobalUndo()} disabled={!globalCanUndo}>
+                            <span>↶</span><span>{t('workbench.toolbar.undo')}</span>
+                          </button>
+                          <button type="button" className="history-action" onClick={() => void handleGlobalRedo()} disabled={!globalCanRedo}>
+                            <span>↷</span><span>{t('workbench.toolbar.redo')}</span>
+                          </button>
+                          <button type="button" className="history-action" onClick={() => void handleGlobalReset()} disabled={!globalCanReset}>
+                            <span>⟲</span><span>{t('workbench.toolbar.reset')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="panel-empty panel-empty-live">
+                    <div className="icon">↖</div>
+                    <h4>{activeTool === 'select' ? t('panel.ready') : t('workbench.empty.interactiveTitle')}</h4>
+                    <p>{activeTool === 'select' ? t('panel.readyDesc') : t('workbench.empty.interactiveDesc')}</p>
+                  </div>
+                </div>
               </div>
             ) : (
               <PropertiesWorkbench

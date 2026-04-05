@@ -12,6 +12,9 @@ export interface PageExportElement {
   displayName: string
   tagName: string
   preset: ElementPreset
+  textPreview: string
+  identityHints: Record<string, string>
+  ancestorPath: string[]
   boxModel: {
     width: number | null
     height: number | null
@@ -19,22 +22,6 @@ export interface PageExportElement {
   styleDiff: Record<string, string>
   updatedAt: number
   tags: string[]
-}
-
-const LANGUAGE_LABELS: Record<string, string> = {
-  en: 'English',
-  zh: 'Chinese',
-  'zh-cn': 'Chinese (Simplified)',
-  'zh-tw': 'Chinese (Traditional)',
-  ja: 'Japanese',
-  ko: 'Korean',
-  fr: 'French',
-  de: 'German',
-  es: 'Spanish',
-  pt: 'Portuguese',
-  it: 'Italian',
-  ru: 'Russian',
-  ar: 'Arabic',
 }
 
 function normalizeWhitespace(value: string | null | undefined) {
@@ -69,33 +56,34 @@ function formatPageLabelFromToken(token: string) {
   return toTitleCase(withoutExtension.replace(/[-_]+/g, ' '))
 }
 
-function buildPageToken(snapshot: PageContextSnapshot | null | undefined, pageUrl: string, targetUrl: string) {
+function buildPageToken(snapshot: PageContextSnapshot | null | undefined) {
   const routeHref = getBasename(snapshot?.activeRouteHref || '')
   if (routeHref) return routeHref
 
-  const pathnameToken = getBasename(snapshot?.pathname || pageUrl || targetUrl)
+  const pathnameToken = getBasename(snapshot?.pathname || '')
   if (pathnameToken) return pathnameToken
 
-  return 'current-page'
+  const hashRoute = normalizeWhitespace(snapshot?.hashRoute)
+  if (hashRoute) return getBasename(hashRoute) || hashRoute
+
+  return ''
 }
 
-function buildPageLabel(snapshot: PageContextSnapshot | null | undefined, pageTitle: string, pageUrl: string, targetUrl: string) {
-  const pathLabel = formatPageLabelFromToken(buildPageToken(snapshot, pageUrl, targetUrl))
+function buildPageLabel(snapshot: PageContextSnapshot | null | undefined, pageTitle: string) {
+  const pageToken = buildPageToken(snapshot)
+  const pathLabel = pageToken ? formatPageLabelFromToken(pageToken) : ''
   if (pathLabel) return pathLabel
 
   const activeRouteLabel = normalizeWhitespace(snapshot?.activeRouteLabel)
   if (activeRouteLabel) return activeRouteLabel
 
+  const pageHeading = normalizeWhitespace(snapshot?.pageHeading)
+  if (pageHeading) return pageHeading
+
   const title = normalizeWhitespace(snapshot?.title || pageTitle)
   if (title) return title
 
   return 'Current Page'
-}
-
-function getLanguageLabel(value: string | null | undefined) {
-  const normalized = normalizeWhitespace(value).toLowerCase()
-  if (!normalized) return null
-  return LANGUAGE_LABELS[normalized] || value || null
 }
 
 function normalizeContextToken(value: string) {
@@ -105,30 +93,7 @@ function normalizeContextToken(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-function buildVariantLabel(snapshot: PageContextSnapshot | null | undefined, pageLabel: string) {
-  const preferredLabels = [
-    normalizeWhitespace(snapshot?.activeVariantLabel),
-    normalizeWhitespace(snapshot?.visibleVariantLabel),
-    getLanguageLabel(snapshot?.activeVariantKey),
-    getLanguageLabel(snapshot?.visibleVariantKey),
-    getLanguageLabel(snapshot?.htmlLang),
-  ]
-
-  return preferredLabels.find((label) => label && label !== pageLabel) || null
-}
-
-function buildVariantToken(snapshot: PageContextSnapshot | null | undefined, variantLabel: string | null) {
-  const preferredTokens = [
-    normalizeContextToken(snapshot?.activeVariantKey || ''),
-    normalizeContextToken(snapshot?.visibleVariantKey || ''),
-    normalizeContextToken(snapshot?.htmlLang || ''),
-    normalizeContextToken(variantLabel || ''),
-  ]
-
-  return preferredTokens.find(Boolean) || ''
-}
-
-function buildSignals(snapshot: PageContextSnapshot | null | undefined) {
+function buildSignals(snapshot: PageContextSnapshot | null | undefined, pageLabel: string) {
   const signals: string[] = []
 
   const activeRouteHref = getBasename(snapshot?.activeRouteHref || '')
@@ -136,19 +101,19 @@ function buildSignals(snapshot: PageContextSnapshot | null | undefined) {
     signals.push(`route=${activeRouteHref}`)
   }
 
-  const activeVariantLabel = normalizeWhitespace(snapshot?.activeVariantLabel)
-  if (activeVariantLabel) {
-    signals.push(`activeVariantLabel=${activeVariantLabel}`)
+  const hashRoute = normalizeWhitespace(snapshot?.hashRoute)
+  if (hashRoute) {
+    signals.push(`hashRoute=${hashRoute}`)
   }
 
-  const htmlLang = normalizeWhitespace(snapshot?.htmlLang)
-  if (htmlLang) {
-    signals.push(`htmlLang=${htmlLang}`)
+  const pageHeading = normalizeWhitespace(snapshot?.pageHeading)
+  if (pageHeading && pageHeading !== pageLabel) {
+    signals.push(`heading=${pageHeading}`)
   }
 
-  const visibleVariantKey = normalizeWhitespace(snapshot?.visibleVariantKey)
-  if (visibleVariantKey) {
-    signals.push(`visibleVariant=${visibleVariantKey}`)
+  const title = normalizeWhitespace(snapshot?.title)
+  if (title && title !== pageLabel && title !== pageHeading) {
+    signals.push(`title=${title}`)
   }
 
   return signals
@@ -171,18 +136,20 @@ export function buildPageContextDescriptor(args: {
   pageUrl: string
   targetUrl: string
 }): PageContextDescriptor {
-  const { snapshot = null, pageTitle, pageUrl, targetUrl } = args
-  const pageToken = buildPageToken(snapshot, pageUrl, targetUrl)
-  const pageLabel = buildPageLabel(snapshot, pageTitle, pageUrl, targetUrl)
-  const variantLabel = buildVariantLabel(snapshot, pageLabel)
-  const variantToken = buildVariantToken(snapshot, variantLabel)
+  const { snapshot = null, pageTitle } = args
+  const pageToken = buildPageToken(snapshot)
+  const pageLabel = buildPageLabel(snapshot, pageTitle)
+
+  const contextKey = pageToken
+    || normalizeContextToken(pageLabel)
+    || 'current-page'
 
   return {
-    contextKey: variantToken ? `${pageToken}::${variantToken}` : pageToken,
+    contextKey,
     pageLabel,
-    variantLabel,
-    scopeLabel: variantLabel ? `${pageLabel} / ${variantLabel}` : pageLabel,
-    signals: buildSignals(snapshot),
+    variantLabel: null,
+    scopeLabel: pageLabel,
+    signals: buildSignals(snapshot, pageLabel),
   }
 }
 
@@ -224,7 +191,7 @@ export function buildPageExportPrompt(args: {
   const payload = {
     source: 'domprompter',
     signalGuide: {
-      pageScope: 'Use page.pageLabel, page.variantLabel, page.scopeLabel, and page.signals to stay inside the intended page or localized in-page variant.',
+      pageScope: 'Use page.pageLabel and page.scopeLabel to stay inside the intended page.',
       objectIdentity: 'Each element is identified by selector, preset, tagName, and backendNodeId.',
       styleChanges: 'Structured style edits captured from the visual workbench.',
       intentTags: 'Natural-language goals attached to a selected element.',
@@ -236,7 +203,6 @@ export function buildPageExportPrompt(args: {
       url: pageUrl || targetUrl || 'unknown',
       exportedAt,
       pageLabel: pageContext.pageLabel,
-      variantLabel: pageContext.variantLabel,
       scopeLabel: pageContext.scopeLabel,
       contextKey: pageContext.contextKey,
       signals: pageContext.signals,
@@ -248,6 +214,9 @@ export function buildPageExportPrompt(args: {
       displayName: entry.displayName,
       tagName: entry.tagName,
       preset: entry.preset,
+      textPreview: entry.textPreview || null,
+      identityHints: Object.keys(entry.identityHints).length > 0 ? entry.identityHints : undefined,
+      ancestorPath: entry.ancestorPath.length > 0 ? entry.ancestorPath : undefined,
       boxModel: entry.boxModel,
       styleChanges: entry.styleDiff,
       intentTags: entry.tags,
@@ -263,7 +232,6 @@ export function buildPageExportPrompt(args: {
     '',
     'Page information:',
     `- Page: ${pageContext.pageLabel}`,
-    `- Variant: ${pageContext.variantLabel || 'default'}`,
     `- Scope: ${pageContext.scopeLabel}`,
     `- Title: ${payload.page.title}`,
     `- URL: ${formatDisplayUrl(payload.page.url)}`,
@@ -287,6 +255,17 @@ export function buildPageExportPrompt(args: {
     'Element targets:',
     ...elements.flatMap((entry, index) => {
       const itemLines = [`${index + 1}. ${entry.selector} (${entry.preset} / <${entry.tagName}>)`]
+      if (entry.textPreview) {
+        itemLines.push(`   - textPreview: "${entry.textPreview}"`)
+      }
+      const hintKeys = Object.keys(entry.identityHints)
+      if (hintKeys.length > 0) {
+        const hintParts = hintKeys.map((key) => `${key}="${entry.identityHints[key]}"`)
+        itemLines.push(`   - identity: ${hintParts.join(', ')}`)
+      }
+      if (entry.ancestorPath.length > 0) {
+        itemLines.push(`   - location: ${entry.ancestorPath.join(' > ')}`)
+      }
       if (Object.keys(entry.styleDiff).length > 0) {
         itemLines.push(`   - styleChanges: ${JSON.stringify(entry.styleDiff)}`)
       }

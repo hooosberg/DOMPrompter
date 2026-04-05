@@ -19,6 +19,7 @@ function createElement(overrides: Partial<InspectedElement> = {}): InspectedElem
     textContent: 'Tell AI what to change',
     textContentPreview: 'Tell AI what to change',
     outerHTMLPreview: '<h1 class="hero-title">Tell AI what to change</h1>',
+    ancestorPath: [],
     descendants: [],
     ...overrides,
   }
@@ -41,6 +42,9 @@ function createExportElement(overrides: Partial<PageExportElement> = {}): PageEx
     displayName: 'h1.hero-title',
     tagName: 'h1',
     preset: 'text',
+    textPreview: 'Tell AI what to change',
+    identityHints: {},
+    ancestorPath: [],
     boxModel: {
       width: 640,
       height: 120,
@@ -54,20 +58,31 @@ function createExportElement(overrides: Partial<PageExportElement> = {}): PageEx
   }
 }
 
+function buildSnapshot(overrides: Partial<PageContextSnapshot> = {}): PageContextSnapshot {
+  return {
+    title: 'DOMPrompter',
+    url: 'file:///Users/demo/test-web/pages/index.html',
+    pathname: '/Users/demo/test-web/pages/index.html',
+    hashRoute: null,
+    pageHeading: null,
+    htmlLang: 'en',
+    contentLanguage: null,
+    navigatorLanguage: null,
+    urlLanguage: null,
+    i18nLanguage: null,
+    activeRouteLabel: '首页',
+    activeRouteHref: './index.html',
+    visibleVariantLabel: null,
+    visibleVariantKey: null,
+    activeVariantLabel: null,
+    activeVariantKey: null,
+    ...overrides,
+  }
+}
+
 describe('export prompt context scope', () => {
-  it('prefers active route and active language controls for same-url localized pages', () => {
-    const snapshot: PageContextSnapshot = {
-      title: 'DOMPrompter',
-      url: 'file:///Users/demo/test-web/pages/index.html',
-      pathname: '/Users/demo/test-web/pages/index.html',
-      htmlLang: 'en',
-      activeRouteLabel: '首页',
-      activeRouteHref: './index.html',
-      visibleVariantLabel: null,
-      visibleVariantKey: 'en',
-      activeVariantLabel: 'English',
-      activeVariantKey: 'en',
-    }
+  it('uses active route for page label and ignores language signals', () => {
+    const snapshot = buildSnapshot()
 
     expect(
       buildPageContextDescriptor({
@@ -77,32 +92,26 @@ describe('export prompt context scope', () => {
         targetUrl: snapshot.url,
       }),
     ).toEqual({
-      contextKey: 'index.html::en',
+      contextKey: 'index.html',
       pageLabel: 'Home',
-      variantLabel: 'English',
-      scopeLabel: 'Home / English',
+      variantLabel: null,
+      scopeLabel: 'Home',
       signals: [
         'route=index.html',
-        'activeVariantLabel=English',
-        'htmlLang=en',
-        'visibleVariant=en',
+        'title=DOMPrompter',
       ],
     })
   })
 
   it('falls back to the current file name when the page exposes no nav metadata', () => {
-    const snapshot: PageContextSnapshot = {
+    const snapshot = buildSnapshot({
       title: '',
       url: 'file:///Users/demo/test-web/pages/about.html',
       pathname: '/Users/demo/test-web/pages/about.html',
       htmlLang: null,
       activeRouteLabel: null,
       activeRouteHref: null,
-      visibleVariantLabel: null,
-      visibleVariantKey: null,
-      activeVariantLabel: null,
-      activeVariantKey: null,
-    }
+    })
 
     expect(
       buildPageContextDescriptor({
@@ -120,20 +129,9 @@ describe('export prompt context scope', () => {
     })
   })
 
-  it('embeds page and variant scope into the exported prompt', () => {
+  it('embeds page scope into the exported prompt without language variant', () => {
     const pageContext = buildPageContextDescriptor({
-      snapshot: {
-        title: 'DOMPrompter',
-        url: 'file:///Users/demo/test-web/pages/index.html',
-        pathname: '/Users/demo/test-web/pages/index.html',
-        htmlLang: 'en',
-        activeRouteLabel: '首页',
-        activeRouteHref: './index.html',
-        visibleVariantLabel: null,
-        visibleVariantKey: 'en',
-        activeVariantLabel: 'English',
-        activeVariantKey: 'en',
-      },
+      snapshot: buildSnapshot(),
       pageTitle: 'DOMPrompter',
       pageUrl: 'file:///Users/demo/test-web/pages/index.html',
       targetUrl: 'file:///Users/demo/test-web/pages/index.html',
@@ -151,13 +149,12 @@ describe('export prompt context scope', () => {
     })
 
     expect(prompt).toContain('Page: Home')
-    expect(prompt).toContain('Variant: English')
-    expect(prompt).toContain('Scope: Home / English')
-    expect(prompt).toContain('Context key: index.html::en')
-    expect(prompt).toContain('Detection signals: route=index.html; activeVariantLabel=English; htmlLang=en; visibleVariant=en')
+    expect(prompt).toContain('Scope: Home')
+    expect(prompt).toContain('Context key: index.html')
+    expect(prompt).toContain('Detection signals: route=index.html; title=DOMPrompter')
     expect(prompt).toContain('Selection anchor: h1.hero-title (backendNodeId: 42, secondary hint only)')
     expect(prompt).toContain('"pageLabel": "Home"')
-    expect(prompt).toContain('"variantLabel": "English"')
-    expect(prompt).toContain('"scopeLabel": "Home / English"')
+    expect(prompt).toContain('"scopeLabel": "Home"')
+    expect(prompt).not.toContain('Variant:')
   })
 })

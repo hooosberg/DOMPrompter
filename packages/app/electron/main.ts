@@ -15,6 +15,8 @@ import { dirname, join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { InspectorService, generateAIPrompt, generateCSSClass, generateCSSVariables } from '@visual-inspector/core'
 import type { CSSProperty, ICDPTransport, InspectedElement, PageContextSnapshot } from '@visual-inspector/core'
+import { DEVELOPER_GITHUB_URL, PRIVACY_URL, SUPPORT_URL, TERMS_URL, WEBSITE_URL } from '../src/shared/externalLinks'
+import { normalizeAppLanguage } from '../src/shared/languages'
 import { registerLicenseHandlers } from './licenseService'
 
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
@@ -74,6 +76,9 @@ interface MenuLabels {
   aboutDeveloper: string
   dockNewWindow: string
   dockOpenHtmlFile: string
+  inspectorSelectParent: string
+  inspectorSelectChild: string
+  inspectorAddTag: string
 }
 
 type OverlaySyncState = Parameters<InspectorService['setExternalOverlayState']>[0]
@@ -87,7 +92,7 @@ const DEFAULT_SETTINGS: PersistedAppSettings = {
   language: 'en',
 }
 
-const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW', MenuLabels> = {
+const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it' | 'pt' | 'ru' | 'ar' | 'ja' | 'ko', MenuLabels> = {
   en: {
     app: APP_NAME,
     about: `About ${APP_NAME}`,
@@ -117,6 +122,9 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW', MenuLabels> = {
     aboutDeveloper: 'About Developer (hooosberg)',
     dockNewWindow: 'New Window',
     dockOpenHtmlFile: 'Open HTML File',
+    inspectorSelectParent: 'Select Parent Element          Esc',
+    inspectorSelectChild: 'Select Child Element          Enter',
+    inspectorAddTag: 'Add Tag',
   },
   zh: {
     app: APP_NAME,
@@ -147,6 +155,9 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW', MenuLabels> = {
     aboutDeveloper: '关于开发者 (hooosberg)',
     dockNewWindow: '新建窗口',
     dockOpenHtmlFile: '打开 HTML 文件',
+    inspectorSelectParent: '选择上一级元素          Esc',
+    inspectorSelectChild: '选择下一级元素          Enter',
+    inspectorAddTag: '添加标签',
   },
   'zh-TW': {
     app: APP_NAME,
@@ -177,6 +188,306 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW', MenuLabels> = {
     aboutDeveloper: '關於開發者 (hooosberg)',
     dockNewWindow: '新增視窗',
     dockOpenHtmlFile: '開啟 HTML 檔案',
+    inspectorSelectParent: '選擇上一級元素          Esc',
+    inspectorSelectChild: '選擇下一級元素          Enter',
+    inspectorAddTag: '新增標籤',
+  },
+  de: {
+    app: APP_NAME,
+    about: `Über ${APP_NAME}`,
+    settings: 'Einstellungen…',
+    file: 'Datei',
+    openHtmlFile: 'HTML-Datei öffnen',
+    newWindow: 'Neues Fenster',
+    view: 'Ansicht',
+    reloadPage: 'Seite neu laden',
+    forceReload: 'Erzwinge Neu laden',
+    toggleToolbar: 'Symbolleiste umschalten',
+    focusAddressBar: 'Adressleiste fokussieren',
+    edit: 'Bearbeiten',
+    actions: 'Aktionen',
+    copyPagePrompt: 'Seiten-Prompt kopieren',
+    copyElementCss: 'Element-CSS kopieren',
+    escape: 'Schließen / Abbrechen',
+    window: 'Fenster',
+    minimize: 'Minimieren',
+    zoom: 'Zoom',
+    front: 'Alle nach vorne bringen',
+    help: 'Hilfe',
+    visitWebsite: 'Website besuchen',
+    supportCenter: 'Hilfecenter',
+    privacyPolicy: 'Datenschutzrichtlinie',
+    termsOfService: 'Nutzungsbedingungen',
+    aboutDeveloper: 'Über den Entwickler (hooosberg)',
+    dockNewWindow: 'Neues Fenster',
+    dockOpenHtmlFile: 'HTML-Datei öffnen',
+    inspectorSelectParent: 'Übergeordnetes Element auswählen          Esc',
+    inspectorSelectChild: 'Untergeordnetes Element auswählen          Eingabe',
+    inspectorAddTag: 'Tag hinzufügen',
+  },
+  es: {
+    app: APP_NAME,
+    about: `Acerca de ${APP_NAME}`,
+    settings: 'Configuración…',
+    file: 'Archivo',
+    openHtmlFile: 'Abrir archivo HTML',
+    newWindow: 'Nueva ventana',
+    view: 'Ver',
+    reloadPage: 'Recargar página',
+    forceReload: 'Forzar recarga',
+    toggleToolbar: 'Alternar barra de herramientas',
+    focusAddressBar: 'Enfocar barra de direcciones',
+    edit: 'Editar',
+    actions: 'Acciones',
+    copyPagePrompt: 'Copiar prompt de página',
+    copyElementCss: 'Copiar CSS del elemento',
+    escape: 'Cerrar / Cancelar',
+    window: 'Ventana',
+    minimize: 'Minimizar',
+    zoom: 'Zoom',
+    front: 'Traer todo al frente',
+    help: 'Ayuda',
+    visitWebsite: 'Visitar sitio web',
+    supportCenter: 'Centro de soporte',
+    privacyPolicy: 'Política de privacidad',
+    termsOfService: 'Términos de servicio',
+    aboutDeveloper: 'Acerca del desarrollador (hooosberg)',
+    dockNewWindow: 'Nueva ventana',
+    dockOpenHtmlFile: 'Abrir archivo HTML',
+    inspectorSelectParent: 'Seleccionar elemento padre          Esc',
+    inspectorSelectChild: 'Seleccionar elemento hijo          Intro',
+    inspectorAddTag: 'Añadir etiqueta',
+  },
+  fr: {
+    app: APP_NAME,
+    about: `À propos de ${APP_NAME}`,
+    settings: 'Paramètres…',
+    file: 'Fichier',
+    openHtmlFile: 'Ouvrir un fichier HTML',
+    newWindow: 'Nouvelle fenêtre',
+    view: 'Affichage',
+    reloadPage: 'Recharger la page',
+    forceReload: 'Forcer le rechargement',
+    toggleToolbar: 'Activer/désactiver la barre d\'outils',
+    focusAddressBar: 'Mettre l\'accent sur la barre d\'adresse',
+    edit: 'Édition',
+    actions: 'Actions',
+    copyPagePrompt: 'Copier l\'invite de la page',
+    copyElementCss: 'Copier le CSS de l\'élément',
+    escape: 'Fermer / Annuler',
+    window: 'Fenêtre',
+    minimize: 'Réduire',
+    zoom: 'Zoom',
+    front: 'Tout amener au premier plan',
+    help: 'Aide',
+    visitWebsite: 'Visiter le site Web',
+    supportCenter: 'Centre d\'assistance',
+    privacyPolicy: 'Politique de confidentialité',
+    termsOfService: 'Conditions d\'utilisation',
+    aboutDeveloper: 'À propos du développeur (hooosberg)',
+    dockNewWindow: 'Nouvelle fenêtre',
+    dockOpenHtmlFile: 'Ouvrir un fichier HTML',
+    inspectorSelectParent: 'Sélectionner l\'élément parent          Esc',
+    inspectorSelectChild: 'Sélectionner l\'élément enfant          Entrée',
+    inspectorAddTag: 'Ajouter une étiquette',
+  },
+  it: {
+    app: APP_NAME,
+    about: `Informazioni su ${APP_NAME}`,
+    settings: 'Impostazioni…',
+    file: 'File',
+    openHtmlFile: 'Apri file HTML',
+    newWindow: 'Nuova finestra',
+    view: 'Visualizza',
+    reloadPage: 'Ricarica pagina',
+    forceReload: 'Ricarica forzata',
+    toggleToolbar: 'Attiva/disattiva barra degli strumenti',
+    focusAddressBar: 'Metti a fuoco la barra degli indirizzi',
+    edit: 'Modifica',
+    actions: 'Azioni',
+    copyPagePrompt: 'Copia prompt della pagina',
+    copyElementCss: 'Copia CSS dell\'elemento',
+    escape: 'Chiudi / Annulla',
+    window: 'Finestra',
+    minimize: 'Riduci a icona',
+    zoom: 'Zoom',
+    front: 'Porta tutto in primo piano',
+    help: 'Aiuto',
+    visitWebsite: 'Visita il sito web',
+    supportCenter: 'Centro assistenza',
+    privacyPolicy: 'Informativa sulla privacy',
+    termsOfService: 'Termini di servizio',
+    aboutDeveloper: 'Informazioni sullo sviluppatore (hooosberg)',
+    dockNewWindow: 'Nuova finestra',
+    dockOpenHtmlFile: 'Apri file HTML',
+    inspectorSelectParent: 'Seleziona elemento padre          Esc',
+    inspectorSelectChild: 'Seleziona elemento figlio          Invio',
+    inspectorAddTag: 'Aggiungi etichetta',
+  },
+  pt: {
+    app: APP_NAME,
+    about: `Sobre ${APP_NAME}`,
+    settings: 'Configurações…',
+    file: 'Arquivo',
+    openHtmlFile: 'Abrir arquivo HTML',
+    newWindow: 'Nova janela',
+    view: 'Exibir',
+    reloadPage: 'Recarregar página',
+    forceReload: 'Forçar recarga',
+    toggleToolbar: 'Alternar barra de ferramentas',
+    focusAddressBar: 'Focar barra de endereços',
+    edit: 'Editar',
+    actions: 'Ações',
+    copyPagePrompt: 'Copiar prompt da página',
+    copyElementCss: 'Copiar CSS do elemento',
+    escape: 'Fechar / Cancelar',
+    window: 'Janela',
+    minimize: 'Minimizar',
+    zoom: 'Zoom',
+    front: 'Trazer tudo para a frente',
+    help: 'Ajuda',
+    visitWebsite: 'Visitar site',
+    supportCenter: 'Central de suporte',
+    privacyPolicy: 'Política de privacidade',
+    termsOfService: 'Termos de serviço',
+    aboutDeveloper: 'Sobre o desenvolvedor (hooosberg)',
+    dockNewWindow: 'Nova janela',
+    dockOpenHtmlFile: 'Abrir arquivo HTML',
+    inspectorSelectParent: 'Selecionar elemento pai          Esc',
+    inspectorSelectChild: 'Selecionar elemento filho          Enter',
+    inspectorAddTag: 'Adicionar etiqueta',
+  },
+  ru: {
+    app: APP_NAME,
+    about: `О программе ${APP_NAME}`,
+    settings: 'Параметры…',
+    file: 'Файл',
+    openHtmlFile: 'Открыть HTML-файл',
+    newWindow: 'Новое окно',
+    view: 'Вид',
+    reloadPage: 'Перезагрузить страницу',
+    forceReload: 'Полная перезагрузка',
+    toggleToolbar: 'Переключить панель инструментов',
+    focusAddressBar: 'Сосредоточить адресную строку',
+    edit: 'Правка',
+    actions: 'Действия',
+    copyPagePrompt: 'Копировать промпт страницы',
+    copyElementCss: 'Копировать CSS элемента',
+    escape: 'Закрыть / Отмена',
+    window: 'Окно',
+    minimize: 'Свернуть',
+    zoom: 'Масштаб',
+    front: 'Переместить все на передний план',
+    help: 'Справка',
+    visitWebsite: 'Посетить сайт',
+    supportCenter: 'Центр поддержки',
+    privacyPolicy: 'Политика конфиденциальности',
+    termsOfService: 'Условия использования',
+    aboutDeveloper: 'О разработчике (hooosberg)',
+    dockNewWindow: 'Новое окно',
+    dockOpenHtmlFile: 'Открыть HTML-файл',
+    inspectorSelectParent: 'Выбрать родительский элемент          Esc',
+    inspectorSelectChild: 'Выбрать дочерний элемент          Enter',
+    inspectorAddTag: 'Добавить метку',
+  },
+  ar: {
+    app: APP_NAME,
+    about: `حول ${APP_NAME}`,
+    settings: 'الإعدادات…',
+    file: 'ملف',
+    openHtmlFile: 'فتح ملف HTML',
+    newWindow: 'نافذة جديدة',
+    view: 'عرض',
+    reloadPage: 'إعادة تحميل الصفحة',
+    forceReload: 'إعادة تحميل قسرية',
+    toggleToolbar: 'بدّل شريط الأدوات',
+    focusAddressBar: 'ركّز شريط العنوان',
+    edit: 'تحرير',
+    actions: 'إجراءات',
+    copyPagePrompt: 'نسخ أمر الصفحة',
+    copyElementCss: 'نسخ CSS العنصر',
+    escape: 'إغلاق / إلغاء',
+    window: 'نافذة',
+    minimize: 'تصغير',
+    zoom: 'تكبير/تصغير',
+    front: 'نقل الكل إلى الأمام',
+    help: 'تعليمات',
+    visitWebsite: 'زيارة الموقع',
+    supportCenter: 'مركز الدعم',
+    privacyPolicy: 'سياسة الخصوصية',
+    termsOfService: 'شروط الخدمة',
+    aboutDeveloper: 'حول المطور (hooosberg)',
+    dockNewWindow: 'نافذة جديدة',
+    dockOpenHtmlFile: 'فتح ملف HTML',
+    inspectorSelectParent: 'حدد العنصر الأب          Esc',
+    inspectorSelectChild: 'حدد العنصر الفرعي          Enter',
+    inspectorAddTag: 'أضف وسم',
+  },
+  ja: {
+    app: APP_NAME,
+    about: `${APP_NAME}について`,
+    settings: '設定…',
+    file: 'ファイル',
+    openHtmlFile: 'HTMLファイルを開く',
+    newWindow: '新規ウインドウ',
+    view: '表示',
+    reloadPage: 'ページを再読み込み',
+    forceReload: '完全に再読み込み',
+    toggleToolbar: 'ツールバーを切り替え',
+    focusAddressBar: 'アドレスバーにフォーカス',
+    edit: '編集',
+    actions: 'アクション',
+    copyPagePrompt: 'ページプロンプトをコピー',
+    copyElementCss: '要素CSSをコピー',
+    escape: '閉じる / キャンセル',
+    window: 'ウインドウ',
+    minimize: '最小化',
+    zoom: 'ズーム',
+    front: 'すべてを前面に持ってくる',
+    help: 'ヘルプ',
+    visitWebsite: 'ウェブサイトにアクセス',
+    supportCenter: 'サポートセンター',
+    privacyPolicy: 'プライバシーポリシー',
+    termsOfService: 'サービス規約',
+    aboutDeveloper: '開発者について (hooosberg)',
+    dockNewWindow: '新規ウインドウ',
+    dockOpenHtmlFile: 'HTMLファイルを開く',
+    inspectorSelectParent: '親要素を選択          Esc',
+    inspectorSelectChild: '子要素を選択          Enter',
+    inspectorAddTag: 'タグを追加',
+  },
+  ko: {
+    app: APP_NAME,
+    about: `${APP_NAME} 정보`,
+    settings: '설정…',
+    file: '파일',
+    openHtmlFile: 'HTML 파일 열기',
+    newWindow: '새 창',
+    view: '보기',
+    reloadPage: '페이지 새로고침',
+    forceReload: '강제 새로고침',
+    toggleToolbar: '도구 모음 전환',
+    focusAddressBar: '주소 표시줄 포커스',
+    edit: '편집',
+    actions: '작업',
+    copyPagePrompt: '페이지 프롬프트 복사',
+    copyElementCss: '요소 CSS 복사',
+    escape: '닫기 / 취소',
+    window: '윈도우',
+    minimize: '최소화',
+    zoom: '확대/축소',
+    front: '모두 앞으로 가져오기',
+    help: '도움말',
+    visitWebsite: '웹사이트 방문',
+    supportCenter: '지원 센터',
+    privacyPolicy: '개인정보처리방침',
+    termsOfService: '서비스 약관',
+    aboutDeveloper: '개발자 정보 (hooosberg)',
+    dockNewWindow: '새 창',
+    dockOpenHtmlFile: 'HTML 파일 열기',
+    inspectorSelectParent: '부모 요소 선택          Esc',
+    inspectorSelectChild: '자식 요소 선택          Enter',
+    inspectorAddTag: '태그 추가',
   },
 }
 
@@ -192,8 +503,18 @@ function getSettingsPath() {
 }
 
 function normalizeLanguage(language: string): keyof typeof MENU_TRANSLATIONS {
-  if (language === 'zh-TW' || language.toLowerCase() === 'zh-hant') return 'zh-TW'
-  if (language.startsWith('zh')) return 'zh'
+  const normalized = normalizeAppLanguage(language)
+  if (normalized === 'zh-TW') return 'zh-TW'
+  if (normalized === 'zh') return 'zh'
+  if (normalized === 'de') return 'de'
+  if (normalized === 'es') return 'es'
+  if (normalized === 'fr') return 'fr'
+  if (normalized === 'it') return 'it'
+  if (normalized === 'pt') return 'pt'
+  if (normalized === 'ru') return 'ru'
+  if (normalized === 'ar') return 'ar'
+  if (normalized === 'ja') return 'ja'
+  if (normalized === 'ko') return 'ko'
   return 'en'
 }
 
@@ -216,7 +537,7 @@ function loadAppSettings(): PersistedAppSettings {
         : parsed.theme === 'auto'
           ? getDefaultTheme()
         : DEFAULT_SETTINGS.theme,
-      language: typeof parsed.language === 'string' ? parsed.language : DEFAULT_SETTINGS.language,
+      language: normalizeAppLanguage(typeof parsed.language === 'string' ? parsed.language : DEFAULT_SETTINGS.language),
     }
   } catch (error) {
     console.error('Failed to load app settings:', error)
@@ -314,8 +635,6 @@ function refreshMenus() {
   }
 }
 
-const WEBSITE_BASE = 'https://hooosberg.github.io/DOMPrompter'
-
 function buildApplicationMenu(labels: MenuLabels) {
   return Menu.buildFromTemplate([
     {
@@ -395,13 +714,13 @@ function buildApplicationMenu(labels: MenuLabels) {
       role: 'help',
       label: labels.help,
       submenu: [
-        { label: labels.visitWebsite, click: () => { void shell.openExternal(`${WEBSITE_BASE}/`) } },
-        { label: labels.supportCenter, click: () => { void shell.openExternal(`${WEBSITE_BASE}/support.html`) } },
+        { label: labels.visitWebsite, click: () => { void shell.openExternal(WEBSITE_URL) } },
+        { label: labels.supportCenter, click: () => { void shell.openExternal(SUPPORT_URL) } },
         { type: 'separator' },
-        { label: labels.privacyPolicy, click: () => { void shell.openExternal(`${WEBSITE_BASE}/privacy.html`) } },
-        { label: labels.termsOfService, click: () => { void shell.openExternal(`${WEBSITE_BASE}/terms.html`) } },
+        { label: labels.privacyPolicy, click: () => { void shell.openExternal(PRIVACY_URL) } },
+        { label: labels.termsOfService, click: () => { void shell.openExternal(TERMS_URL) } },
         { type: 'separator' },
-        { label: labels.aboutDeveloper, click: () => { void shell.openExternal('https://github.com/hooosberg') } },
+        { label: labels.aboutDeveloper, click: () => { void shell.openExternal(DEVELOPER_GITHUB_URL) } },
       ],
     },
   ])
@@ -667,9 +986,12 @@ if (!hasSingleInstanceLock) {
 
     ipcMain.handle('settings:get', async (_event, key: keyof PersistedAppSettings) => appSettings[key])
     ipcMain.handle('settings:set', async (_event, key: keyof PersistedAppSettings, value: PersistedAppSettings[keyof PersistedAppSettings]) => {
+      const nextValue = key === 'language' && typeof value === 'string'
+        ? normalizeAppLanguage(value)
+        : value
       appSettings = {
         ...appSettings,
-        [key]: value,
+        [key]: nextValue,
       }
       if (key === 'theme' && typeof value === 'string') {
         applyThemeSource(value as PersistedAppSettings['theme'])
@@ -680,7 +1002,7 @@ if (!hasSingleInstanceLock) {
     ipcMain.handle('menu:changeLanguage', async (_event, language: string) => {
       appSettings = {
         ...appSettings,
-        language,
+        language: normalizeAppLanguage(language),
       }
       saveAppSettings(appSettings)
       refreshMenus()
@@ -734,6 +1056,7 @@ ipcMain.handle('attach-debugger', async (event): Promise<boolean> => {
     await session.debuggerTransport.attach()
 
     session.inspectorService = new InspectorService(session.debuggerTransport)
+    session.inspectorService.setLanguage(appSettings.language)
     await session.inspectorService.initialize()
 
     session.inspectorService.onElementSelected((element: InspectedElement, meta) => {

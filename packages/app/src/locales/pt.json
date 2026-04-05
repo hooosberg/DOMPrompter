@@ -3,25 +3,28 @@
     "description": "Inspetor DOM visual e gerador de prompts IA. Selecione elementos, ajuste estilos visualmente, gere prompts IA precisos para Cursor, Claude Code, Codex e mais.",
     "website": "Site",
     "support": "Central de suporte",
-    "privacy": "Pol\u00edtica de privacidade",
-    "terms": "Termos de servi\u00e7o",
+    "privacy": "Política de privacidade",
+    "terms": "Termos de serviço",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. Todos os direitos reservados."
+    "copyright": "© 2025 hooosberg. Todos os direitos reservados.",
+    "descFeatures": "Seleção precisa de elementos com seletores CSS • Rastreamento de diferenças de estilo (antes/depois) • Etiquetas em linguagem natural • Feedback visual imediato com desfazer/refazer • Funciona com Cursor, Claude Code, Codex, Copilot e mais",
+    "descPrivacy": "Local primeiro, privacidade total. Toda inspeção e geração de prompts ocorre localmente no seu Mac.",
+    "version": "Versão {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
     "title": "Desbloqueie todo o poder",
-    "subtitle": "Exporte prompts IA precisos para cada p\u00e1gina inspecionada. Uma compra, precis\u00e3o ilimitada.",
-    "lifetimeBadge": "Licen\u00e7a vital\u00edcia",
+    "subtitle": "Exporte prompts IA precisos para cada página inspecionada. Uma compra, precisão ilimitada.",
+    "lifetimeBadge": "Licença vitalícia",
     "priceValue": "$19.99",
-    "benefitExportTitle": "Exporta\u00e7\u00e3o ilimitada de prompts",
-    "benefitExportDesc": "Exporte prompts combinando seletores, diferen\u00e7as de estilo e anota\u00e7\u00f5es em uma sa\u00edda estruturada.",
-    "benefitPrecisionTitle": "Rastreamento de diferen\u00e7as de estilo",
-    "benefitPrecisionDesc": "Cada ajuste CSS registrado automaticamente antes/depois \u2014 width: 200px \u2192 300px. Claro para a IA.",
-    "benefitTagsTitle": "Tags em linguagem natural",
-    "benefitTagsDesc": "Anote elementos com inten\u00e7\u00e3o: \u201ccor do bot\u00e3o muito escura\u201d, \u201cespa\u00e7amento muito grande\u201d. A IA entende seu design.",
-    "benefitFutureTitle": "Todas as futuras fun\u00e7\u00f5es Pro",
-    "benefitFutureDesc": "Compra \u00fanica para todas as fun\u00e7\u00f5es Pro atuais e futuras. Sem assinatura.",
+    "benefitExportTitle": "Exportação ilimitada de prompts",
+    "benefitExportDesc": "Exporte prompts combinando seletores, diferenças de estilo e anotações em uma saída estruturada.",
+    "benefitPrecisionTitle": "Rastreamento de diferenças de estilo",
+    "benefitPrecisionDesc": "Cada ajuste CSS registrado automaticamente antes/depois — width: 200px → 300px. Claro para a IA.",
+    "benefitTagsTitle": "Etiquetas em linguagem natural",
+    "benefitTagsDesc": "Anote elementos com intenção: \u201ccor do botão muito escura\u201d, \u201cespaçamento muito grande\u201d. A IA entende seu design.",
+    "benefitFutureTitle": "Todas as futuras funcionalidades Pro",
+    "benefitFutureDesc": "Compra única para todas as funcionalidades Pro atuais e futuras. Sem assinatura.",
     "unlockNow": "Atualizar para Pro",
     "cancel": "Cancelar",
     "purchasing": "Comprando...",
@@ -30,7 +33,585 @@
     "restorePurchase": "Restaurar compra",
     "restoring": "Restaurando...",
     "restoreNotFound": "Nenhuma compra anterior encontrada.",
-    "restoreFailed": "A restaura\u00e7\u00e3o falhou. Tente novamente.",
-    "ctaNote": "Pagamento \u00fanico. Sem taxas de assinatura. As fun\u00e7\u00f5es Pro permanecem desbloqueadas permanentemente."
+    "restoreFailed": "A restauração falhou. Tente novamente.",
+    "ctaNote": "Pagamento único. Sem taxas de assinatura. As funcionalidades Pro permanecem desbloqueadas permanentemente."
+  },
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "Ajuste visualmente sua UI e gere prompts precisos para Vibe Coding"
+  },
+  "topbar": {
+    "refresh": "Atualizar",
+    "load": "Carregar",
+    "urlPlaceholder": "Insira uma URL do localhost ou abra um HTML local",
+    "addressLabel": "Endereço da página",
+    "settings": "Configurações",
+    "connected": "Conectado",
+    "connecting": "Conectando",
+    "disconnected": "Sem conexão",
+    "hideToolbar": "Ocultar barra de ferramentas",
+    "showToolbar": "Mostrar barra de ferramentas",
+    "disconnect": "Desconectar"
+  },
+  "onboarding": {
+    "chooseTitle": "Escolha como deseja começar",
+    "chooseDesc": "Use um servidor de desenvolvimento local ou abra diretamente um arquivo HTML estático.",
+    "serverMode": "Modo servidor",
+    "serverDesc": "Seu projeto já está rodando no localhost",
+    "serverFoot": "Configuração guiada em 3 passos",
+    "htmlMode": "Modo HTML",
+    "htmlDesc": "Abra um arquivo HTML local e inspecione imediatamente",
+    "htmlFoot": "Selecione um arquivo para começar",
+    "htmlTitle": "Modo HTML",
+    "htmlGuide": "Ideal para páginas de arquivo único, exportações estáticas e protótipos locais. Abra um arquivo diretamente ou continue pelo histórico recente.",
+    "htmlGuideTitle": "Abrir HTML local diretamente",
+    "htmlGuideBody": "Você não precisa iniciar um servidor de desenvolvimento primeiro. Escolha um arquivo HTML e o DOMPrompter o carregará diretamente na tela para inspeção.",
+    "htmlHistory": "Histórico recente",
+    "htmlHistoryEmpty": "Nenhum arquivo HTML foi aberto recentemente.",
+    "htmlOpenAction": "Abrir arquivo HTML",
+    "htmlRecentAction": "Reabrir",
+    "serverTitle": "Modo servidor",
+    "serverGuide": "Inicie seu projeto web na URL de depuração padrão e carregue-o pela barra de endereços acima.",
+    "aiPrompt": "Copiar prompt de configuração para IA",
+    "aiPromptDesc": "Este prompt foca apenas em iniciar o app web, unificar a URL e exigir que o assistente a verifique.",
+    "copyPrompt": "Copiar prompt",
+    "copied": "Copiado",
+    "startServer": "Inicie seu servidor de desenvolvimento",
+    "startServerDesc": "Execute npm run dev no diretório do projeto e confirme que a URL localhost final corresponde à URL de depuração padrão.",
+    "copyCommand": "Copiar comando",
+    "loadPage": "Carregue sua página",
+    "loadPageDesc": "Se o script foi adaptado corretamente, o endereço padrão abaixo deve funcionar imediatamente. Caso contrário, edite o endereço na barra superior.",
+    "topBarHint": "Você não precisa mais digitar o endereço dentro do assistente. Use a barra de endereços superior para atualizar, editar rapidamente e recarregar.",
+    "loadPreset": "Carregar endereço padrão",
+    "loadButton": "Carregar página",
+    "exit": "Sair",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "aiSetupPrompt": "Estou usando o DOMPrompter para depurar um projeto web. Por favor, adapte os scripts de inicialização do projeto à URL de depuração padrão do DOMPrompter para que eu possa clicar em Carregar diretamente sem precisar copiar e colar uma URL manualmente.\n\nPrimeiro identifique que tipo de projeto web é este (React / Vue / Svelte / Next.js / HTML estático / outro projeto frontend) e depois foque em apenas um objetivo: fazer a página web iniciar corretamente no navegador. Prefira alterar apenas os scripts do package.json e não modifique a lógica de negócio.\n\nObjetivo:\n- A página deve abrir diretamente em {{defaultUrl}}\n- A URL padrão no passo 3 do DOMPrompter deve carregar com sucesso\n- Após fazer as mudanças, você deve executar o projeto e verificar por conta própria\n\nRequisitos:\n\n1. Adaptação de scripts\n- Garanta que exista um script dev\n- O servidor de desenvolvimento deve escutar no localhost\n- Prefira unificar a URL final para {{defaultUrl}}\n- Para Vite, vite --host localhost --port 5173 é aceitável\n- Para Next.js, next dev -H localhost -p 5173 é aceitável\n- Para HTML puro sem package.json, crie um e adicione \"dev\": \"npx serve . -l 5173\"\n\n2. Restrições\n- Não modifique a lógica de negócio\n- Preserve todos os scripts existentes\n- Se serve ou qualquer outra dependência necessária estiver faltando, instale-a\n- Foque apenas na depuração web. Não trate Electron, fluxos de trabalho de desktop ou portas de depuração remota\n\n3. Verificação obrigatória\n- Execute npm run dev (ou o comando equivalente do seu gerenciador de pacotes)\n- Confirme que o terminal exibe uma URL do localhost\n- Prefira confirmar que a URL final é exatamente {{defaultUrl}}\n- Encerre o processo somente após verificar que inicia sem erros\n\n4. A saída final deve incluir\n- O tipo de projeto web detectado\n- Os scripts que você alterou\n- A URL final que pode ser aberta diretamente\n- O resultado da sua verificação\n- Se {{defaultUrl}} não for possível, explique por que e forneça a URL alternativa exata que funciona\n\nInicie a análise e faça as mudanças agora. A tarefa só estará completa após você verificar que o app web inicia com sucesso.",
+    "philosophy": {
+      "eyebrow": "Entre a IA e o código",
+      "title": "Transforme ajustes visuais em instruções que a IA pode executar com precisão",
+      "body": "DOMPrompter é um assistente visual entre a IA e o código de produção. Ele não reescreve arquivos-fonte por conta própria. Ele ajuda você a marcar alvos, registrar mudanças de parâmetros e montar prompts estruturados que a IA pode aplicar corretamente.",
+      "flow": {
+        "mark": "Marcar",
+        "tune": "Ajustar",
+        "generate": "Gerar",
+        "handToAi": "Entregar à IA"
+      },
+      "footerLead": "Selecione com precisão, descreva com precisão e entregue à IA.",
+      "footerBody": "A sobreposição da página cuida do feedback imediato. O painel de trabalho cuida do estado persistente. Isso mantém o fluxo leve, rápido e confiável.",
+      "modeHint": "Escolha como deseja começar",
+      "serverBadge": "Recomendado",
+      "htmlBadge": "Página estática"
+    }
+  },
+  "panel": {
+    "ready": "Pronto para inspecionar",
+    "readyDesc": "Passe o cursor e clique em um elemento da página para trazer seus estilos ao painel de trabalho."
+  },
+  "toast": {
+    "settingsSoon": "O painel de configurações chegará na próxima fase",
+    "connected": "Conectado à página",
+    "htmlOpened": "HTML local aberto",
+    "pageRefreshed": "Página atualizada",
+    "connectionFailed": "Falha na conexão",
+    "loadFailed": "Falha ao carregar a página",
+    "debuggerFailed": "Falha ao anexar o depurador",
+    "htmlFailed": "Falha ao abrir o arquivo HTML",
+    "tagRemoved": "Etiqueta removida",
+    "promptCopied": "Prompt da página copiado",
+    "noPrompt": "Nenhum prompt de página disponível ainda",
+    "elementCssCopied": "CSS do elemento copiado"
+  },
+  "settings": {
+    "title": "Configurações",
+    "appearance": "Aparência",
+    "language": "Idioma",
+    "shortcuts": "Atalhos",
+    "license": "Licença",
+    "about": "Sobre",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "themeAuto": "Automático",
+    "accent": "Cor de destaque",
+    "glassOpacity": "Opacidade do vidro",
+    "close": "Fechar",
+    "currentPlan": "Plano atual",
+    "free": "Grátis",
+    "pro": "Pro",
+    "buyPro": "Comprar Pro",
+    "restore": "Restaurar compra"
+  },
+  "license": {
+    "promoTitle": "Desbloqueie o DOMPrompter Pro",
+    "promoDesc": "Aproveite ao máximo seu fluxo de inspeção visual. Exporte prompts de página completa, registre cada mudança de estilo e anote com linguagem natural.",
+    "benefitExport": "Exportação ilimitada de prompts de página",
+    "benefitDiff": "Rastreamento de diferenças de estilo (antes/depois)",
+    "benefitTags": "Etiquetas e anotações em linguagem natural",
+    "benefitFuture": "Inclui todas as futuras funcionalidades Pro",
+    "upgradeCta": "Atualizar para Pro — $19.99",
+    "ctaNote": "Pagamento único. Sem assinatura. As funcionalidades Pro ficam desbloqueadas permanentemente.",
+    "proThanks": "Obrigado por apoiar o DOMPrompter! Todas as funcionalidades Pro estão desbloqueadas. Sua compra única cobre todas as futuras funcionalidades Pro que adicionarmos.",
+    "purchase": "Comprar Pro",
+    "restore": "Restaurar compra",
+    "processing": "Processando..."
+  },
+  "shortcuts": {
+    "openSettings": "Abrir configurações",
+    "openHtml": "Abrir arquivo HTML",
+    "reload": "Recarregar página",
+    "forceReload": "Forçar recarga",
+    "toggleToolbar": "Alternar barra de ferramentas",
+    "copyPrompt": "Copiar prompt da página",
+    "copyCss": "Copiar CSS do elemento",
+    "focusAddress": "Focar barra de endereços",
+    "newWindow": "Nova janela",
+    "selectParent": "Selecionar elemento pai",
+    "selectChild": "Selecionar elemento filho",
+    "escape": "Fechar / Desselecionar"
+  },
+  "common": {
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "collapse": "Recolher",
+    "expand": "Expandir",
+    "tip": "Dica"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "Todos",
+      "top": "Topo",
+      "right": "Direita",
+      "bottom": "Baixo",
+      "left": "Esquerda"
+    },
+    "spacing": {
+      "allSides": "todos os lados",
+      "topSide": "topo",
+      "rightSide": "direita",
+      "bottomSide": "baixo",
+      "leftSide": "esquerda"
+    },
+    "sections": {
+      "size": {
+        "title": "Tamanho",
+        "hint": "Fixe primeiro as dimensões do contêiner e depois ajuste a estrutura interna."
+      },
+      "padding": {
+        "title": "Padding",
+        "hint": "O padding costuma ser a forma mais rápida de ajustar o espaço interior de um contêiner."
+      },
+      "margin": {
+        "title": "Margem",
+        "hint": "O espaçamento entre módulos normalmente vem da margem."
+      },
+      "layout": {
+        "title": "Layout",
+        "hint": "Use display, gap e alinhamento para observar rapidamente as mudanças estruturais."
+      },
+      "position": {
+        "title": "Posição",
+        "hint": "Mantenha o layout estável primeiro; use posicionamento e empilhamento para ajustes precisos."
+      },
+      "border": {
+        "title": "Borda e raio",
+        "hint": "Bordas, raio de canto e sombras definem a sensação visual do contêiner."
+      },
+      "background": {
+        "title": "Fundo",
+        "hint": "Cor de fundo e opacidade são ótimos para testar hierarquia rapidamente."
+      },
+      "overflow": {
+        "title": "Estouro e recorte",
+        "hint": "Útil ao lidar com recortes, rolagem e contêineres de mídia."
+      },
+      "typography": {
+        "title": "Tipografia",
+        "hint": "Refine o texto com tamanho de fonte, altura de linha, peso e alinhamento."
+      },
+      "image": {
+        "title": "Imagem",
+        "hint": "Para imagens, comece pelo modo de ajuste, raio e tamanho."
+      }
+    },
+    "options": {
+      "display": {
+        "block": "Block"
+      },
+      "align": {
+        "start": "Início",
+        "center": "Centro",
+        "end": "Fim",
+        "spaceBetween": "Espaço entre",
+        "stretch": "Esticar"
+      },
+      "position": {
+        "static": "Estática",
+        "relative": "Relativa",
+        "absolute": "Absoluta",
+        "fixed": "Fixa"
+      },
+      "overflow": {
+        "visible": "Visível",
+        "hidden": "Oculto",
+        "auto": "Rolável"
+      },
+      "textAlign": {
+        "left": "Esquerda",
+        "center": "Centro",
+        "right": "Direita"
+      },
+      "objectFit": {
+        "cover": "Cobrir",
+        "contain": "Conter",
+        "fill": "Esticar"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "Largura",
+        "helperText": "Ajuste a largura final do contêiner. Útil para cards, painéis e áreas de mídia de tamanho fixo.",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "Altura",
+        "helperText": "Ajuste a altura final do contêiner. Ótimo para áreas de título, cards e molduras de mídia.",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "Ajuste o espaço superior entre o conteúdo e a borda do contêiner.",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "Ajuste o espaço interno do lado direito do contêiner.",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "Ajuste o espaço interno inferior para que o bloco fique mais sólido.",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "Ajuste o espaço interno do lado esquerdo do contêiner.",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "Ajuste a distância externa em relação ao elemento acima.",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "Ajuste a distância externa do lado direito.",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "Ajuste o espaço vertical em relação ao próximo elemento.",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "Ajuste a distância externa do lado esquerdo.",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "Display",
+        "helperText": "Mude o modo de layout do contêiner. Alinhamento e gap só funcionam de verdade em Flex ou Grid."
+      },
+      "gap": {
+        "label": "Gap",
+        "helperText": "Ajuste o espaço entre elementos filhos. Só funciona em Flex ou Grid.",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "Eixo principal",
+        "helperText": "Controle como os filhos são distribuídos ao longo do eixo principal."
+      },
+      "alignItems": {
+        "label": "Eixo cruzado",
+        "helperText": "Controle como os filhos se alinham ao longo do eixo cruzado."
+      },
+      "position": {
+        "label": "Modo de posição",
+        "helperText": "Mude o elemento para posicionamento relativo, absoluto ou fixo."
+      },
+      "top": {
+        "label": "Deslocamento superior",
+        "helperText": "Ajuste com precisão o deslocamento superior de um elemento posicionado.",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "Deslocamento esquerdo",
+        "helperText": "Ajuste com precisão o deslocamento esquerdo de um elemento posicionado.",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "Z-Index",
+        "helperText": "Controle a ordem de empilhamento para sobreposições, modais e camadas decorativas.",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "Transformação",
+        "helperText": "Use translate e transformações relacionadas para movimentos sutis sem quebrar o fluxo.",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "Borda",
+        "helperText": "Controle espessura, cor e estilo de linha para cards, inputs e botões.",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "Raio",
+        "helperText": "Ajuste o raio dos cantos para cards, painéis e botões."
+      },
+      "boxShadow": {
+        "label": "Sombra",
+        "helperText": "Use sombra para criar elevação e profundidade.",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "Fundo",
+        "helperText": "Ajuste a cor de fundo para explorar hierarquia e ênfase."
+      },
+      "opacity": {
+        "label": "Opacidade",
+        "helperText": "Reduza a opacidade para estados desativados, sobreposições e camadas suavizadas."
+      },
+      "overflow": {
+        "label": "Estouro",
+        "helperText": "Controle se o conteúdo excedente permanece visível, fica oculto ou se torna rolável."
+      },
+      "fontSize": {
+        "label": "Tamanho da fonte",
+        "helperText": "Ajuste o tamanho do texto para títulos, subtítulos e corpo de texto."
+      },
+      "lineHeight": {
+        "label": "Altura de linha",
+        "helperText": "Ajuste o espaçamento vertical entre linhas para ritmo e legibilidade.",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "Peso",
+        "helperText": "Mude o peso do texto para enfatizar ou suavizar o conteúdo.",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "Família tipográfica",
+        "helperText": "Troque a família tipográfica para comparar o tom rapidamente.",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "Cor do texto",
+        "helperText": "Ajuste a cor do texto para hierarquia, marca e conteúdo secundário."
+      },
+      "textAlign": {
+        "label": "Alinhamento",
+        "helperText": "Mude a direção do layout de todo o bloco de texto."
+      },
+      "objectFit": {
+        "label": "Modo de ajuste",
+        "helperText": "Controle se a imagem cobre, se encaixa ou se estica dentro do contêiner."
+      },
+      "imageWidth": {
+        "helperText": "Ajuste a largura final da imagem ou moldura de mídia.",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "Ajuste a altura final da imagem ou moldura de mídia.",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "Suavize os cantos de imagens de capa e avatares."
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "Selecionar elemento",
+      "selectOn": "Ativar seleção de elementos",
+      "selectOff": "Desativar seleção e restaurar cliques reais",
+      "selectActive": "Selecionando",
+      "interactive": "Interativo",
+      "syncing": "Sincronizando",
+      "undo": "Desfazer",
+      "redo": "Refazer",
+      "reset": "Redefinir"
+    },
+    "empty": {
+      "interactiveTitle": "Modo interativo",
+      "interactiveDesc": "Agora você pode interagir livremente com a página. Clique em «Interativo» acima novamente para voltar à seleção de elementos."
+    },
+    "element": {
+      "containerName": "Contêiner",
+      "elementName": "Elemento",
+      "copyTitle": "Clique para copiar {{name}}"
+    },
+    "sections": {
+      "labels": "Intenção de etiquetas",
+      "labelsHint": "Escreva aqui a instrução prioritária para a IA. Essas etiquetas expressam intenção, não apenas anotações.",
+      "quick": "Ações rápidas",
+      "quickHint": "Aproxime primeiro o elemento do alvo com ações semânticas e depois ajuste os valores precisos abaixo.",
+      "precision": "Controles de precisão",
+      "precisionHint": "Quando as ações rápidas já estiverem próximas, refine cada propriedade aqui.",
+      "assist": "Informações de apoio",
+      "assistHint": "Mantenha aqui anotações de contexto e visualizações para que o fluxo principal de edição permaneça focado.",
+      "cssVariables": "Variáveis CSS"
+    },
+    "helper": {
+      "browseTitle": "Interação real",
+      "browseDesc": "A seleção de elementos está desativada no momento. Você pode clicar e interagir com a página real para que menus, popovers e dropdowns abram naturalmente.",
+      "contextTitle": "Ajuste contextual",
+      "contextDesc": "Passe o cursor sobre qualquer cartão de parâmetro e a tela destacará as regiões correspondentes de margem, padding ou tipografia para que você possa ler a estrutura como um diagrama.",
+      "innerChild": "seus elementos filhos",
+      "innerChildWithClass": "elementos filhos dentro de {{className}}",
+      "paddingCentered": "Este nó é um contêiner Flex centralizado. Alterar {{field}} muda o tamanho da caixa interna, mas o conteúdo continua centralizado. Se quiser mover o bloco de conteúdo central, ajuste primeiro o alinhamento do layout ou continue selecionando {{childTargetName}} para ajustar margem ou padding.",
+      "marginCentered": "Este nó usa um layout Flex centralizado. A margem externa afeta principalmente a distância em relação a nós irmãos, não o conteúdo centralizado em si. Para ajustar o bloco de texto central, mude primeiro o alinhamento do layout ou selecione {{childTargetName}} e ajuste a margem lá.",
+      "sizeCentered": "Este nó é um contêiner Flex centralizado. Ajustar largura ou altura muda a caixa, mas o conteúdo continua centralizado com eixo principal {{justifyContent}} e eixo cruzado {{alignItems}}. Se quiser que o conteúdo fique alinhado ao topo, esquerda ou borda, mude primeiro o alinhamento do layout.",
+      "gapUnavailable": "Este nó não é um contêiner Flex nem Grid, então definir gap não produzirá o efeito de espaçamento esperado. Mude primeiro o Display para Flex ou Grid, ou selecione o contêiner pai real que controla o layout dos filhos."
+    },
+    "insight": {
+      "layoutTitle": "Leitura de layout",
+      "flexCentered": "A seleção atual é um contêiner Flex centralizado (eixo principal {{justifyContent}}, eixo cruzado {{alignItems}}). Mudanças de padding e tamanho costumam manter o conteúdo centralizado. Se quiser mover o conteúdo interno, ajuste primeiro o alinhamento do layout ou continue selecionando um elemento filho.",
+      "grid": "Este nó é um contêiner Grid. Foque primeiro em gap, padding e tamanho. Se um bloco filho específico estiver mal posicionado, normalmente você precisa selecionar esse filho em vez de editar apenas o contêiner externo.",
+      "parent": "Este nó é um contêiner pai. Alterar seu padding, largura ou altura afeta a estrutura interna, mas nem sempre move diretamente o conteúdo filho. Se quiser ajustar um bloco específico de texto ou imagem, selecione o elemento filho diretamente."
+    },
+    "active": {
+      "labels": "Escreva primeiro aqui o objetivo em linguagem natural que você quer que a IA siga antes de ajustar números.",
+      "size": "Use primeiro os cartões rápidos de largura e altura para se aproximar do alvo e depois ajuste abaixo.",
+      "padding": "Use os controles rápidos de padding para estabelecer o espaço interno do contêiner e depois refine lado a lado.",
+      "margin": "Use os controles rápidos de margem para definir o espaçamento entre módulos de forma direcional antes dos ajustes precisos em um único lado.",
+      "alignmentTitle": "Alinhamento",
+      "layout": "Vá para a seção Layout e foque primeiro no alinhamento do eixo principal e do eixo cruzado.",
+      "gapShortcut": "Este objeto tem vários filhos visíveis, então Gap aparece como controle unificado de espaçamento na seção Layout.",
+      "gap": "Gap aparece na seção Layout. Só funciona como esperado quando o contêiner tem filhos reais e um modo de layout ativo.",
+      "position": "Os controles de posição ficam na seção de precisão para correções de top, left e z-index.",
+      "border": "Borda, raio e sombra trabalham juntos para definir a sensação do componente, então vale revisá-los em conjunto.",
+      "background": "Aqui ficam a cor de fundo e a opacidade para ajuste rápido de hierarquia e ênfase.",
+      "shadow": "A sombra costuma ser revisada junto com o raio para obter um acabamento visual estável.",
+      "typography": "Os controles de tipografia estão agrupados aqui para que você possa ajustar continuamente tamanho, altura de linha, peso e alinhamento.",
+      "overflow": "Use esta área quando precisar controlar o comportamento de recorte ou rolagem.",
+      "image": "O modo de imagem mantém o modo de ajuste, tamanho e raio em um só lugar para facilitar comparações."
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "Ativar Flex",
+        "description": "Mude primeiro o contêiner para Flex e depois continue com os ajustes de alinhamento e espaçamento."
+      },
+      "alignCenter": {
+        "label": "Centralizar conteúdo",
+        "description": "Redefina ambos os eixos para o centro para restaurar rapidamente o estado centralizado padrão."
+      },
+      "spaceBetween": {
+        "label": "Espaço entre",
+        "description": "Distribua os itens para ambas as extremidades do eixo principal. Ótimo para barras de título, fileiras de botões e barras de ferramentas."
+      },
+      "centerText": {
+        "label": "Centralizar texto",
+        "description": "Mude o alinhamento do texto para o centro. Ótimo para títulos e blocos de texto curtos."
+      },
+      "imageCover": {
+        "label": "Preencher contêiner",
+        "description": "Mude object-fit para cover para que a imagem preencha primeiro o contêiner."
+      },
+      "imageContain": {
+        "label": "Mostrar imagem completa",
+        "description": "Mude object-fit para contain para que a imagem completa permaneça visível."
+      },
+      "increasePadding": {
+        "label": "Aumentar padding",
+        "description": "Adicione {{quickStep}}px de espaço em todos os lados de uma vez."
+      },
+      "increaseGap": {
+        "label": "Aumentar gap",
+        "description": "Aumente o espaço entre elementos filhos em {{quickStep}}px."
+      }
+    },
+    "quick": {
+      "step": "Passo",
+      "decrease": "Diminuir",
+      "increase": "Aumentar",
+      "decreaseWithStep": "Diminuir {{step}}px",
+      "increaseWithStep": "Aumentar {{step}}px",
+      "increased": "aumentado",
+      "decreased": "diminuído",
+      "layout": {
+        "title": "Cartão rápido de layout",
+        "hint": "Mude primeiro entre Block, Flex e Grid e depois use o painel para empurrar o conteúdo para cima, baixo, esquerda, direita ou centro.",
+        "modeTitle": "Modo de layout",
+        "modeDescription": "Display foi alterado para {{display}}. Continue usando o painel para mover o conteúdo para cima, baixo, esquerda, direita ou centro.",
+        "positionTitle": "Posição do conteúdo",
+        "positionDescription": "O conteúdo do contêiner está agora posicionado em {{slot}}."
+      },
+      "spacing": {
+        "title": "Ajuste rápido de espaçamento",
+        "hint": "Escolha primeiro padding ou margem e depois uma direção. O centro significa todos os lados juntos.",
+        "currentPadding": "Alvo rápido atual: Padding",
+        "currentMargin": "Alvo rápido atual: Margem",
+        "paddingActionTitle": "Ação rápida de padding",
+        "marginActionTitle": "Ação rápida de margem",
+        "adjusted": "{{side}} foi {{direction}} em {{value}}px. Você pode continuar com ajustes finos de valor único abaixo."
+      },
+      "cards": {
+        "width": "A largura costuma ser a primeira coisa a ajustar em cards, painéis e molduras de imagem.",
+        "height": "Ótimo para esticar rapidamente áreas de título, cards ou zonas de imagem.",
+        "gap": "Aumente ou diminua diretamente o espaço entre os elementos filhos do contêiner.",
+        "radius": "Suaviza as bordas de cards, painéis e imagens.",
+        "objectFit": "Mude rapidamente o comportamento de recorte da imagem entre preencher e se encaixar completamente no contêiner.",
+        "opacity": "Útil para estados atenuados, sobreposições e suavizações.",
+        "fontSize": "Um controle rápido de hierarquia para títulos e corpo de texto."
+      }
+    },
+    "direction": {
+      "topLeft": "Superior esquerdo",
+      "top": "Cima",
+      "topRight": "Superior direito",
+      "left": "Esquerda",
+      "center": "Centro",
+      "right": "Direita",
+      "bottomLeft": "Inferior esquerdo",
+      "bottom": "Baixo",
+      "bottomRight": "Inferior direito"
+    },
+    "slot": {
+      "topLeft": "superior esquerdo",
+      "top": "cima",
+      "topRight": "superior direito",
+      "left": "esquerda",
+      "center": "centro",
+      "right": "direita",
+      "bottomLeft": "inferior esquerdo",
+      "bottom": "baixo",
+      "bottomRight": "inferior direito"
+    },
+    "editor": {
+      "textContent": "Conteúdo de texto",
+      "textPlaceholder": "Insira o novo conteúdo",
+      "imageUrl": "URL da imagem",
+      "altText": "Texto alternativo",
+      "altPlaceholder": "descrição da imagem"
+    },
+    "labels": {
+      "description": "Escreva aqui o objetivo para a IA em linguagem natural, não números precisos. Use para descrever o efeito desejado, a estrutura e as restrições.",
+      "placeholder": "Insira uma nota de mudança…",
+      "placeholderConfirm": "Insira uma nota de mudança e pressione Enter…",
+      "delete": "Excluir etiqueta"
+    },
+    "snapshot": {
+      "layout": "Instantâneo de layout",
+      "visual": "Instantâneo visual",
+      "typography": "Instantâneo tipográfico",
+      "position": "Instantâneo de posição"
+    },
+    "export": {
+      "sectionTitle": "Exportar prompt",
+      "sectionHint": "Aqui são reunidos os ajustes estruturados e a intenção das etiquetas da página atual para que você possa colá-los diretamente no Codex ou em outras ferramentas de código com IA.",
+      "kicker": "Prompt de nível de página",
+      "title": "Resumo final de ajuste para ferramentas de código com IA",
+      "summary": "{{elementCount}} elementos coletados / {{modifiedCount}} ajustes estruturados / {{tagCount}} grupos de etiquetas",
+      "copyTitle": "Copiar o resumo completo de ajustes e etiquetas da sessão atual da página",
+      "copyButton": "Exportar prompt",
+      "copied": "Prompt da página copiado",
+      "empty": "Nenhuma edição de nível de página foi coletada ainda. Ajuste elementos na tela e o DOMPrompter montará um prompt de página para você."
+    },
+    "field": {
+      "scrubTitle": "{{label}}. Arraste para a esquerda ou direita para alterar o valor; use as setas para ajustes precisos e Shift para acelerar."
+    }
   }
 }

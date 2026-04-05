@@ -1,19 +1,10 @@
+import type { AppLanguage as SharedAppLanguage } from './shared/languages'
+
+export type AppLanguage = SharedAppLanguage
+
 export type InspectorMode = 'builtin'
 export type CanvasTool = 'select' | 'browse'
 export type AppTheme = 'light' | 'dark'
-export type AppLanguage =
-  | 'en'
-  | 'zh'
-  | 'zh-TW'
-  | 'ja'
-  | 'ko'
-  | 'fr'
-  | 'de'
-  | 'es'
-  | 'pt'
-  | 'it'
-  | 'ru'
-  | 'ar'
 
 export type ActiveEditProperty =
   | 'labels'
@@ -65,6 +56,7 @@ export interface InspectedElement {
   textContent: string
   textContentPreview: string
   outerHTMLPreview: string
+  ancestorPath: string[]
   descendants: ElementHierarchyNode[]
 }
 
@@ -156,6 +148,9 @@ export interface PageEditLedgerEntry {
   displayName: string
   tagName: string
   preset: ElementPreset
+  textPreview: string
+  identityHints: Record<string, string>
+  ancestorPath: string[]
   boxModel: {
     width: number | null
     height: number | null
@@ -168,7 +163,13 @@ export interface PageContextSnapshot {
   title: string
   url: string
   pathname: string
+  hashRoute: string | null
+  pageHeading: string | null
   htmlLang: string | null
+  contentLanguage: string | null
+  navigatorLanguage: string | null
+  urlLanguage: string | null
+  i18nLanguage: string | null
   activeRouteLabel: string | null
   activeRouteHref: string | null
   visibleVariantLabel: string | null

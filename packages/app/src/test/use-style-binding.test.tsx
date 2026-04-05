@@ -23,6 +23,7 @@ function createElement(overrides: Partial<InspectedElement> = {}): InspectedElem
     textContent: '',
     textContentPreview: '',
     outerHTMLPreview: '<div class="hero-card"></div>',
+    ancestorPath: [],
     descendants: [],
     ...overrides,
   }

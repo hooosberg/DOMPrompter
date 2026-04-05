@@ -6,7 +6,10 @@
     "privacy": "개인정보 보호정책",
     "terms": "서비스 약관",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. All rights reserved."
+    "copyright": "© 2025 hooosberg. All rights reserved.",
+    "descFeatures": "CSS 선택자를 이용한 정밀한 요소 선택 • 스타일 차이 추적(수정 전 / 수정 후) • 자연어 태그와 주석 • 실행 취소 / 다시 실행 기반 즉시 피드백 • Cursor, Claude Code, Codex, Copilot 등과 호환",
+    "descPrivacy": "로컬 우선, 완전한 프라이버시. 모든 검사와 프롬프트 생성은 사용자의 Mac 안에서 로컬로 처리됩니다.",
+    "version": "버전 {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
@@ -17,7 +20,7 @@
     "benefitExportTitle": "무제한 페이지 프롬프트 내보내기",
     "benefitExportDesc": "요소 선택자, 스타일 차이, 주석을 하나의 구조화된 출력으로 통합하여 내보냅니다.",
     "benefitPrecisionTitle": "스타일 차이 추적",
-    "benefitPrecisionDesc": "CSS 조정이 자동으로 전후 기록 — width: 200px \u2192 300px. AI가 정확히 실행.",
+    "benefitPrecisionDesc": "CSS 조정이 자동으로 전후 기록 — width: 200px → 300px. AI가 정확히 실행.",
     "benefitTagsTitle": "자연어 태그",
     "benefitTagsDesc": "요소에 의도를 주석: \"버튼 색상이 너무 어두움\", \"간격이 너무 넓음\". AI가 디자인 의도를 이해합니다.",
     "benefitFutureTitle": "모든 미래 Pro 기능 포함",
@@ -32,5 +35,583 @@
     "restoreNotFound": "이전 구매 기록을 찾을 수 없습니다.",
     "restoreFailed": "복원에 실패했습니다. 다시 시도해 주세요.",
     "ctaNote": "일회성 결제. 구독료 없음. Pro 기능 영구 잠금 해제."
+  },
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "UI를 시각적으로 미세 조정하고 Vibe Coding용 정밀 프롬프트를 생성"
+  },
+  "topbar": {
+    "refresh": "새로고침",
+    "load": "불러오기",
+    "urlPlaceholder": "localhost URL을 입력하거나 로컬 HTML을 여세요",
+    "addressLabel": "페이지 주소",
+    "settings": "설정",
+    "connected": "연결됨",
+    "connecting": "연결 중",
+    "disconnected": "연결 안 됨",
+    "hideToolbar": "툴바 숨기기",
+    "showToolbar": "툴바 표시",
+    "disconnect": "연결 해제"
+  },
+  "onboarding": {
+    "chooseTitle": "시작 방식을 선택하세요",
+    "chooseDesc": "로컬 개발 서버를 사용하거나 정적 HTML 파일을 직접 열어 시작할 수 있습니다.",
+    "serverMode": "서버 모드",
+    "serverDesc": "프로젝트가 이미 localhost 에서 실행 중입니다",
+    "serverFoot": "3단계 가이드 설정",
+    "htmlMode": "HTML 모드",
+    "htmlDesc": "로컬 HTML 파일을 바로 열고 즉시 검사",
+    "htmlFoot": "파일을 선택해 시작",
+    "htmlTitle": "HTML 모드",
+    "htmlGuide": "단일 파일 페이지, 정적 내보내기, 로컬 프로토타입에 적합합니다. 파일을 직접 열거나 최근 기록에서 이어서 진행할 수 있습니다.",
+    "htmlGuideTitle": "로컬 HTML 바로 열기",
+    "htmlGuideBody": "먼저 개발 서버를 띄울 필요가 없습니다. HTML 파일을 선택하면 DOMPrompter가 바로 캔버스로 불러와 검사를 시작합니다.",
+    "htmlHistory": "최근 기록",
+    "htmlHistoryEmpty": "최근에 연 HTML 파일이 없습니다.",
+    "htmlOpenAction": "HTML 파일 열기",
+    "htmlRecentAction": "다시 열기",
+    "serverTitle": "서버 모드",
+    "serverGuide": "웹 프로젝트를 기본 디버그 URL에서 실행한 뒤, 위 주소창에서 바로 불러오세요.",
+    "aiPrompt": "AI 설정 프롬프트 복사",
+    "aiPromptDesc": "이 프롬프트는 웹앱 실행, URL 통일, 그리고 AI가 직접 실행 확인하는 데만 집중합니다.",
+    "copyPrompt": "프롬프트 복사",
+    "copied": "복사됨",
+    "startServer": "개발 서버 시작",
+    "startServerDesc": "프로젝트 디렉터리에서 npm run dev 를 실행하고, 최종 localhost 출력이 기본 디버그 URL과 일치하는지 확인하세요.",
+    "copyCommand": "명령 복사",
+    "loadPage": "페이지 불러오기",
+    "loadPageDesc": "스크립트가 올바르게 맞춰졌다면 아래 기본 주소가 바로 동작해야 합니다. 그렇지 않다면 상단 주소창에서 주소를 수정하세요.",
+    "topBarHint": "이제 마법사 안에서 주소를 직접 입력할 필요가 없습니다. 상단 주소창에서 새로고침, 빠른 수정, 재불러오기를 계속 사용할 수 있습니다.",
+    "loadPreset": "기본 주소 불러오기",
+    "loadButton": "페이지 불러오기",
+    "exit": "종료",
+    "previous": "이전",
+    "next": "다음",
+    "aiSetupPrompt": "DOMPrompter로 웹 프로젝트를 디버깅하고 있습니다. URL을 직접 복사해 붙여넣지 않고도 바로 \"불러오기\"를 눌러 시작할 수 있도록, 프로젝트의 시작 스크립트를 DOMPrompter 기본 디버깅 URL에 맞게 조정해 주세요.\n\n먼저 이 프로젝트가 어떤 종류의 웹 프로젝트인지 판단해 주세요(React / Vue / Svelte / Next.js / 정적 HTML / 기타 프런트엔드 프로젝트). 그다음 \"웹페이지가 브라우저에서 정상적으로 실행되도록 만드는 것\"에만 집중해 수정해 주세요. 가능하면 package.json 의 scripts 만 수정하고, 비즈니스 로직 코드는 바꾸지 마세요.\n\n목표:\n- 최종 페이지를 {{defaultUrl}} 로 직접 열 수 있어야 합니다\n- DOMPrompter 3단계의 기본 URL이 그대로 성공적으로 열려야 합니다\n- 변경 후에는 직접 실행해서 성공 여부를 검증해야 합니다\n\n요구 사항:\n\n1. 스크립트 조정\n- dev 스크립트가 존재하는지 확인\n- 개발 서버는 반드시 localhost 를 리슨해야 함\n- 최종 URL 은 가능하면 {{defaultUrl}} 로 통일\n- Vite 라면 vite --host localhost --port 5173 사용 가능\n- Next.js 라면 next dev -H localhost -p 5173 사용 가능\n- package.json 이 없는 순수 HTML 프로젝트라면 package.json 을 만들고 \"dev\": \"npx serve . -l 5173\" 추가\n\n2. 제약 사항\n- 비즈니스 로직 코드는 수정하지 말 것\n- 기존 scripts 는 유지할 것\n- serve 또는 기타 필수 의존성이 없으면 바로 설치할 것\n- 웹 디버깅에만 집중하고, Electron, 데스크톱 워크플로, remote debugging 포트는 다루지 말 것\n\n3. 반드시 해야 하는 검증\n- npm run dev(또는 해당 패키지 매니저 명령) 실행\n- 터미널 출력에 localhost 주소가 보이는지 확인\n- 가능하면 최종 URL 이 정확히 {{defaultUrl}} 인지 확인\n- 오류 없이 실행되는 것을 확인한 뒤에만 프로세스를 종료\n\n4. 최종 출력에 반드시 포함할 내용\n- 판별한 웹 프로젝트 유형\n- 수정한 scripts\n- 직접 열 수 있는 최종 URL\n- 검증 결과\n- {{defaultUrl}} 로 고정할 수 없다면 그 이유와 실제로 동작하는 대체 URL\n\n바로 분석과 수정을 시작해 주세요. 직접 실행 성공을 확인했을 때만 작업이 완료된 것입니다.",
+    "philosophy": {
+      "eyebrow": "AI와 코드 사이",
+      "title": "시각적 미세 조정을 AI가 정확히 실행할 수 있는 지시로 바꾸기",
+      "body": "DOMPrompter는 AI와 실제 코드 사이에 위치한 시각 보조 도구입니다. 소스 파일을 직접 수정하지 않고, 대상을 표시하고, 파라미터 변화를 기록하며, AI가 정확히 적용할 수 있는 구조화 프롬프트를 조립해 줍니다.",
+      "flow": {
+        "mark": "표시",
+        "tune": "미세 조정",
+        "generate": "생성",
+        "handToAi": "AI에 전달"
+      },
+      "footerLead": "정확히 선택하고, 정확히 설명한 뒤, AI에 넘기세요.",
+      "footerBody": "페이지 오버레이는 즉각적인 피드백을 담당하고, 워크벤치는 지속적인 상태 기록을 담당합니다. 그래서 이 워크플로는 가볍고, 빠르며, 신뢰할 수 있습니다.",
+      "modeHint": "시작 방식을 선택하세요",
+      "serverBadge": "추천",
+      "htmlBadge": "정적 페이지"
+    }
+  },
+  "panel": {
+    "ready": "검사할 준비 완료",
+    "readyDesc": "페이지에서 요소를 호버하고 클릭하면 해당 스타일이 워크벤치에 표시됩니다."
+  },
+  "toast": {
+    "settingsSoon": "설정 패널은 다음 단계에서 제공됩니다",
+    "connected": "페이지에 연결되었습니다",
+    "htmlOpened": "로컬 HTML을 열었습니다",
+    "pageRefreshed": "페이지를 새로고침했습니다",
+    "connectionFailed": "연결에 실패했습니다",
+    "loadFailed": "페이지 불러오기에 실패했습니다",
+    "debuggerFailed": "디버거 연결에 실패했습니다",
+    "htmlFailed": "HTML 파일을 열지 못했습니다",
+    "tagRemoved": "태그를 삭제했습니다",
+    "promptCopied": "페이지 프롬프트를 복사했습니다",
+    "noPrompt": "아직 페이지 수준 프롬프트가 없습니다",
+    "elementCssCopied": "요소 CSS를 복사했습니다"
+  },
+  "settings": {
+    "title": "설정",
+    "appearance": "외형",
+    "language": "언어",
+    "shortcuts": "단축키",
+    "license": "라이선스",
+    "about": "정보",
+    "theme": "테마",
+    "themeLight": "라이트",
+    "themeDark": "다크",
+    "themeAuto": "자동",
+    "accent": "강조 색상",
+    "glassOpacity": "글래스 투명도",
+    "close": "닫기",
+    "currentPlan": "현재 플랜",
+    "free": "무료",
+    "pro": "Pro",
+    "buyPro": "Pro 구매",
+    "restore": "구매 복원"
+  },
+  "license": {
+    "promoTitle": "DOMPrompter Pro 잠금 해제",
+    "promoDesc": "시각적 검사 워크플로를 최대한 활용해 보세요. 전체 페이지 프롬프트를 내보내고, 모든 스타일 변화를 추적하며, 자연어로 주석을 남길 수 있습니다.",
+    "benefitExport": "페이지 프롬프트 무제한 내보내기",
+    "benefitDiff": "스타일 차이 추적(수정 전 / 수정 후)",
+    "benefitTags": "자연어 태그와 주석",
+    "benefitFuture": "앞으로 추가될 모든 Pro 기능 포함",
+    "upgradeCta": "Pro로 업그레이드 - $19.99",
+    "ctaNote": "일회성 결제입니다. 구독은 없습니다. Pro 기능은 영구적으로 잠금 해제됩니다.",
+    "proThanks": "DOMPrompter를 지원해 주셔서 감사합니다. 모든 Pro 기능이 잠금 해제되었습니다. 한 번의 구매로 앞으로 추가될 모든 Pro 기능도 이용할 수 있습니다.",
+    "purchase": "Pro 구매",
+    "restore": "구매 복원",
+    "processing": "처리 중..."
+  },
+  "shortcuts": {
+    "openSettings": "설정 열기",
+    "openHtml": "HTML 파일 열기",
+    "reload": "페이지 새로고침",
+    "forceReload": "강제 새로고침",
+    "toggleToolbar": "툴바 전환",
+    "copyPrompt": "페이지 프롬프트 복사",
+    "copyCss": "요소 CSS 복사",
+    "focusAddress": "주소창 포커스",
+    "newWindow": "새 창",
+    "selectParent": "부모 요소 선택",
+    "selectChild": "자식 요소 선택",
+    "escape": "닫기 / 선택 해제"
+  },
+  "common": {
+    "copy": "복사",
+    "copied": "복사됨",
+    "collapse": "접기",
+    "expand": "펼치기",
+    "tip": "팁"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "전체",
+      "top": "위",
+      "right": "오른쪽",
+      "bottom": "아래",
+      "left": "왼쪽"
+    },
+    "spacing": {
+      "allSides": "모든 변",
+      "topSide": "위쪽",
+      "rightSide": "오른쪽",
+      "bottomSide": "아래쪽",
+      "leftSide": "왼쪽"
+    },
+    "sections": {
+      "size": {
+        "title": "크기",
+        "hint": "먼저 컨테이너 자체의 너비와 높이를 잡고, 그다음 내부 구조를 세밀하게 조정하세요."
+      },
+      "padding": {
+        "title": "패딩",
+        "hint": "패딩은 컨테이너 내부 여백감을 가장 빠르게 조절할 수 있는 방법입니다."
+      },
+      "margin": {
+        "title": "마진",
+        "hint": "모듈 사이의 간격은 보통 margin 에서 결정됩니다."
+      },
+      "layout": {
+        "title": "레이아웃",
+        "hint": "display, gap, 정렬을 사용해 구조 변화를 빠르게 확인할 수 있습니다."
+      },
+      "position": {
+        "title": "위치",
+        "hint": "우선 레이아웃을 안정적으로 유지하고, 필요할 때 위치와 겹침 순서로 세밀하게 조정하세요."
+      },
+      "border": {
+        "title": "테두리와 라운드",
+        "hint": "테두리, 모서리 반경, 그림자는 컨테이너의 전체 인상을 함께 만듭니다."
+      },
+      "background": {
+        "title": "배경",
+        "hint": "배경색과 불투명도는 계층감과 강조를 빠르게 검토하기 좋습니다."
+      },
+      "overflow": {
+        "title": "오버플로와 잘림",
+        "hint": "잘림, 스크롤, 미디어 컨테이너를 다룰 때 자주 사용됩니다."
+      },
+      "typography": {
+        "title": "타이포그래피",
+        "hint": "글자 크기, 줄 간격, 굵기, 정렬을 중심으로 텍스트를 다듬습니다."
+      },
+      "image": {
+        "title": "이미지",
+        "hint": "이미지는 먼저 맞춤 방식, 반경, 크기부터 조정하는 것이 좋습니다."
+      }
+    },
+    "options": {
+      "display": {
+        "block": "블록"
+      },
+      "align": {
+        "start": "시작",
+        "center": "가운데",
+        "end": "끝",
+        "spaceBetween": "양끝 정렬",
+        "stretch": "늘이기"
+      },
+      "position": {
+        "static": "정적",
+        "relative": "상대",
+        "absolute": "절대",
+        "fixed": "고정"
+      },
+      "overflow": {
+        "visible": "보이기",
+        "hidden": "숨기기",
+        "auto": "스크롤"
+      },
+      "textAlign": {
+        "left": "왼쪽 정렬",
+        "center": "가운데 정렬",
+        "right": "오른쪽 정렬"
+      },
+      "objectFit": {
+        "cover": "채우기",
+        "contain": "전체 표시",
+        "fill": "늘이기"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "너비",
+        "helperText": "컨테이너의 최종 너비를 조정합니다. 카드, 패널, 고정 크기 미디어 영역에 적합합니다.",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "높이",
+        "helperText": "컨테이너의 최종 높이를 조정합니다. 제목 영역, 카드, 미디어 프레임에 적합합니다.",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "콘텐츠와 컨테이너 테두리 사이의 위쪽 여백을 조정합니다.",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "컨테이너 내부 오른쪽 여백을 조정합니다.",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "블록 아래쪽 내부 여백을 조정해 더 안정감 있게 보이도록 합니다.",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "컨테이너 내부 왼쪽 여백을 조정합니다.",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "위쪽 요소와의 외부 간격을 조정합니다.",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "오른쪽 바깥 간격을 조정합니다.",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "다음 요소와의 세로 간격을 조정합니다.",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "왼쪽 바깥 간격을 조정합니다.",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "표시 방식",
+        "helperText": "컨테이너의 레이아웃 모드를 전환합니다. 정렬과 gap 은 Flex 또는 Grid 일 때만 제대로 동작합니다."
+      },
+      "gap": {
+        "label": "간격",
+        "helperText": "자식 요소 사이 간격을 조정합니다. Flex 또는 Grid 에서만 동작합니다.",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "주축",
+        "helperText": "주축을 따라 자식 요소가 어떻게 배치될지 제어합니다."
+      },
+      "alignItems": {
+        "label": "교차축",
+        "helperText": "교차축을 따라 자식 요소가 어떻게 정렬될지 제어합니다."
+      },
+      "position": {
+        "label": "위치 모드",
+        "helperText": "요소를 relative, absolute, fixed 중 하나로 전환합니다."
+      },
+      "top": {
+        "label": "위쪽 오프셋",
+        "helperText": "배치된 요소의 위쪽 오프셋을 미세 조정합니다.",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "왼쪽 오프셋",
+        "helperText": "배치된 요소의 왼쪽 오프셋을 미세 조정합니다.",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "겹침 순서",
+        "helperText": "오버레이, 모달, 장식 레이어의 쌓임 순서를 제어합니다.",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "변형",
+        "helperText": "레이아웃 흐름을 깨지 않고 미세하게 움직일 때 translate 같은 transform 을 사용합니다.",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "테두리",
+        "helperText": "카드, 입력창, 버튼의 선 두께, 색상, 스타일을 조정합니다.",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "모서리 반경",
+        "helperText": "카드, 패널, 버튼의 모서리 둥글기를 조정합니다."
+      },
+      "boxShadow": {
+        "label": "그림자",
+        "helperText": "그림자를 사용해 높이감과 깊이를 표현합니다.",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "배경색",
+        "helperText": "배경색을 조정해 계층감과 강조를 살펴봅니다."
+      },
+      "opacity": {
+        "label": "불투명도",
+        "helperText": "비활성 상태, 오버레이, 부드러운 레이어 효과에 적합합니다."
+      },
+      "overflow": {
+        "label": "오버플로",
+        "helperText": "넘친 콘텐츠를 그대로 보여줄지, 숨길지, 스크롤 가능하게 만들지 제어합니다."
+      },
+      "fontSize": {
+        "label": "글자 크기",
+        "helperText": "제목, 부제, 본문 텍스트의 크기를 조정합니다."
+      },
+      "lineHeight": {
+        "label": "줄 간격",
+        "helperText": "줄 사이의 세로 간격을 조정해 리듬감과 가독성을 개선합니다.",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "굵기",
+        "helperText": "텍스트 굵기를 바꿔 강조하거나 부드럽게 만듭니다.",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "글꼴",
+        "helperText": "글꼴을 바꿔 전체 톤 차이를 빠르게 비교합니다.",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "텍스트 색상",
+        "helperText": "계층감, 브랜드 컬러, 보조 텍스트 표현에 맞게 텍스트 색을 조정합니다."
+      },
+      "textAlign": {
+        "label": "정렬",
+        "helperText": "텍스트 블록 전체의 배치 방향을 바꿉니다."
+      },
+      "objectFit": {
+        "label": "맞춤 방식",
+        "helperText": "이미지가 컨테이너 안에서 채워질지, 전체가 보일지, 늘어날지 제어합니다."
+      },
+      "imageWidth": {
+        "helperText": "이미지 또는 미디어 프레임의 최종 너비를 조정합니다.",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "이미지 또는 미디어 프레임의 최종 높이를 조정합니다.",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "커버 이미지와 아바타의 모서리를 부드럽게 만듭니다."
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "요소 선택",
+      "selectOn": "요소 선택 활성화",
+      "selectOff": "요소 선택을 끄고 실제 클릭으로 복귀",
+      "selectActive": "선택 중",
+      "interactive": "인터랙티브",
+      "syncing": "동기화 중",
+      "undo": "되돌리기",
+      "redo": "다시 실행",
+      "reset": "초기화"
+    },
+    "empty": {
+      "interactiveTitle": "인터랙티브 모드",
+      "interactiveDesc": "이제 페이지를 자유롭게 조작할 수 있습니다. 위의 \"인터랙티브\"를 다시 누르면 요소 선택 모드로 돌아갑니다."
+    },
+    "element": {
+      "containerName": "컨테이너",
+      "elementName": "요소",
+      "copyTitle": "{{name}} 클릭하여 복사"
+    },
+    "sections": {
+      "labels": "태그 의도",
+      "labelsHint": "여기에는 AI에 우선적으로 전달할 지시를 적습니다. 이 태그는 단순 메모가 아니라 의도입니다.",
+      "quick": "빠른 작업",
+      "quickHint": "먼저 의미 기반 작업으로 목표에 가깝게 맞춘 뒤, 아래에서 숫자를 세밀하게 조정하세요.",
+      "precision": "정밀 제어",
+      "precisionHint": "빠른 작업으로 가까이 맞춘 뒤, 여기에서 각 속성을 세밀하게 다듬습니다.",
+      "assist": "보조 정보",
+      "assistHint": "맥락 메모와 미리보기는 여기에 두어 메인 편집 흐름에 집중할 수 있게 합니다.",
+      "cssVariables": "CSS 변수"
+    },
+    "helper": {
+      "browseTitle": "실제 상호작용",
+      "browseDesc": "현재 요소 선택이 꺼져 있습니다. 실제 페이지를 직접 클릭하고 조작할 수 있으므로 메뉴, 팝오버, 드롭다운이 자연스럽게 열립니다.",
+      "contextTitle": "맥락 기반 조정",
+      "contextDesc": "아무 파라미터 카드에나 마우스를 올리면 캔버스가 대응하는 margin, padding, 타이포그래피 영역을 강조해 구조를 설계도처럼 읽을 수 있습니다.",
+      "innerChild": "해당 자식 요소",
+      "innerChildWithClass": "{{className}} 내부 자식 요소",
+      "paddingCentered": "이 노드는 가운데 정렬된 Flex 컨테이너입니다. {{field}} 를 바꾸면 내부 박스 크기는 바뀌지만 콘텐츠는 계속 가운데에 머뭅니다. 중앙 콘텐츠 블록을 움직이고 싶다면 먼저 레이아웃 정렬을 조정하거나 {{childTargetName}} 를 계속 선택해 margin / padding 을 조절하세요.",
+      "marginCentered": "이 노드는 가운데 정렬된 Flex 레이아웃을 사용합니다. 바깥쪽 margin 은 주로 형제 노드와의 거리만 바꾸며, 중앙 콘텐츠 자체는 거의 움직이지 않습니다. 가운데 텍스트 블록을 조정하려면 먼저 정렬을 바꾸거나 {{childTargetName}} 를 선택해 그쪽 margin 을 조정하세요.",
+      "sizeCentered": "이 노드는 가운데 정렬된 Flex 컨테이너입니다. 너비나 높이를 바꾸면 박스 자체는 달라지지만 콘텐츠는 주축 {{justifyContent}}, 교차축 {{alignItems}} 상태로 가운데에 남습니다. 콘텐츠를 위, 왼쪽, 모서리 쪽으로 붙이고 싶다면 먼저 레이아웃 정렬을 바꾸세요.",
+      "gapUnavailable": "이 노드는 Flex 또는 Grid 컨테이너가 아니므로 gap 을 설정해도 기대한 자식 간격 효과가 생기지 않습니다. 먼저 표시 방식을 Flex / Grid 로 바꾸거나, 실제로 자식 레이아웃을 담당하는 부모 컨테이너를 선택하세요."
+    },
+    "insight": {
+      "layoutTitle": "레이아웃 인사이트",
+      "flexCentered": "현재 선택한 대상은 가운데 정렬된 Flex 컨테이너입니다(주축 {{justifyContent}}, 교차축 {{alignItems}}). padding 과 크기를 바꿔도 콘텐츠는 자주 가운데에 남습니다. 내부 콘텐츠를 옮기고 싶다면 먼저 레이아웃 정렬을 조정하거나 자식 요소를 계속 선택하세요.",
+      "grid": "이 노드는 Grid 컨테이너입니다. 먼저 gap, padding, 크기에 집중하세요. 자식 블록 하나만 어긋나 있다면, 바깥 컨테이너만 편집하지 말고 해당 자식 자체를 선택해야 하는 경우가 많습니다.",
+      "parent": "이 노드는 부모 컨테이너입니다. padding, 너비, 높이를 바꾸면 내부 구조에는 영향을 주지만 자식 콘텐츠가 바로 직접 움직이지는 않을 수 있습니다. 특정 텍스트나 이미지 블록을 조정하려면 그 자식 요소를 직접 선택하세요."
+    },
+    "active": {
+      "labels": "숫자를 조정하기 전에 AI가 따라야 할 자연어 목표를 여기에 적으세요.",
+      "size": "먼저 너비와 높이 빠른 카드로 목표에 가깝게 맞춘 뒤, 아래에서 세밀하게 다듬으세요.",
+      "padding": "빠른 padding 조절로 내부 여백의 분위기를 먼저 잡고, 그다음 각 변을 세밀하게 다듬으세요.",
+      "margin": "빠른 margin 조절로 모듈 간 거리 방향감을 먼저 맞춘 뒤, 한쪽 값씩 정밀하게 수정하세요.",
+      "alignmentTitle": "정렬",
+      "layout": "레이아웃 섹션으로 이동해 먼저 주축과 교차축 정렬을 확인하세요.",
+      "gapShortcut": "이 객체에는 보이는 자식 요소가 여러 개 있으므로 Gap 이 레이아웃 섹션의 공통 간격 제어로 노출됩니다.",
+      "gap": "Gap 은 레이아웃 섹션에 나타납니다. 실제 자식 요소가 있고 레이아웃 모드가 활성화되어 있을 때만 기대한 대로 동작합니다.",
+      "position": "position 관련 제어는 정밀 섹션에 있으며 top / left / z-index 같은 고정밀 수정에 적합합니다.",
+      "border": "테두리, 반경, 그림자는 함께 보아야 컴포넌트의 인상을 제대로 파악할 수 있습니다.",
+      "background": "배경색과 불투명도는 여기에서 조정하며 계층감과 강조를 빠르게 살펴볼 수 있습니다.",
+      "shadow": "그림자는 반경과 함께 확인할 때 더 안정적으로 마감할 수 있습니다.",
+      "typography": "타이포그래피 제어는 여기에 모여 있어 크기, 줄 간격, 굵기, 정렬을 연속적으로 조정하기 좋습니다.",
+      "overflow": "콘텐츠 잘림이나 스크롤 동작을 제어해야 할 때 먼저 이 영역을 보세요.",
+      "image": "이미지 모드는 맞춤 방식, 크기, 반경을 한 곳에 모아 비교하기 쉽게 합니다."
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "Flex 활성화",
+        "description": "먼저 컨테이너를 Flex 로 전환한 뒤 정렬과 간격 조정을 이어가세요."
+      },
+      "alignCenter": {
+        "label": "콘텐츠 가운데 정렬",
+        "description": "두 축을 모두 가운데로 되돌려 표준 중앙 정렬 상태를 빠르게 복원합니다."
+      },
+      "spaceBetween": {
+        "label": "양끝 배치",
+        "description": "주축 양끝으로 요소를 펼칩니다. 제목 바, 버튼 행, 툴바에 적합합니다."
+      },
+      "centerText": {
+        "label": "텍스트 가운데 정렬",
+        "description": "텍스트 정렬을 가운데로 바꿉니다. 제목과 짧은 문단에 적합합니다."
+      },
+      "imageCover": {
+        "label": "컨테이너 채우기",
+        "description": "object-fit 을 cover 로 바꿔 이미지를 컨테이너에 가득 채웁니다."
+      },
+      "imageContain": {
+        "label": "이미지 전체 보기",
+        "description": "object-fit 을 contain 으로 바꿔 이미지 전체가 보이도록 합니다."
+      },
+      "increasePadding": {
+        "label": "패딩 늘리기",
+        "description": "모든 변에 {{quickStep}}px 여백을 한 번에 추가합니다."
+      },
+      "increaseGap": {
+        "label": "Gap 늘리기",
+        "description": "자식 요소 사이 gap 을 {{quickStep}}px 늘립니다."
+      }
+    },
+    "quick": {
+      "step": "단계",
+      "decrease": "줄이기",
+      "increase": "늘리기",
+      "decreaseWithStep": "{{step}}px 줄이기",
+      "increaseWithStep": "{{step}}px 늘리기",
+      "increased": "증가",
+      "decreased": "감소",
+      "layout": {
+        "title": "레이아웃 빠른 카드",
+        "hint": "먼저 Block, Flex, Grid 를 전환한 뒤, 패드를 이용해 콘텐츠를 위, 아래, 왼쪽, 오른쪽, 가운데로 밀어보세요.",
+        "modeTitle": "레이아웃 모드",
+        "modeDescription": "표시 방식이 {{display}} 로 바뀌었습니다. 계속 패드를 사용해 콘텐츠를 위, 아래, 왼쪽, 오른쪽, 가운데로 이동시키세요.",
+        "positionTitle": "콘텐츠 위치",
+        "positionDescription": "컨테이너 콘텐츠는 현재 {{slot}} 에 배치되어 있습니다."
+      },
+      "spacing": {
+        "title": "간격 빠른 조정",
+        "hint": "먼저 padding 또는 margin 을 고르고, 그다음 방향을 선택하세요. 가운데는 모든 변을 함께 의미합니다.",
+        "currentPadding": "현재 빠른 대상: 패딩",
+        "currentMargin": "현재 빠른 대상: 마진",
+        "paddingActionTitle": "패딩 빠른 작업",
+        "marginActionTitle": "마진 빠른 작업",
+        "adjusted": "{{side}} 이(가) {{value}}px 만큼 {{direction}}되었습니다. 아래에서 더 세밀한 단일 값 조정을 계속할 수 있습니다."
+      },
+      "cards": {
+        "width": "카드, 패널, 이미지 프레임에서는 너비가 가장 먼저 조정할 항목이 되는 경우가 많습니다.",
+        "height": "제목 영역, 카드, 이미지 구역을 빠르게 늘릴 때 유용합니다.",
+        "gap": "컨테이너 안 자식 요소 사이 간격을 직접 늘리거나 줄입니다.",
+        "radius": "카드, 패널, 이미지의 모서리를 부드럽게 만듭니다.",
+        "objectFit": "이미지의 자르기 / 전체 표시 방식을 빠르게 전환합니다.",
+        "opacity": "약한 상태, 오버레이, 부드러운 표현을 조정할 때 유용합니다.",
+        "fontSize": "제목과 본문의 계층감을 빠르게 잡는 데 유용한 제어입니다."
+      }
+    },
+    "direction": {
+      "topLeft": "왼쪽 위",
+      "top": "위",
+      "topRight": "오른쪽 위",
+      "left": "왼쪽",
+      "center": "가운데",
+      "right": "오른쪽",
+      "bottomLeft": "왼쪽 아래",
+      "bottom": "아래",
+      "bottomRight": "오른쪽 아래"
+    },
+    "slot": {
+      "topLeft": "왼쪽 위",
+      "top": "위",
+      "topRight": "오른쪽 위",
+      "left": "왼쪽",
+      "center": "가운데",
+      "right": "오른쪽",
+      "bottomLeft": "왼쪽 아래",
+      "bottom": "아래",
+      "bottomRight": "오른쪽 아래"
+    },
+    "editor": {
+      "textContent": "텍스트 내용",
+      "textPlaceholder": "새 문구 입력",
+      "imageUrl": "이미지 URL",
+      "altText": "대체 텍스트",
+      "altPlaceholder": "이미지 설명"
+    },
+    "labels": {
+      "description": "여기에는 정확한 숫자가 아니라 AI에 전달할 자연어 목표를 적습니다. 의도한 효과, 구조, 제약을 설명하는 데 사용하세요.",
+      "placeholder": "변경 메모 입력…",
+      "placeholderConfirm": "변경 메모를 입력하고 Enter…",
+      "delete": "태그 삭제"
+    },
+    "snapshot": {
+      "layout": "레이아웃 스냅샷",
+      "visual": "비주얼 스냅샷",
+      "typography": "타이포그래피 스냅샷",
+      "position": "위치 스냅샷"
+    },
+    "export": {
+      "sectionTitle": "프롬프트 내보내기",
+      "sectionHint": "현재 페이지의 구조화된 미세 조정과 태그 의도를 여기에 모아 Codex 같은 AI 코딩 도구에 바로 붙여넣을 수 있게 합니다.",
+      "kicker": "페이지 수준 프롬프트",
+      "title": "AI 코딩 도구를 위한 최종 조정 브리프",
+      "summary": "{{elementCount}}개 요소 수집 / {{modifiedCount}}개 구조화 조정 / {{tagCount}}개 태그 그룹",
+      "copyTitle": "현재 페이지 세션의 전체 조정 요약과 태그 복사",
+      "copyButton": "프롬프트 내보내기",
+      "copied": "페이지 프롬프트를 복사했습니다",
+      "empty": "아직 페이지 수준 변경이 수집되지 않았습니다. 캔버스에서 요소를 계속 조정하면 DOMPrompter가 자동으로 페이지 프롬프트를 구성합니다."
+    },
+    "field": {
+      "scrubTitle": "{{label}}. 좌우로 드래그해 값을 바꾸고, 화살표 키로 미세 조정하며, Shift 로 가속할 수 있습니다."
+    }
   }
 }

@@ -2420,23 +2420,6 @@
   color: var(--vi-accent);
 }
 
-.export-preview-guide {
-  display: grid;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: var(--vi-radius-md);
-  border: 1px solid rgba(125, 211, 252, 0.12);
-  background: rgba(15, 23, 42, 0.52);
-  font-size: 11px;
-  line-height: 1.55;
-  color: rgba(226, 232, 240, 0.72);
-}
-
-.export-preview-guide span {
-  display: block;
-}
-
 .export-preview-body {
   margin-top: 10px;
   max-height: 188px;
@@ -5262,7 +5245,6 @@
 :root[data-theme='light'] .metric-badge-label,
 :root[data-theme='light'] .html-preview pre,
 :root[data-theme='light'] .helper-callout-body,
-:root[data-theme='light'] .export-preview-guide,
 :root[data-theme='light'] .export-preview-body,
 :root[data-theme='light'] .quick-step-label,
 :root[data-theme='light'] .quick-step-unit,

@@ -36,6 +36,7 @@ export interface InspectedElement {
     textContent: string
     textContentPreview: string
     outerHTMLPreview: string
+    ancestorPath: string[]
     descendants: ElementHierarchyNode[]
 }
 
@@ -48,7 +49,13 @@ export interface PageContextSnapshot {
     title: string
     url: string
     pathname: string
+    hashRoute: string | null
+    pageHeading: string | null
     htmlLang: string | null
+    contentLanguage: string | null
+    navigatorLanguage: string | null
+    urlLanguage: string | null
+    i18nLanguage: string | null
     activeRouteLabel: string | null
     activeRouteHref: string | null
     visibleVariantLabel: string | null
@@ -282,6 +289,10 @@ export class InspectorService {
         this.onContextMenuCallback = callback
     }
 
+    setLanguage(language: string): void {
+        this.helper.language = language
+    }
+
     async startInspecting(preferNativeOverlay: boolean = false): Promise<void> {
         this.inspecting = true
         await this.helper.startInspectMode(preferNativeOverlay)
@@ -363,11 +374,86 @@ export class InspectorService {
                     ? visibleVariant.querySelector('[data-lang-label], [data-locale-label], .lang-label, .locale-label')
                     : null;
 
+                /* --- Meta / HTTP language signals --- */
+                const metaContentLang = (
+                    document.querySelector('meta[http-equiv="content-language" i]')?.getAttribute('content')
+                    || document.querySelector('meta[name="language" i]')?.getAttribute('content')
+                    || document.querySelector('meta[property="og:locale"]')?.getAttribute('content')
+                    || ''
+                );
+
+                /* --- URL-based language detection --- */
+                const detectUrlLanguage = () => {
+                    const langPattern = /^[a-z]{2}(-[a-z]{2,4})?$/i;
+                    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                    const firstSegment = pathSegments[0] || '';
+                    if (langPattern.test(firstSegment)) return firstSegment.toLowerCase();
+                    const params = new URLSearchParams(window.location.search);
+                    for (const key of ['lang', 'locale', 'language', 'hl', 'lng']) {
+                        const val = params.get(key);
+                        if (val && langPattern.test(val)) return val.toLowerCase();
+                    }
+                    const hashParams = new URLSearchParams(window.location.hash.replace(/^#\\/?/, '').split('?')[1] || '');
+                    for (const key of ['lang', 'locale', 'language']) {
+                        const val = hashParams.get(key);
+                        if (val && langPattern.test(val)) return val.toLowerCase();
+                    }
+                    return '';
+                };
+
+                /* --- i18n framework runtime detection --- */
+                const detectI18nLanguage = () => {
+                    try {
+                        if (window.i18next?.language) return normalize(window.i18next.language);
+                        if (window.i18n?.global?.locale) {
+                            const loc = window.i18n.global.locale;
+                            const val = typeof loc === 'function' ? loc() : (loc?.value ?? loc);
+                            if (typeof val === 'string' && val) return normalize(val);
+                        }
+                        if (window.__NEXT_DATA__?.locale) return normalize(window.__NEXT_DATA__.locale);
+                        if (window.$nuxt?.$i18n?.locale) return normalize(window.$nuxt.$i18n.locale);
+                        if (window.__NUXT__?.config?.public?.i18n?.defaultLocale) return normalize(window.__NUXT__.config.public.i18n.defaultLocale);
+                        if (window.Intl?.DateTimeFormat) {
+                            const dtf = new Intl.DateTimeFormat();
+                            const resolved = dtf.resolvedOptions();
+                            if (resolved.locale && resolved.locale !== navigator.language) return normalize(resolved.locale);
+                        }
+                    } catch {}
+                    return '';
+                };
+
+                /* --- Page heading --- */
+                const detectPageHeading = () => {
+                    for (const tag of ['h1', 'h2']) {
+                        const nodes = document.querySelectorAll(tag);
+                        for (const node of nodes) {
+                            if (node instanceof Element && isVisible(node)) {
+                                const text = normalize(node.textContent);
+                                if (text && text.length <= 120) return text;
+                            }
+                        }
+                    }
+                    return '';
+                };
+
+                /* --- Hash route --- */
+                const hashRoute = (() => {
+                    const hash = window.location.hash;
+                    if (!hash || hash === '#' || hash === '#/') return '';
+                    return hash.replace(/^#\/?/, '').split('?')[0].replace(/\/$/, '');
+                })();
+
                 return {
                     title: normalize(document.title),
                     url: window.location.href,
                     pathname: window.location.pathname,
+                    hashRoute: hashRoute || null,
+                    pageHeading: detectPageHeading() || null,
                     htmlLang: normalize(document.documentElement.lang) || null,
+                    contentLanguage: normalize(metaContentLang) || null,
+                    navigatorLanguage: normalize(navigator.language) || null,
+                    urlLanguage: detectUrlLanguage() || null,
+                    i18nLanguage: detectI18nLanguage() || null,
                     activeRouteLabel: getText(activeRoute) || null,
                     activeRouteHref: activeRoute instanceof Element ? normalize(activeRoute.getAttribute('href')) || null : null,
                     visibleVariantLabel: getText(visibleVariantLabelNode) || null,
@@ -398,17 +484,25 @@ export class InspectorService {
                 return null
             }
 
+            const str = (key: string) => typeof value[key] === 'string' && value[key] ? value[key] as string : null
+
             return {
                 title: typeof value.title === 'string' ? value.title : '',
                 url: typeof value.url === 'string' ? value.url : '',
                 pathname: typeof value.pathname === 'string' ? value.pathname : '',
-                htmlLang: typeof value.htmlLang === 'string' && value.htmlLang ? value.htmlLang : null,
-                activeRouteLabel: typeof value.activeRouteLabel === 'string' && value.activeRouteLabel ? value.activeRouteLabel : null,
-                activeRouteHref: typeof value.activeRouteHref === 'string' && value.activeRouteHref ? value.activeRouteHref : null,
-                visibleVariantLabel: typeof value.visibleVariantLabel === 'string' && value.visibleVariantLabel ? value.visibleVariantLabel : null,
-                visibleVariantKey: typeof value.visibleVariantKey === 'string' && value.visibleVariantKey ? value.visibleVariantKey : null,
-                activeVariantLabel: typeof value.activeVariantLabel === 'string' && value.activeVariantLabel ? value.activeVariantLabel : null,
-                activeVariantKey: typeof value.activeVariantKey === 'string' && value.activeVariantKey ? value.activeVariantKey : null,
+                hashRoute: str('hashRoute'),
+                pageHeading: str('pageHeading'),
+                htmlLang: str('htmlLang'),
+                contentLanguage: str('contentLanguage'),
+                navigatorLanguage: str('navigatorLanguage'),
+                urlLanguage: str('urlLanguage'),
+                i18nLanguage: str('i18nLanguage'),
+                activeRouteLabel: str('activeRouteLabel'),
+                activeRouteHref: str('activeRouteHref'),
+                visibleVariantLabel: str('visibleVariantLabel'),
+                visibleVariantKey: str('visibleVariantKey'),
+                activeVariantLabel: str('activeVariantLabel'),
+                activeVariantKey: str('activeVariantKey'),
             }
         } catch (err) {
             console.error('Get page context snapshot error:', err)
@@ -747,6 +841,13 @@ export class InspectorService {
                 }
             }
 
+            let ancestorPath: string[] = []
+            try {
+                ancestorPath = await this.helper.getAncestorPath(nodeId, 5)
+            } catch {
+                ancestorPath = []
+            }
+
             // CSS variables
             const cssVariables: Record<string, string> = {}
             try {
@@ -806,7 +907,7 @@ export class InspectorService {
                 classNames, id, attributes, boxModel,
                 computedStyles: styles,
                 cssVariables, textContent, textContentPreview, outerHTMLPreview,
-                descendants,
+                ancestorPath, descendants,
             }
         } catch (err) {
             console.error('Build element details error:', err)

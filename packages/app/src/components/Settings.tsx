@@ -1,23 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { GITHUB_REPO_URL, PRIVACY_URL, SUPPORT_URL, TERMS_URL, WEBSITE_URL } from '../shared/externalLinks'
+import { APP_LANGUAGE_OPTIONS } from '../shared/languages'
 import type { AppLanguage, AppSettings, LicenseStatus } from '../types'
 
 const APP_NAME = 'DOMPrompter'
-
-const LANGUAGE_OPTIONS: Array<{ code: AppLanguage; label: string }> = [
-  { code: 'en', label: 'English' },
-  { code: 'zh', label: '简体中文' },
-  { code: 'zh-TW', label: '繁體中文' },
-  { code: 'ja', label: '日本語' },
-  { code: 'ko', label: '한국어' },
-  { code: 'fr', label: 'Français' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'es', label: 'Español' },
-  { code: 'pt', label: 'Português' },
-  { code: 'it', label: 'Italiano' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'ar', label: 'العربية' },
-]
 
 const SHORTCUT_ROWS = [
   { key: 'openSettings', combo: 'Cmd+,' },
@@ -68,7 +55,7 @@ export function Settings({
     { id: 'about', label: t('settings.about') },
   ]), [t])
   const currentLanguageLabel = useMemo(
-    () => LANGUAGE_OPTIONS.find((option) => option.code === settings.language)?.label || 'English',
+    () => APP_LANGUAGE_OPTIONS.find((option) => option.code === settings.language)?.label || 'English',
     [settings.language],
   )
 
@@ -139,7 +126,7 @@ export function Settings({
 
                   {languageExpanded && (
                     <div className="settings-language-list" role="listbox" aria-label={t('settings.language')}>
-                      {LANGUAGE_OPTIONS.map((option) => (
+                      {APP_LANGUAGE_OPTIONS.map((option) => (
                         <button
                           key={option.code}
                           className={`settings-language-item ${settings.language === option.code ? 'active' : ''}`}
@@ -237,18 +224,18 @@ export function Settings({
                   />
                   <div className="settings-about-meta">
                     <strong className="settings-about-name">{APP_NAME}</strong>
-                    <span className="settings-about-version">Version 0.1.0</span>
+                    <span className="settings-about-version">{t('about.version', { version: '0.1.0' })}</span>
                   </div>
                 </div>
                 <p className="settings-copy">{t('about.description')}</p>
                 <p className="settings-copy settings-copy-features">{t('about.descFeatures')}</p>
                 <p className="settings-copy settings-copy-muted">{t('about.descPrivacy')}</p>
                 <div className="settings-links">
-                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal('https://hooosberg.github.io/DOMPrompter/')}>{t('about.website')}</button>
-                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal('https://hooosberg.github.io/DOMPrompter/support.html')}>{t('about.support')}</button>
-                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal('https://hooosberg.github.io/DOMPrompter/privacy.html')}>{t('about.privacy')}</button>
-                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal('https://hooosberg.github.io/DOMPrompter/terms.html')}>{t('about.terms')}</button>
-                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal('https://github.com/hooosberg/DOMPrompter')}>{t('about.github')}</button>
+                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal(WEBSITE_URL)}>{t('about.website')}</button>
+                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal(SUPPORT_URL)}>{t('about.support')}</button>
+                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal(PRIVACY_URL)}>{t('about.privacy')}</button>
+                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal(TERMS_URL)}>{t('about.terms')}</button>
+                  <button type="button" className="settings-link-btn" onClick={() => void window.electronAPI.openExternal(GITHUB_REPO_URL)}>{t('about.github')}</button>
                 </div>
                 <p className="settings-copy settings-copy-muted">{t('about.copyright')}</p>
               </div>

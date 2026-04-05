@@ -49,7 +49,24 @@
     "loadButton": "加载页面",
     "exit": "退出",
     "previous": "上一步",
-    "next": "下一步"
+    "next": "下一步",
+    "aiSetupPrompt": "我正在使用 DOMPrompter 调试一个网页项目。请帮我把项目的启动脚本适配到 DOMPrompter 的默认调试地址，让我不需要再手动复制粘贴地址，直接点击加载即可开始调试。\n\n请先判断我的项目属于哪种网页项目（React / Vue / Svelte / Next.js / 纯 HTML / 其他前端项目），然后只围绕“网页能在浏览器里启动”这件事修改。优先只改 package.json 里的 scripts，不要改业务逻辑代码。\n\n目标：\n- 最终页面可以直接通过 {{defaultUrl}} 打开\n- DOMPrompter 第 3 步默认地址可以直接加载成功\n- 你修改完以后要自己运行并验证成功\n\n请按下面要求处理：\n\n1. 脚本适配\n- 确保存在 dev 脚本\n- 开发服务器必须监听 localhost\n- 优先统一到 {{defaultUrl}}\n- 如果是 Vite，可使用 vite --host localhost --port 5173\n- 如果是 Next.js，可使用 next dev -H localhost -p 5173\n- 如果是纯 HTML 且没有 package.json，请创建 package.json，并添加 \"dev\": \"npx serve . -l 5173\"\n\n2. 修改限制\n- 不要修改业务逻辑代码\n- 保留项目原有其他 scripts\n- 如果缺少 serve 或其他必需依赖，请直接安装\n- 只关注网页调试，不需要处理 Electron、桌面端或 remote debugging 端口\n\n3. 验证步骤必须执行\n- 运行 npm run dev（或项目对应包管理器命令）\n- 确认终端输出里有 localhost 地址\n- 优先确认最终地址就是 {{defaultUrl}}\n- 确认启动无报错后再停止进程\n\n4. 最终输出必须包含\n- 你识别出的网页项目类型\n- 你修改了哪些 scripts\n- 最终可直接打开的地址\n- 你的验证结果\n- 如果不能固定为 {{defaultUrl}}，明确说明原因，并给出实际可用地址\n\n请直接开始分析并修改。只有你自己验证启动成功后，才算完成。",
+    "philosophy": {
+      "eyebrow": "AI 与代码之间",
+      "title": "把页面微调，变成 AI 能准确执行的说明",
+      "body": "DOMPrompter 是一个介于 AI 和专业代码之间的可视化辅助工具。它不直接改源码，而是帮助你标记对象、记录参数变化，并生成可交付给 AI 的结构化提示词。",
+      "flow": {
+        "mark": "标记",
+        "tune": "微调",
+        "generate": "生成",
+        "handToAi": "交给 AI"
+      },
+      "footerLead": "精准选择，精确描述变更，再交给 AI 落地。",
+      "footerBody": "页面内 Overlay 负责即时反馈，属性工作台负责持久记录。这让整个调试过程保持轻、快、可信。",
+      "modeHint": "选择一种开始方式",
+      "serverBadge": "默认推荐",
+      "htmlBadge": "静态页面"
+    }
   },
   "panel": {
     "ready": "准备开始检查",
@@ -66,7 +83,8 @@
     "htmlFailed": "打开 HTML 文件失败",
     "tagRemoved": "标签已删除",
     "promptCopied": "页面级提示词已复制",
-    "noPrompt": "当前还没有可导出的页面级提示词"
+    "noPrompt": "当前还没有可导出的页面级提示词",
+    "elementCssCopied": "元素 CSS 已复制"
   },
   "settings": {
     "title": "设置",
@@ -111,7 +129,8 @@
     "privacy": "隐私政策",
     "terms": "服务条款",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. 保留所有权利。"
+    "copyright": "\u00a9 2025 hooosberg. 保留所有权利。",
+    "version": "版本 {{version}}"
   },
   "shortcuts": {
     "openSettings": "打开设置",
@@ -151,5 +170,253 @@
     "restoreNotFound": "未找到之前的购买记录。",
     "restoreFailed": "恢复失败，请重试。",
     "ctaNote": "一次付费，无订阅费用。Pro 功能永久解锁。"
+  },
+  "common": {
+    "copy": "复制",
+    "copied": "已复制",
+    "collapse": "收起",
+    "expand": "展开",
+    "tip": "提示"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "全",
+      "top": "上",
+      "right": "右",
+      "bottom": "下",
+      "left": "左"
+    },
+    "spacing": {
+      "allSides": "四边",
+      "topSide": "上边",
+      "rightSide": "右边",
+      "bottomSide": "下边",
+      "leftSide": "左边"
+    },
+    "sections": {
+      "size": { "title": "尺寸", "hint": "先确定容器本身的宽高，再继续微调内部结构。" },
+      "padding": { "title": "内边距", "hint": "内边距通常是调整容器呼吸感最快的入口。" },
+      "margin": { "title": "外边距", "hint": "模块之间的距离通常主要来自 margin。" },
+      "layout": { "title": "布局", "hint": "通过 display、gap 和对齐快速观察结构变化。" },
+      "position": { "title": "定位", "hint": "优先保持布局稳定，微调时再使用定位和层级。" },
+      "border": { "title": "边框与圆角", "hint": "边框、圆角和投影共同决定组件气质。" },
+      "background": { "title": "背景", "hint": "背景色和透明度适合快速推敲层级感。" },
+      "overflow": { "title": "滚动与裁切", "hint": "处理裁切、滚动和媒体容器时常用。" },
+      "typography": { "title": "文字", "hint": "围绕字号、行高、字重和对齐做微调。" },
+      "image": { "title": "图片", "hint": "图片优先调整填充方式、圆角和尺寸。" }
+    },
+    "options": {
+      "display": { "block": "块" },
+      "align": { "start": "起点", "center": "居中", "end": "终点", "spaceBetween": "两端", "stretch": "拉伸" },
+      "position": { "static": "静态", "relative": "相对", "absolute": "绝对", "fixed": "固定" },
+      "overflow": { "visible": "可见", "hidden": "隐藏", "auto": "滚动" },
+      "textAlign": { "left": "左对齐", "center": "居中", "right": "右对齐" },
+      "objectFit": { "cover": "裁切", "contain": "包含", "fill": "拉伸" }
+    },
+    "fields": {
+      "width": { "label": "宽度", "helperText": "调整容器的最终宽度，适合卡片、面板和固定尺寸媒体区。", "placeholder": "320px / auto" },
+      "height": { "label": "高度", "helperText": "调整容器的最终高度，适合标题区、卡片和媒体框。", "placeholder": "200px / auto" },
+      "paddingTop": { "helperText": "调整内容与容器边框之间的上侧留白。", "placeholder": "16px" },
+      "paddingRight": { "helperText": "调整容器内部右侧的留白距离。", "placeholder": "16px" },
+      "paddingBottom": { "helperText": "调整容器底部的内部留白，让模块更稳。", "placeholder": "16px" },
+      "paddingLeft": { "helperText": "调整容器内部左侧的留白距离。", "placeholder": "16px" },
+      "marginTop": { "helperText": "调整与上一个元素之间的外部距离。", "placeholder": "24px" },
+      "marginRight": { "helperText": "调整右侧外边距。", "placeholder": "0px" },
+      "marginBottom": { "helperText": "调整与下一个元素之间的垂直间距。", "placeholder": "24px" },
+      "marginLeft": { "helperText": "调整左侧外边距。", "placeholder": "0px" },
+      "display": { "label": "显示方式", "helperText": "切换容器布局模式。只有在 Flex 或 Grid 下，对齐与 Gap 才真正生效。" },
+      "gap": { "label": "间距", "helperText": "调整子元素之间的空隙，仅在 Flex 或 Grid 下生效。", "placeholder": "16px" },
+      "justifyContent": { "label": "主轴对齐", "helperText": "控制子元素沿主轴的分布方式。" },
+      "alignItems": { "label": "交叉轴", "helperText": "控制子元素沿交叉轴的对齐方式。" },
+      "position": { "label": "定位模式", "helperText": "将元素切换到相对、绝对或固定定位。" },
+      "top": { "label": "顶部偏移", "helperText": "在定位元素上微调顶部偏移。", "placeholder": "12px" },
+      "left": { "label": "左侧偏移", "helperText": "在定位元素上微调左侧偏移。", "placeholder": "12px" },
+      "zIndex": { "label": "层级", "helperText": "控制元素覆盖层级，适合浮层、弹窗和装饰层。", "placeholder": "10" },
+      "transform": { "label": "变换", "helperText": "通过 translate 等方式做不破坏文档流的细微位移。", "placeholder": "translate(10px, 5px)" },
+      "border": { "label": "边框", "helperText": "控制线条粗细、颜色和样式。", "placeholder": "1px solid rgba(255,255,255,.12)" },
+      "borderRadius": { "label": "圆角", "helperText": "调整卡片、面板和按钮的圆角大小。" },
+      "boxShadow": { "label": "投影", "helperText": "用阴影塑造层级和立体感。", "placeholder": "0 10px 30px rgba(0,0,0,.18)" },
+      "backgroundColor": { "label": "背景色", "helperText": "直接调整背景综合色彩，快速推敲层级与强调。" },
+      "opacity": { "label": "透明度", "helperText": "适合制作禁用态、叠层和柔化效果。" },
+      "overflow": { "label": "裁切", "helperText": "控制内容溢出时是显示、隐藏还是允许滚动。" },
+      "fontSize": { "label": "字号", "helperText": "调整标题、副标题和正文的文字尺寸。" },
+      "lineHeight": { "label": "行高", "helperText": "调整文本行间距，改善节奏和可读性。", "placeholder": "1.5 / 24px" },
+      "fontWeight": { "label": "字重", "helperText": "改变文字轻重感，用于强调或弱化。", "placeholder": "400 / 600" },
+      "fontFamily": { "label": "字体", "helperText": "切换字体族，快速比较文案气质。", "placeholder": "Georgia, serif" },
+      "color": { "label": "文字颜色", "helperText": "调整文字颜色以表达层级、品牌色和弱化信息。" },
+      "textAlign": { "label": "对齐", "helperText": "改变整块文字的排版方向。" },
+      "objectFit": { "label": "填充方式", "helperText": "控制图片在容器内是裁切、完整显示还是拉伸。" },
+      "imageWidth": { "helperText": "调整图片或媒体框的最终宽度。", "placeholder": "320px / auto" },
+      "imageHeight": { "helperText": "调整图片或媒体框的最终高度。", "placeholder": "240px / auto" },
+      "imageBorderRadius": { "helperText": "让封面图和头像等图片边缘更柔和。" }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "选择元素",
+      "selectOn": "开启元素选择",
+      "selectOff": "关闭元素选择，恢复真实点击",
+      "selectActive": "选择中",
+      "interactive": "可交互",
+      "syncing": "同步中",
+      "undo": "撤销",
+      "redo": "前进",
+      "reset": "复位"
+    },
+    "empty": {
+      "interactiveTitle": "可交互模式",
+      "interactiveDesc": "当前可自由操作页面，点击上方“可交互”可切回选择模式来选取元素。"
+    },
+    "element": {
+      "containerName": "容器名称",
+      "elementName": "元素名称",
+      "copyTitle": "点击复制 {{name}}"
+    },
+    "sections": {
+      "labels": "标签意图",
+      "labelsHint": "这里直接写给 AI 你想怎么改这个元素。标签是高优先级意图，不只是备注。",
+      "quick": "快捷操作",
+      "quickHint": "先用语义化动作和方向卡把对象推到接近目标，再到后面的原始参数区做精修。",
+      "precision": "精确控制",
+      "precisionHint": "快捷操作把对象推进到目标附近后，在这里做逐项精修。",
+      "assist": "辅助信息",
+      "assistHint": "上下文说明和预览集中放在这里，避免打断主编辑流程。",
+      "cssVariables": "CSS 变量"
+    },
+    "helper": {
+      "browseTitle": "真实交互",
+      "browseDesc": "当前已关闭元素拾取。你可以直接点击和操作真实页面，让弹窗、菜单和下拉面板自然展开。",
+      "contextTitle": "上下文微调",
+      "contextDesc": "把鼠标移到任意参数卡片上，画布会高亮对应的 Margin、Padding 或排版区域，帮助你像看建筑图纸一样理解结构。",
+      "innerChild": "内部子元素",
+      "innerChildWithClass": "{{className}} 内部的子元素",
+      "paddingCentered": "当前节点是一个 Flex 居中容器。修改 {{field}} 会改变容器内盒尺寸，但子内容仍会保持居中。若你的目标是移动中间内容，优先调整布局对齐，或者继续选中 {{childTargetName}} 去调 margin / padding。",
+      "marginCentered": "当前节点通过 Flex 居中排版。外层 margin 主要影响它与兄弟节点的距离，不会像内部偏移那样直接推动中间内容。想微调中间文案块，优先改布局对齐，或者选中 {{childTargetName}} 再调 margin。",
+      "sizeCentered": "当前节点是一个 Flex 居中容器。调整宽高会改变容器包围盒，但内部内容仍会按主轴 {{justifyContent}}、交叉轴 {{alignItems}} 继续居中。若你想让内容靠上、靠左或贴边，优先修改布局对齐。",
+      "gapUnavailable": "当前节点不是 Flex 或 Grid 容器，Gap 即使写入样式也不会产生你期待的子元素间距效果。先把显示方式切到 Flex / Grid，或选中真正承载子元素布局的父容器。"
+    },
+    "insight": {
+      "layoutTitle": "布局洞察",
+      "flexCentered": "当前选中的是一个 Flex 居中容器（主轴 {{justifyContent}}，交叉轴 {{alignItems}}）。这类节点改 padding / 宽高时，内容通常仍会保持居中；如果你的目标是移动中间内容位置，优先改布局对齐，或者继续选中内部子元素。",
+      "grid": "当前节点是 Grid 容器。优先关注 gap、padding 和宽高；如果某个子块位置不对，通常需要选中子元素本身，而不是只改外层容器。",
+      "parent": "当前节点是父容器。改它的 padding / width / height 会影响内部结构，但不一定直接改变子内容的相对站位；如果你想微调具体文案块或图片块，继续点选内部子元素会更直接。"
+    },
+    "active": {
+      "labels": "这里写的是给 AI 的自然语言目标。先明确对象想达到什么效果，再继续做数值微调。",
+      "size": "先用宽高快捷卡把外轮廓推到接近目标，再到下方尺寸字段做精细值修正。",
+      "padding": "内边距快捷盘会优先出现，适合先把容器内部留白拉到位，再逐边微调。",
+      "margin": "外边距快捷盘适合先做模块间距的大方向调整，再到精确控制区修正单边数值。",
+      "alignmentTitle": "对齐",
+      "layout": "这里会带你到布局小节，优先看主轴对齐和交叉轴这些真正决定排布的位置。",
+      "gapShortcut": "当前对象有多个可见子元素，Gap 字段会作为统一间距入口显示在布局小节里。",
+      "gap": "Gap 会在布局小节里显示；只有容器存在真实子项并启用布局模式时，它才会产生你期待的效果。",
+      "position": "定位相关控制放在精确控制区，适合做 top / left / z-index 这类高精度修正。",
+      "border": "边框、圆角和投影会一起影响组件气质，适合在同一组字段里联动观察。",
+      "background": "背景色和透明度都在这里，适合快速调整层级感和视觉强弱。",
+      "shadow": "投影与圆角通常要联动观察，这里更适合做稳定的视觉精修。",
+      "typography": "文字控制集中在这里，适合连续调整字号、行高、字重和对齐。",
+      "overflow": "需要控制内容裁切或滚动时，优先看这里的 overflow 相关设置。",
+      "image": "图片模式会把填充方式、尺寸和圆角放在同一区域，方便一起比对。"
+    },
+    "recommended": {
+      "enableFlex": { "label": "启用 Flex", "description": "先把容器切到 Flex，再继续做对齐和间距微调。" },
+      "alignCenter": { "label": "让内容居中", "description": "把主轴和交叉轴都切回居中，快速恢复标准居中态。" },
+      "spaceBetween": { "label": "两端排布", "description": "把主轴分布切到两端，适合标题条、按钮条和工具栏。" },
+      "centerText": { "label": "文字居中", "description": "把文本对齐方式切到居中，适合标题和短文案块。" },
+      "imageCover": { "label": "填满容器", "description": "将 object-fit 切到 cover，让图片优先铺满容器。" },
+      "imageContain": { "label": "完整显示", "description": "将 object-fit 切到 contain，让图片完整地留在容器里。" },
+      "increasePadding": { "label": "增加内边距", "description": "四边同时增加 {{quickStep}}px 留白，快速拉开内容呼吸感。" },
+      "increaseGap": { "label": "增加间距", "description": "把容器内子元素之间的 gap 增加 {{quickStep}}px。" }
+    },
+    "quick": {
+      "step": "步进",
+      "decrease": "减少",
+      "increase": "增加",
+      "decreaseWithStep": "减少 {{step}}px",
+      "increaseWithStep": "增加 {{step}}px",
+      "increased": "增加",
+      "decreased": "减少",
+      "layout": {
+        "title": "布局快捷卡",
+        "hint": "先切换块 / Flex / Grid，再用方向盘把内容推到上、下、左、右或居中。",
+        "modeTitle": "布局模式",
+        "modeDescription": "显示方式已切到 {{display}}。继续用方向盘可以把内容快速推到上、下、左、右或中心。",
+        "positionTitle": "内容站位",
+        "positionDescription": "已把容器内容切到 {{slot}}。"
+      },
+      "spacing": {
+        "title": "边距快捷调节",
+        "hint": "先选内边距或外边距，再点方向。中心表示四边一起调整。",
+        "currentPadding": "当前快捷调节：内边距",
+        "currentMargin": "当前快捷调节：外边距",
+        "paddingActionTitle": "内边距快捷操作",
+        "marginActionTitle": "外边距快捷操作",
+        "adjusted": "{{side}}已{{direction}} {{value}}px。你也可以继续在下方参数区做更精细的单值微调。"
+      },
+      "cards": {
+        "width": "卡片、面板和图像框最常先调宽度。",
+        "height": "适合快速拉高标题区、卡片或图片区。",
+        "gap": "直接增减容器里子元素之间的空隙。",
+        "radius": "让卡片、面板和图片边缘更柔和。",
+        "objectFit": "在铺满和完整显示之间快速切换图片裁切方式。",
+        "opacity": "适合做弱化态、叠层和柔和感。",
+        "fontSize": "标题和正文最常用的快速层级控制。"
+      }
+    },
+    "direction": {
+      "topLeft": "左上",
+      "top": "上",
+      "topRight": "右上",
+      "left": "左",
+      "center": "中",
+      "right": "右",
+      "bottomLeft": "左下",
+      "bottom": "下",
+      "bottomRight": "右下"
+    },
+    "slot": {
+      "topLeft": "左上角",
+      "top": "上方",
+      "topRight": "右上角",
+      "left": "左侧",
+      "center": "中心",
+      "right": "右侧",
+      "bottomLeft": "左下角",
+      "bottom": "下方",
+      "bottomRight": "右下角"
+    },
+    "editor": {
+      "textContent": "文案内容",
+      "textPlaceholder": "输入新的文案",
+      "imageUrl": "图片地址",
+      "altText": "替代文本",
+      "altPlaceholder": "image description"
+    },
+    "field": {
+      "scrubTitle": "{{label}}，左右拖拽改数值；方向键微调，Shift 加速"
+    },
+    "labels": {
+      "description": "这里写给 AI 的是自然语言目标，不是精确数值。用它描述这个对象想达到的效果、结构意图和实现约束。",
+      "placeholder": "输入修改意见…",
+      "placeholderConfirm": "输入修改意见，回车确认…",
+      "delete": "删除标签"
+    },
+    "snapshot": {
+      "layout": "布局快照",
+      "visual": "视觉快照",
+      "typography": "排版快照",
+      "position": "定位快照"
+    },
+    "export": {
+      "sectionTitle": "导出提示词",
+      "sectionHint": "这里汇总当前页面里所有结构化微调和标签意图，适合直接复制给 Codex 等 AI 编程工具。",
+      "kicker": "页面级提示词",
+      "title": "面向 AI 编程工具的最终微调说明",
+      "summary": "已收集 {{elementCount}} 个元素 / {{modifiedCount}} 组结构化微调 / {{tagCount}} 组标签",
+      "copyTitle": "复制当前页面会话内的全部微调摘要和标签",
+      "copyButton": "导出修改提示词",
+      "copied": "已复制页面级修改提示词",
+      "empty": "还没有收集到页面级修改。继续在画布上调整元素后，DOMPrompter 会自动整理整页提示词。"
+    }
   }
 }

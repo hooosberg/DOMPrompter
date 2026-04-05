@@ -6,7 +6,10 @@
     "privacy": "プライバシーポリシー",
     "terms": "利用規約",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. All rights reserved."
+    "copyright": "© 2025 hooosberg. All rights reserved.",
+    "descFeatures": "CSS セレクターによる高精度な要素選択 • スタイル差分の追跡（変更前 / 変更後）• 自然言語タグと注釈 • Undo / Redo による即時フィードバック • Cursor、Claude Code、Codex、Copilot などに対応",
+    "descPrivacy": "ローカルファーストで、完全にプライベート。検査とプロンプト生成はすべてあなたの Mac 上で完結します。",
+    "version": "バージョン {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
@@ -17,7 +20,7 @@
     "benefitExportTitle": "無制限のページプロンプトエクスポート",
     "benefitExportDesc": "要素セレクター、スタイル差分、アノテーションを一つの構造化出力に統合してエクスポート。",
     "benefitPrecisionTitle": "スタイル差分トラッキング",
-    "benefitPrecisionDesc": "CSSの微調整を自動で前後記録 — width: 200px \u2192 300px。AIが正確に実行。",
+    "benefitPrecisionDesc": "CSSの微調整を自動で前後記録 — width: 200px → 300px。AIが正確に実行。",
     "benefitTagsTitle": "自然言語タグ",
     "benefitTagsDesc": "要素に意図を注釈：「ボタンの色が暗すぎる」「余白が広すぎる」。AIがデザイン意図を理解。",
     "benefitFutureTitle": "すべての将来のPro機能を含む",
@@ -32,5 +35,583 @@
     "restoreNotFound": "以前の購入が見つかりませんでした。",
     "restoreFailed": "復元に失敗しました。もう一度お試しください。",
     "ctaNote": "一回限りの支払い。サブスクリプション料金なし。Pro機能は永久にアンロック。"
+  },
+  "app": {
+    "name": "DOMPrompter",
+    "tagline": "UI を視覚的に微調整し、Vibe Coding 向けの正確なプロンプトを生成"
+  },
+  "topbar": {
+    "refresh": "再読み込み",
+    "load": "読み込む",
+    "urlPlaceholder": "localhost の URL を入力するか、ローカル HTML を開く",
+    "addressLabel": "ページアドレス",
+    "settings": "設定",
+    "connected": "接続済み",
+    "connecting": "接続中",
+    "disconnected": "未接続",
+    "hideToolbar": "ツールバーを隠す",
+    "showToolbar": "ツールバーを表示",
+    "disconnect": "接続解除"
+  },
+  "onboarding": {
+    "chooseTitle": "開始方法を選択",
+    "chooseDesc": "ローカル開発サーバーを使うか、静的 HTML ファイルを直接開きます。",
+    "serverMode": "サーバーモード",
+    "serverDesc": "プロジェクトはすでに localhost 上で動作しています",
+    "serverFoot": "3 ステップのガイド付き設定",
+    "htmlMode": "HTML モード",
+    "htmlDesc": "ローカル HTML ファイルを開いてすぐに検査",
+    "htmlFoot": "ファイルを選択して開始",
+    "htmlTitle": "HTML モード",
+    "htmlGuide": "単一ファイルのページ、静的エクスポート、ローカルプロトタイプに最適です。ファイルを直接開くか、最近の履歴から続行できます。",
+    "htmlGuideTitle": "ローカル HTML を直接開く",
+    "htmlGuideBody": "最初に開発サーバーを起動する必要はありません。HTML ファイルを選ぶだけで、DOMPrompter が検査用にそのままキャンバスへ読み込みます。",
+    "htmlHistory": "最近の履歴",
+    "htmlHistoryEmpty": "最近開いた HTML ファイルはありません。",
+    "htmlOpenAction": "HTML ファイルを開く",
+    "htmlRecentAction": "もう一度開く",
+    "serverTitle": "サーバーモード",
+    "serverGuide": "Web プロジェクトを既定のデバッグ URL で起動し、上のアドレスバーから読み込みます。",
+    "aiPrompt": "AI セットアップ用プロンプトをコピー",
+    "aiPromptDesc": "このプロンプトは Web アプリの起動、URL の統一、そして AI 自身による検証だけに集中しています。",
+    "copyPrompt": "プロンプトをコピー",
+    "copied": "コピーしました",
+    "startServer": "開発サーバーを起動",
+    "startServerDesc": "プロジェクトディレクトリで npm run dev を実行し、最終的な localhost 出力が既定のデバッグ URL と一致することを確認してください。",
+    "copyCommand": "コマンドをコピー",
+    "loadPage": "ページを読み込む",
+    "loadPageDesc": "スクリプトが正しく適応されていれば、以下の既定アドレスはすぐに動作します。そうでなければ、上部バーのアドレスを編集してください。",
+    "topBarHint": "ウィザード内でアドレスを入力する必要はもうありません。上部のアドレスバーで再読み込み、クイック編集、リロードができます。",
+    "loadPreset": "既定アドレスを読み込む",
+    "loadButton": "ページを読み込む",
+    "exit": "終了",
+    "previous": "前へ",
+    "next": "次へ",
+    "aiSetupPrompt": "DOMPrompter を使って Web プロジェクトをデバッグしています。URL を手動でコピーして貼り付けなくても、そのまま「読み込む」を押して開始できるように、プロジェクトの起動スクリプトを DOMPrompter の既定デバッグ URL に合わせて調整してください。\n\nまずこのプロジェクトがどの種類の Web プロジェクトかを判断してください（React / Vue / Svelte / Next.js / 静的 HTML / その他のフロントエンドプロジェクト）。そのうえで、「ページがブラウザで正しく起動すること」だけに集中して修正してください。できるだけ package.json の scripts だけを変更し、業務ロジックは変更しないでください。\n\n目標:\n- 最終ページを {{defaultUrl}} で直接開けること\n- DOMPrompter のステップ 3 にある既定 URL でそのまま読み込めること\n- 変更後にあなた自身で起動し、成功を検証すること\n\n要件:\n\n1. スクリプト調整\n- dev スクリプトが存在することを確認する\n- 開発サーバーは localhost をリッスンすること\n- 最終 URL はできるだけ {{defaultUrl}} に統一する\n- Vite なら vite --host localhost --port 5173 を使ってよい\n- Next.js なら next dev -H localhost -p 5173 を使ってよい\n- package.json がない純粋な HTML プロジェクトなら package.json を作成し、\"dev\": \"npx serve . -l 5173\" を追加する\n\n2. 制約\n- 業務ロジックは変更しない\n- 既存の scripts はそのまま残す\n- serve など必要な依存関係が足りなければそのままインストールする\n- Web デバッグだけに集中し、Electron、デスクトップフロー、remote debugging ポートは扱わない\n\n3. 必須の検証\n- npm run dev（または対応するパッケージマネージャーのコマンド）を実行する\n- ターミナル出力に localhost の URL が出ていることを確認する\n- 可能なら最終 URL が {{defaultUrl}} であることを確認する\n- エラーなく起動したことを確認してからプロセスを停止する\n\n4. 最終出力に必ず含めること\n- 判定した Web プロジェクトの種類\n- 変更した scripts\n- 直接開ける最終 URL\n- 検証結果\n- {{defaultUrl}} に固定できない場合は、その理由と実際に使える代替 URL\n\nそのまま分析と修正を開始してください。あなた自身で起動成功を確認できて初めて完了です。",
+    "philosophy": {
+      "eyebrow": "AI とコードのあいだ",
+      "title": "視覚的な微調整を、AI が正確に実行できる指示へ変える",
+      "body": "DOMPrompter は AI と本番コードのあいだに立つビジュアルアシスタントです。ソースコードを直接書き換えるのではなく、対象をマークし、パラメータの変更を記録し、AI が正しく適用できる構造化プロンプトを組み立てます。",
+      "flow": {
+        "mark": "マーク",
+        "tune": "微調整",
+        "generate": "生成",
+        "handToAi": "AI に渡す"
+      },
+      "footerLead": "正確に選び、正確に説明し、そのうえで AI に渡す。",
+      "footerBody": "ページ上のオーバーレイは即時フィードバックを担当し、ワークベンチは持続的な状態管理を担当します。だからこそ、このワークフローは軽く、速く、そして信頼できます。",
+      "modeHint": "開始方法を選んでください",
+      "serverBadge": "おすすめ",
+      "htmlBadge": "静的ページ"
+    }
+  },
+  "panel": {
+    "ready": "検査を開始できます",
+    "readyDesc": "ページ上の要素にホバーしてクリックすると、そのスタイルがワークベンチに表示されます。"
+  },
+  "toast": {
+    "settingsSoon": "設定パネルは次のフェーズで追加されます",
+    "connected": "ページに接続しました",
+    "htmlOpened": "ローカル HTML を開きました",
+    "pageRefreshed": "ページを再読み込みしました",
+    "connectionFailed": "接続に失敗しました",
+    "loadFailed": "ページの読み込みに失敗しました",
+    "debuggerFailed": "デバッガの接続に失敗しました",
+    "htmlFailed": "HTML ファイルを開けませんでした",
+    "tagRemoved": "タグを削除しました",
+    "promptCopied": "ページ用プロンプトをコピーしました",
+    "noPrompt": "まだページレベルのプロンプトはありません",
+    "elementCssCopied": "要素 CSS をコピーしました"
+  },
+  "settings": {
+    "title": "設定",
+    "appearance": "外観",
+    "language": "言語",
+    "shortcuts": "ショートカット",
+    "license": "ライセンス",
+    "about": "このアプリについて",
+    "theme": "テーマ",
+    "themeLight": "ライト",
+    "themeDark": "ダーク",
+    "themeAuto": "自動",
+    "accent": "アクセントカラー",
+    "glassOpacity": "ガラスの透明度",
+    "close": "閉じる",
+    "currentPlan": "現在のプラン",
+    "free": "無料版",
+    "pro": "Pro",
+    "buyPro": "Pro を購入",
+    "restore": "購入を復元"
+  },
+  "license": {
+    "promoTitle": "DOMPrompter Pro をアンロック",
+    "promoDesc": "ビジュアル検査ワークフローを最大限に活用できます。ページ全体のプロンプトをエクスポートし、すべてのスタイル変更を追跡し、自然言語で注釈を残せます。",
+    "benefitExport": "ページ全体のプロンプトを無制限にエクスポート",
+    "benefitDiff": "スタイル差分の追跡（変更前 / 変更後）",
+    "benefitTags": "自然言語タグと注釈",
+    "benefitFuture": "今後の Pro 機能もすべて含まれます",
+    "upgradeCta": "Pro にアップグレード - $19.99",
+    "ctaNote": "買い切りです。サブスクリプションはありません。Pro 機能は永久にアンロックされます。",
+    "proThanks": "DOMPrompter をサポートしていただきありがとうございます。すべての Pro 機能がアンロックされました。一度の購入で、今後追加されるすべての Pro 機能も利用できます。",
+    "purchase": "Pro を購入",
+    "restore": "購入を復元",
+    "processing": "処理中..."
+  },
+  "shortcuts": {
+    "openSettings": "設定を開く",
+    "openHtml": "HTML ファイルを開く",
+    "reload": "ページを再読み込み",
+    "forceReload": "強制再読み込み",
+    "toggleToolbar": "ツールバーを切り替え",
+    "copyPrompt": "ページプロンプトをコピー",
+    "copyCss": "要素 CSS をコピー",
+    "focusAddress": "アドレスバーにフォーカス",
+    "newWindow": "新しいウィンドウ",
+    "selectParent": "親要素を選択",
+    "selectChild": "子要素を選択",
+    "escape": "閉じる / 選択解除"
+  },
+  "common": {
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "collapse": "折りたたむ",
+    "expand": "展開",
+    "tip": "ヒント"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "全",
+      "top": "上",
+      "right": "右",
+      "bottom": "下",
+      "left": "左"
+    },
+    "spacing": {
+      "allSides": "四辺",
+      "topSide": "上辺",
+      "rightSide": "右辺",
+      "bottomSide": "下辺",
+      "leftSide": "左辺"
+    },
+    "sections": {
+      "size": {
+        "title": "サイズ",
+        "hint": "まずコンテナ自体の幅と高さを固め、そのあと内部構造を微調整します。"
+      },
+      "padding": {
+        "title": "パディング",
+        "hint": "パディングは、コンテナ内部の余白感を最も素早く調整できる入口です。"
+      },
+      "margin": {
+        "title": "マージン",
+        "hint": "モジュール同士の間隔は、たいてい margin で決まります。"
+      },
+      "layout": {
+        "title": "レイアウト",
+        "hint": "display、gap、整列を使って、構造変化を素早く観察できます。"
+      },
+      "position": {
+        "title": "配置",
+        "hint": "まずレイアウトを安定させてから、position や重なり順で細かく調整します。"
+      },
+      "border": {
+        "title": "境界線と角丸",
+        "hint": "境界線、角丸、影はコンテナ全体の印象を一緒に決めます。"
+      },
+      "background": {
+        "title": "背景",
+        "hint": "背景色と不透明度は、階層感を素早く検討するのに向いています。"
+      },
+      "overflow": {
+        "title": "オーバーフローと切り抜き",
+        "hint": "切り抜き、スクロール、メディアコンテナの調整でよく使います。"
+      },
+      "typography": {
+        "title": "文字",
+        "hint": "フォントサイズ、行高、ウェイト、整列を中心に文字組みを調整します。"
+      },
+      "image": {
+        "title": "画像",
+        "hint": "画像では、まず表示モード、角丸、サイズから調整するのがおすすめです。"
+      }
+    },
+    "options": {
+      "display": {
+        "block": "ブロック"
+      },
+      "align": {
+        "start": "開始",
+        "center": "中央",
+        "end": "終了",
+        "spaceBetween": "両端揃え",
+        "stretch": "ストレッチ"
+      },
+      "position": {
+        "static": "静的",
+        "relative": "相対",
+        "absolute": "絶対",
+        "fixed": "固定"
+      },
+      "overflow": {
+        "visible": "表示",
+        "hidden": "非表示",
+        "auto": "スクロール"
+      },
+      "textAlign": {
+        "left": "左揃え",
+        "center": "中央揃え",
+        "right": "右揃え"
+      },
+      "objectFit": {
+        "cover": "トリミング",
+        "contain": "全体表示",
+        "fill": "引き伸ばし"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "幅",
+        "helperText": "コンテナの最終的な幅を調整します。カード、パネル、固定サイズのメディア領域に適しています。",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "高さ",
+        "helperText": "コンテナの最終的な高さを調整します。タイトル領域、カード、メディアフレームに向いています。",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "コンテンツとコンテナ境界のあいだにある上側の余白を調整します。",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "コンテナ内の右側余白を調整します。",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "ブロック下側の内側余白を調整し、全体の安定感を整えます。",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "コンテナ内の左側余白を調整します。",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "上にある要素との外側距離を調整します。",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "右側の外側距離を調整します。",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "次の要素との縦方向の間隔を調整します。",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "左側の外側距離を調整します。",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "表示方式",
+        "helperText": "コンテナのレイアウトモードを切り替えます。整列や gap が本当に効くのは Flex か Grid のときだけです。"
+      },
+      "gap": {
+        "label": "間隔",
+        "helperText": "子要素同士の間隔を調整します。Flex または Grid のときだけ有効です。",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "主軸",
+        "helperText": "主軸に沿って子要素をどう配置するかを制御します。"
+      },
+      "alignItems": {
+        "label": "交差軸",
+        "helperText": "交差軸に沿った子要素の揃え方を制御します。"
+      },
+      "position": {
+        "label": "配置モード",
+        "helperText": "要素を relative、absolute、fixed のいずれかに切り替えます。"
+      },
+      "top": {
+        "label": "上方向オフセット",
+        "helperText": "配置された要素の上方向オフセットを微調整します。",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "左方向オフセット",
+        "helperText": "配置された要素の左方向オフセットを微調整します。",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "重なり順",
+        "helperText": "オーバーレイ、モーダル、装飾レイヤーの重なり順を制御します。",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "変形",
+        "helperText": "レイアウトフローを壊さずに微妙な移動を加えるときは、translate などの transform を使います。",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "境界線",
+        "helperText": "カード、入力欄、ボタンの線幅、色、スタイルを制御します。",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "角丸",
+        "helperText": "カード、パネル、ボタンの角丸を調整します。"
+      },
+      "boxShadow": {
+        "label": "影",
+        "helperText": "影を使って高さや奥行きを表現します。",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "背景色",
+        "helperText": "背景色を調整して、階層感や強調のバランスを探ります。"
+      },
+      "opacity": {
+        "label": "不透明度",
+        "helperText": "無効状態、オーバーレイ、やわらかい見え方の調整に使います。"
+      },
+      "overflow": {
+        "label": "オーバーフロー",
+        "helperText": "あふれた内容を表示したままにするか、隠すか、スクロール可能にするかを制御します。"
+      },
+      "fontSize": {
+        "label": "文字サイズ",
+        "helperText": "タイトル、サブタイトル、本文の文字サイズを調整します。"
+      },
+      "lineHeight": {
+        "label": "行高",
+        "helperText": "行間の縦方向スペースを調整し、リズムと読みやすさを整えます。",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "ウェイト",
+        "helperText": "文字の太さを変えて、強調したりやわらげたりします。",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "フォント",
+        "helperText": "フォントファミリーを切り替えて、トーンの違いを素早く比較します。",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "文字色",
+        "helperText": "階層感、ブランドカラー、補助テキストの見せ方に合わせて文字色を調整します。"
+      },
+      "textAlign": {
+        "label": "整列",
+        "helperText": "テキストブロック全体の配置方向を変更します。"
+      },
+      "objectFit": {
+        "label": "表示モード",
+        "helperText": "画像をコンテナ内でトリミングするか、全体表示するか、引き伸ばすかを制御します。"
+      },
+      "imageWidth": {
+        "helperText": "画像またはメディアフレームの最終的な幅を調整します。",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "画像またはメディアフレームの最終的な高さを調整します。",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "カバー画像やアバターの角をやわらかく見せます。"
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "要素を選択",
+      "selectOn": "要素ピッカーを有効にする",
+      "selectOff": "要素ピッカーを無効にして実際のクリックに戻す",
+      "selectActive": "選択中",
+      "interactive": "インタラクティブ",
+      "syncing": "同期中",
+      "undo": "元に戻す",
+      "redo": "やり直す",
+      "reset": "リセット"
+    },
+    "empty": {
+      "interactiveTitle": "インタラクティブモード",
+      "interactiveDesc": "いまはページを自由に操作できます。上の「インタラクティブ」をもう一度押すと、要素選択モードに戻ります。"
+    },
+    "element": {
+      "containerName": "コンテナ",
+      "elementName": "要素",
+      "copyTitle": "{{name}} をクリックしてコピー"
+    },
+    "sections": {
+      "labels": "タグ意図",
+      "labelsHint": "ここには AI に最優先で伝えたい指示を書きます。タグは単なるメモではなく、意図そのものです。",
+      "quick": "クイック操作",
+      "quickHint": "まずは意味のあるアクションで目標に近づけ、そのあと下で数値を細かく詰めます。",
+      "precision": "精密コントロール",
+      "precisionHint": "クイック操作で近づけたあと、ここで各プロパティを細かく調整します。",
+      "assist": "補助情報",
+      "assistHint": "コンテキストメモやプレビューはここにまとめ、メインの編集フローを集中しやすくします。",
+      "cssVariables": "CSS 変数"
+    },
+    "helper": {
+      "browseTitle": "実際の操作",
+      "browseDesc": "現在は要素ピックがオフです。実際のページをそのままクリックして操作できるので、メニュー、ポップオーバー、ドロップダウンも自然に開けます。",
+      "contextTitle": "コンテキスト微調整",
+      "contextDesc": "任意のパラメータカードにホバーすると、キャンバス上で対応する margin、padding、文字領域が強調表示され、設計図のように構造を読み取れます。",
+      "innerChild": "その子要素",
+      "innerChildWithClass": "{{className}} 内の子要素",
+      "paddingCentered": "このノードは中央揃えの Flex コンテナです。{{field}} を変更すると内側のボックスサイズは変わりますが、内容は中央にとどまります。中央のコンテンツブロックを動かしたい場合は、まずレイアウトの整列を変えるか、{{childTargetName}} を選択し続けて margin や padding を調整してください。",
+      "marginCentered": "このノードは中央揃えの Flex レイアウトを使っています。外側の margin は主に兄弟ノードとの距離に影響し、中央のコンテンツ自体はあまり動きません。中央のテキストブロックを調整したい場合は、まず整列を変えるか、{{childTargetName}} を選択してそちらの margin を調整してください。",
+      "sizeCentered": "このノードは中央揃えの Flex コンテナです。幅や高さを変えるとボックス自体は変わりますが、内容は主軸 {{justifyContent}}、交差軸 {{alignItems}} のまま中央に残ります。内容を上、左、端寄せにしたいなら、先にレイアウト整列を変更してください。",
+      "gapUnavailable": "このノードは Flex でも Grid でもないため、gap を設定しても期待する子要素間の余白にはなりません。まず表示方式を Flex / Grid に切り替えるか、実際に子要素レイアウトを持っている親コンテナを選択してください。"
+    },
+    "insight": {
+      "layoutTitle": "レイアウト洞察",
+      "flexCentered": "現在の選択対象は中央揃えの Flex コンテナです（主軸 {{justifyContent}}、交差軸 {{alignItems}}）。padding やサイズを変えても、内容は中央に残ることが多いです。内側のコンテンツを動かしたい場合は、先に整列を変えるか、子要素を引き続き選択してください。",
+      "grid": "このノードは Grid コンテナです。まず gap、padding、サイズに注目してください。子ブロックの一つだけがずれているなら、外側コンテナだけでなく、その子自体を選ぶ必要があることが多いです。",
+      "parent": "このノードは親コンテナです。padding、幅、高さを変えると内部構造には影響しますが、子コンテンツがそのまま直接動くとは限りません。特定のテキストや画像ブロックを調整したい場合は、その子要素を直接選択してください。"
+    },
+    "active": {
+      "labels": "ここには、数値調整の前に AI に従ってほしい自然言語の目標を書きます。",
+      "size": "まず幅と高さのクイックカードで目標に近づけ、そのあと下で微調整します。",
+      "padding": "まずクイックな padding 操作で内部余白の雰囲気を作り、そのあと各辺を個別に整えます。",
+      "margin": "まずクイックな margin 操作でモジュール間距離の方向感を整え、そのあと片側ごとの精密調整を行います。",
+      "alignmentTitle": "整列",
+      "layout": "レイアウトセクションへ移動し、まず主軸と交差軸の整列を確認してください。",
+      "gapShortcut": "このオブジェクトには複数の可視子要素があるため、Gap がレイアウトセクションで共通の間隔入口として表示されます。",
+      "gap": "Gap はレイアウトセクションに表示されます。実際の子要素があり、レイアウトモードが有効なときにだけ期待どおりに機能します。",
+      "position": "position 系のコントロールは精密調整セクションにあり、top / left / z-index のような高精度修正に向いています。",
+      "border": "境界線、角丸、影は一緒に見ることで、そのコンポーネントの印象をつかみやすくなります。",
+      "background": "背景色と不透明度はここで調整でき、階層感や強調のバランスを素早く検討できます。",
+      "shadow": "影は角丸と一緒に確認することで、安定した見た目の仕上げがしやすくなります。",
+      "typography": "文字系コントロールはここにまとまっているので、サイズ、行高、ウェイト、整列を続けて調整できます。",
+      "overflow": "内容の切り抜きやスクロール挙動を制御したいときは、まずここを見てください。",
+      "image": "画像モードでは、表示モード、サイズ、角丸が一か所にまとまり、比較しやすくなっています。"
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "Flex を有効化",
+        "description": "まずコンテナを Flex に切り替えてから、整列や間隔の調整を進めます。"
+      },
+      "alignCenter": {
+        "label": "内容を中央揃え",
+        "description": "両軸を中央に戻して、標準的な中央揃え状態を素早く復元します。"
+      },
+      "spaceBetween": {
+        "label": "両端配置",
+        "description": "主軸の両端に要素を広げます。タイトルバー、ボタン列、ツールバーに向いています。"
+      },
+      "centerText": {
+        "label": "文字を中央揃え",
+        "description": "テキストの整列を中央に切り替えます。見出しや短いテキストブロックに向いています。"
+      },
+      "imageCover": {
+        "label": "コンテナいっぱいに表示",
+        "description": "object-fit を cover に切り替え、まず画像をコンテナいっぱいに見せます。"
+      },
+      "imageContain": {
+        "label": "画像全体を表示",
+        "description": "object-fit を contain に切り替え、画像全体が見える状態を保ちます。"
+      },
+      "increasePadding": {
+        "label": "パディングを増やす",
+        "description": "四辺すべてに {{quickStep}}px の余白を一度に追加します。"
+      },
+      "increaseGap": {
+        "label": "Gap を増やす",
+        "description": "子要素同士の gap を {{quickStep}}px 増やします。"
+      }
+    },
+    "quick": {
+      "step": "ステップ",
+      "decrease": "減らす",
+      "increase": "増やす",
+      "decreaseWithStep": "{{step}}px 減らす",
+      "increaseWithStep": "{{step}}px 増やす",
+      "increased": "増加",
+      "decreased": "減少",
+      "layout": {
+        "title": "レイアウトクイックカード",
+        "hint": "まず Block、Flex、Grid を切り替え、そのあとパッドを使って内容を上、下、左、右、中央へ寄せます。",
+        "modeTitle": "レイアウトモード",
+        "modeDescription": "表示方式を {{display}} に切り替えました。引き続きパッドを使って内容を上、下、左、右、中央へ寄せてください。",
+        "positionTitle": "内容の位置",
+        "positionDescription": "コンテナ内の内容は現在 {{slot}} に配置されています。"
+      },
+      "spacing": {
+        "title": "余白クイック調整",
+        "hint": "まず padding か margin を選び、そのあと方向を選びます。中央は四辺まとめてを意味します。",
+        "currentPadding": "現在のクイック対象: パディング",
+        "currentMargin": "現在のクイック対象: マージン",
+        "paddingActionTitle": "パディングクイック操作",
+        "marginActionTitle": "マージンクイック操作",
+        "adjusted": "{{side}} を {{value}}px {{direction}}しました。下でさらに細かな単独値調整を続けられます。"
+      },
+      "cards": {
+        "width": "カード、パネル、画像フレームでは、幅が最初に調整すべき項目になりやすいです。",
+        "height": "タイトル領域、カード、画像領域を素早く伸ばしたいときに便利です。",
+        "gap": "コンテナ内の子要素同士の間隔を直接増減します。",
+        "radius": "カード、パネル、画像の縁をやわらかくします。",
+        "objectFit": "画像のトリミングと全体表示を素早く切り替えます。",
+        "opacity": "弱い状態、オーバーレイ、やわらかい見せ方の調整に便利です。",
+        "fontSize": "見出しや本文の階層感を素早く整えるための入口です。"
+      }
+    },
+    "direction": {
+      "topLeft": "左上",
+      "top": "上",
+      "topRight": "右上",
+      "left": "左",
+      "center": "中央",
+      "right": "右",
+      "bottomLeft": "左下",
+      "bottom": "下",
+      "bottomRight": "右下"
+    },
+    "slot": {
+      "topLeft": "左上",
+      "top": "上",
+      "topRight": "右上",
+      "left": "左",
+      "center": "中央",
+      "right": "右",
+      "bottomLeft": "左下",
+      "bottom": "下",
+      "bottomRight": "右下"
+    },
+    "editor": {
+      "textContent": "テキスト内容",
+      "textPlaceholder": "新しい文言を入力",
+      "imageUrl": "画像 URL",
+      "altText": "代替テキスト",
+      "altPlaceholder": "画像の説明"
+    },
+    "labels": {
+      "description": "ここには正確な数値ではなく、AI に伝えたい自然言語の目標を書きます。意図する効果、構造、制約を説明するために使ってください。",
+      "placeholder": "変更メモを入力…",
+      "placeholderConfirm": "変更メモを入力して Enter…",
+      "delete": "タグを削除"
+    },
+    "snapshot": {
+      "layout": "レイアウトスナップショット",
+      "visual": "ビジュアルスナップショット",
+      "typography": "文字スナップショット",
+      "position": "配置スナップショット"
+    },
+    "export": {
+      "sectionTitle": "プロンプトを書き出す",
+      "sectionHint": "このページで行った構造化微調整とタグ意図をここに集約し、Codex などの AI コーディングツールへそのまま貼り付けられるようにします。",
+      "kicker": "ページレベルプロンプト",
+      "title": "AI コーディングツール向けの最終調整ブリーフ",
+      "summary": "{{elementCount}} 要素を収集 / {{modifiedCount}} 件の構造化調整 / {{tagCount}} 件のタググループ",
+      "copyTitle": "現在のページセッションにある調整要約とタグをまとめてコピー",
+      "copyButton": "プロンプトを書き出す",
+      "copied": "ページプロンプトをコピーしました",
+      "empty": "まだページレベルの変更は収集されていません。キャンバス上で要素を調整すると、DOMPrompter が自動でページプロンプトを組み立てます。"
+    },
+    "field": {
+      "scrubTitle": "{{label}}。左右にドラッグして値を変更します。矢印キーで微調整、Shift で加速します。"
+    }
   }
 }

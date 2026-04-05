@@ -10,7 +10,10 @@
     "privacy": "隱私政策",
     "terms": "服務條款",
     "github": "GitHub",
-    "copyright": "\u00a9 2025 hooosberg. 保留所有權利。"
+    "copyright": "© 2025 hooosberg. 保留所有權利。",
+    "descFeatures": "精確元素選取與 CSS 選擇器 • 樣式差異追蹤（修改前/後）• 自然語言標籤註解 • 即時視覺回饋與復原/重做 • 適用於 Cursor、Claude Code、Codex、Copilot 等工具",
+    "descPrivacy": "本機優先，完整隱私。所有檢查與提示詞產生都只在你的 Mac 上本地完成。",
+    "version": "版本 {{version}}"
   },
   "paywall": {
     "kicker": "DOMPROMPTER PRO",
@@ -19,11 +22,11 @@
     "lifetimeBadge": "終身買斷",
     "priceValue": "$19.99",
     "benefitExportTitle": "無限頁面提示詞匯出",
-    "benefitExportDesc": "匯出完整頁面 AI 提示詞，融合元素選擇器、樣式差異和標籤註釋為一體。",
+    "benefitExportDesc": "匯出完整頁面 AI 提示詞，將元素選擇器、樣式差異與標籤註釋整合在一起。",
     "benefitPrecisionTitle": "樣式差異追蹤",
-    "benefitPrecisionDesc": "每次 CSS 微調自動記錄前後對比 — width: 200px \u2192 300px，AI 一目了然。",
+    "benefitPrecisionDesc": "每次 CSS 微調自動記錄前後對比 — width: 200px → 300px，AI 一目了然。",
     "benefitTagsTitle": "自然語言標籤",
-    "benefitTagsDesc": "為元素添加意圖註釋：「按鈕顏色太深」「間距太大」。讓 AI 理解你的設計思路。",
+    "benefitTagsDesc": "為元素加入意圖註釋：「按鈕顏色太深」「間距太大」。讓 AI 理解你的設計思路。",
     "benefitFutureTitle": "包含所有未來 Pro 功能",
     "benefitFutureDesc": "一次購買，永久享有每項新增 Pro 功能。無訂閱費用。",
     "unlockNow": "升級到 Pro",
@@ -36,5 +39,579 @@
     "restoreNotFound": "未找到之前的購買紀錄。",
     "restoreFailed": "恢復失敗，請重試。",
     "ctaNote": "一次付費，無訂閱費用。Pro 功能永久解鎖。"
+  },
+  "topbar": {
+    "refresh": "重新整理",
+    "load": "載入",
+    "urlPlaceholder": "輸入 localhost 位址或開啟本地 HTML",
+    "addressLabel": "頁面位址",
+    "settings": "設定",
+    "connected": "已連線",
+    "connecting": "連線中",
+    "disconnected": "未連線",
+    "hideToolbar": "隱藏工具列",
+    "showToolbar": "顯示工具列",
+    "disconnect": "中斷連線"
+  },
+  "onboarding": {
+    "chooseTitle": "選擇開始方式",
+    "chooseDesc": "透過本地開發伺服器，或直接開啟靜態 HTML 檔開始偵錯。",
+    "serverMode": "服務模式設定流程",
+    "serverDesc": "你的專案已經執行在 localhost 上",
+    "serverFoot": "3 步驟引導設定",
+    "htmlMode": "HTML 模式",
+    "htmlDesc": "直接開啟本地 HTML 檔並開始檢查",
+    "htmlFoot": "選擇檔案即可開始",
+    "htmlTitle": "HTML 模式",
+    "htmlGuide": "適合單檔頁面、靜態匯出頁與本地原型。可直接開啟檔案，或從最近紀錄繼續。",
+    "htmlGuideTitle": "直接開啟本地 HTML",
+    "htmlGuideBody": "不需要先啟動本地服務，選取一個 HTML 檔後就會立即載入到畫布中，適合快速檢查與局部微調。",
+    "htmlHistory": "最近紀錄",
+    "htmlHistoryEmpty": "目前還沒有最近開啟的 HTML 檔。",
+    "htmlOpenAction": "開啟 HTML 檔",
+    "htmlRecentAction": "重新開啟",
+    "serverTitle": "服務模式",
+    "serverGuide": "先把網頁專案啟動到預設偵錯位址，再從上方位址列一鍵載入。",
+    "aiPrompt": "複製 AI 適配提示詞",
+    "aiPromptDesc": "這份提示詞只聚焦在啟動網頁專案、統一位址，並要求 AI 自行完成啟動驗證。",
+    "copyPrompt": "複製提示詞",
+    "copied": "已複製",
+    "startServer": "啟動開發伺服器",
+    "startServerDesc": "在專案目錄中執行 npm run dev，並確認終端最終輸出的是預設偵錯位址。",
+    "copyCommand": "複製指令",
+    "loadPage": "載入頁面",
+    "loadPageDesc": "如果 AI 已依規格完成適配，這裡的預設位址應可直接使用；若需要改埠號，直接修改頂部位址列即可。",
+    "topBarHint": "不需要再在精靈中手動輸入位址。頂部位址列可以持續重新整理、切換位址並重新載入。",
+    "loadPreset": "載入預設位址",
+    "loadButton": "載入頁面",
+    "exit": "離開",
+    "previous": "上一步",
+    "next": "下一步",
+    "aiSetupPrompt": "我正在使用 DOMPrompter 偵錯一個網頁專案。請幫我把專案的啟動腳本適配到 DOMPrompter 的預設偵錯位址，讓我不需要再手動複製貼上位址，直接點擊載入即可開始偵錯。\n\n請先判斷我的專案屬於哪一種網頁專案（React / Vue / Svelte / Next.js / 純 HTML / 其他前端專案），然後只圍繞「讓網頁能在瀏覽器中啟動」這件事修改。優先只改 package.json 裡的 scripts，不要修改業務邏輯程式碼。\n\n目標：\n- 最終頁面可以直接透過 {{defaultUrl}} 開啟\n- DOMPrompter 第 3 步的預設位址可以直接載入成功\n- 你修改完成後必須自行執行並驗證成功\n\n請依照以下要求處理：\n\n1. 腳本適配\n- 確保存在 dev 腳本\n- 開發伺服器必須監聽 localhost\n- 優先統一到 {{defaultUrl}}\n- 如果是 Vite，可使用 vite --host localhost --port 5173\n- 如果是 Next.js，可使用 next dev -H localhost -p 5173\n- 如果是純 HTML 且沒有 package.json，請建立 package.json，並加入 \"dev\": \"npx serve . -l 5173\"\n\n2. 修改限制\n- 不要修改業務邏輯程式碼\n- 保留專案原有的其他 scripts\n- 如果缺少 serve 或其他必要依賴，請直接安裝\n- 只聚焦於網頁偵錯，不需要處理 Electron、桌面端或 remote debugging 埠號\n\n3. 驗證步驟必須執行\n- 執行 npm run dev（或專案對應的套件管理器指令）\n- 確認終端輸出中有 localhost 位址\n- 優先確認最終位址就是 {{defaultUrl}}\n- 確認啟動無錯誤後再停止程序\n\n4. 最終輸出必須包含\n- 你辨識出的網頁專案類型\n- 你修改了哪些 scripts\n- 最終可直接開啟的位址\n- 你的驗證結果\n- 如果無法固定為 {{defaultUrl}}，請明確說明原因，並提供實際可用位址\n\n請直接開始分析並修改。只有在你自行驗證啟動成功後，才算完成。",
+    "philosophy": {
+      "eyebrow": "AI 與程式碼之間",
+      "title": "把頁面微調變成 AI 能精準執行的說明",
+      "body": "DOMPrompter 是介於 AI 與專業程式碼之間的視覺化輔助工具。它不會直接改寫原始碼，而是幫你標記目標、記錄參數變化，並產生可交付給 AI 的結構化提示詞。",
+      "flow": {
+        "mark": "標記",
+        "tune": "微調",
+        "generate": "生成",
+        "handToAi": "交給 AI"
+      },
+      "footerLead": "精準選取、精確描述變更，再交給 AI 落地。",
+      "footerBody": "頁面上的 Overlay 負責即時回饋，屬性工作台負責持久記錄，讓整個偵錯流程保持輕、快、可信。",
+      "modeHint": "選擇一種開始方式",
+      "serverBadge": "預設推薦",
+      "htmlBadge": "靜態頁面"
+    }
+  },
+  "panel": {
+    "ready": "準備開始檢查",
+    "readyDesc": "在頁面中懸停並點擊元素，右側工作台會顯示對應樣式。"
+  },
+  "toast": {
+    "settingsSoon": "設定面板將在下一階段接入",
+    "connected": "頁面已連線",
+    "htmlOpened": "已開啟本地 HTML",
+    "pageRefreshed": "頁面已重新整理",
+    "connectionFailed": "連線失敗",
+    "loadFailed": "頁面載入失敗",
+    "debuggerFailed": "偵錯器附加失敗",
+    "htmlFailed": "開啟 HTML 檔失敗",
+    "tagRemoved": "標籤已刪除",
+    "promptCopied": "頁面級提示詞已複製",
+    "noPrompt": "目前還沒有可匯出的頁面級提示詞",
+    "elementCssCopied": "元素 CSS 已复制"
+  },
+  "settings": {
+    "title": "設定",
+    "appearance": "外观",
+    "language": "语言",
+    "shortcuts": "快捷鍵",
+    "license": "许可证",
+    "about": "关于",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeAuto": "跟隨系統",
+    "accent": "強調色",
+    "glassOpacity": "毛玻璃透明度",
+    "close": "關閉",
+    "currentPlan": "目前方案",
+    "free": "免費版",
+    "pro": "專業版",
+    "buyPro": "購買 Pro",
+    "restore": "恢復購買"
+  },
+  "license": {
+    "promoTitle": "解鎖 DOMPrompter Pro",
+    "promoDesc": "充分發揮視覺化檢查工作流的潛力。匯出整頁提示詞、追蹤每次樣式變化，並使用自然語言註解。",
+    "benefitExport": "無限頁面提示詞匯出",
+    "benefitDiff": "樣式差異追蹤（修改前/後）",
+    "benefitTags": "自然語言標籤與註解",
+    "benefitFuture": "包含所有未来 Pro 功能",
+    "upgradeCta": "升級到 Pro — $19.99",
+    "ctaNote": "一次付費，無訂閱。Pro 功能永久解鎖。",
+    "proThanks": "感謝支持 DOMPrompter！所有 Pro 功能已解鎖。一次購買即可享有我們未來新增的每項 Pro 功能。",
+    "purchase": "購買 Pro",
+    "restore": "恢復購買",
+    "processing": "處理中..."
+  },
+  "shortcuts": {
+    "openSettings": "開啟設定",
+    "openHtml": "開啟 HTML 檔",
+    "reload": "重新整理頁面",
+    "forceReload": "強制重新整理",
+    "toggleToolbar": "切換工具列",
+    "copyPrompt": "複製頁面提示詞",
+    "copyCss": "複製元素 CSS",
+    "focusAddress": "聚焦位址列",
+    "newWindow": "新增視窗",
+    "selectParent": "選取父層元素",
+    "selectChild": "選取子層元素",
+    "escape": "關閉 / 取消選取"
+  },
+  "common": {
+    "copy": "複製",
+    "copied": "已複製",
+    "collapse": "收起",
+    "expand": "展開",
+    "tip": "提示"
+  },
+  "properties": {
+    "sides": {
+      "allShort": "全",
+      "top": "上",
+      "right": "右",
+      "bottom": "下",
+      "left": "左"
+    },
+    "spacing": {
+      "allSides": "四邊",
+      "topSide": "上邊",
+      "rightSide": "右邊",
+      "bottomSide": "下邊",
+      "leftSide": "左邊"
+    },
+    "sections": {
+      "size": {
+        "title": "尺寸",
+        "hint": "先確認容器本身的寬高，再繼續微調內部結構。"
+      },
+      "padding": {
+        "title": "內距",
+        "hint": "內距通常是調整容器呼吸感最快的入口。"
+      },
+      "margin": {
+        "title": "外距",
+        "hint": "模組之間的距離通常主要來自 margin。"
+      },
+      "layout": {
+        "title": "版面",
+        "hint": "透過 display、gap 與對齊快速觀察結構變化。"
+      },
+      "position": {
+        "title": "定位",
+        "hint": "優先保持版面穩定，微調時再使用定位與層級。"
+      },
+      "border": {
+        "title": "邊框與圓角",
+        "hint": "邊框、圓角與投影共同決定元件氣質。"
+      },
+      "background": {
+        "title": "背景",
+        "hint": "背景色與透明度適合快速推敲層級感。"
+      },
+      "overflow": {
+        "title": "捲動與裁切",
+        "hint": "處理裁切、捲動與媒體容器時很常用。"
+      },
+      "typography": {
+        "title": "文字",
+        "hint": "圍繞字級、行高、字重與對齊做微調。"
+      },
+      "image": {
+        "title": "圖片",
+        "hint": "圖片優先調整填充方式、圓角與尺寸。"
+      }
+    },
+    "options": {
+      "display": {
+        "block": "區塊"
+      },
+      "align": {
+        "start": "起點",
+        "center": "置中",
+        "end": "終點",
+        "spaceBetween": "兩端",
+        "stretch": "延展"
+      },
+      "position": {
+        "static": "靜態",
+        "relative": "相對",
+        "absolute": "絕對",
+        "fixed": "固定"
+      },
+      "overflow": {
+        "visible": "可見",
+        "hidden": "隱藏",
+        "auto": "捲動"
+      },
+      "textAlign": {
+        "left": "靠左對齊",
+        "center": "置中",
+        "right": "靠右對齊"
+      },
+      "objectFit": {
+        "cover": "裁切",
+        "contain": "包含",
+        "fill": "延展"
+      }
+    },
+    "fields": {
+      "width": {
+        "label": "寬度",
+        "helperText": "調整容器的最終寬度，適合卡片、面板與固定尺寸媒體區。",
+        "placeholder": "320px / auto"
+      },
+      "height": {
+        "label": "高度",
+        "helperText": "調整容器的最終高度，適合標題區、卡片與媒體框。",
+        "placeholder": "200px / auto"
+      },
+      "paddingTop": {
+        "helperText": "調整內容與容器邊框之間的上側留白。",
+        "placeholder": "16px"
+      },
+      "paddingRight": {
+        "helperText": "調整容器內部右側的留白距離。",
+        "placeholder": "16px"
+      },
+      "paddingBottom": {
+        "helperText": "調整容器底部的內部留白，讓模組更穩。",
+        "placeholder": "16px"
+      },
+      "paddingLeft": {
+        "helperText": "調整容器內部左側的留白距離。",
+        "placeholder": "16px"
+      },
+      "marginTop": {
+        "helperText": "調整與上一個元素之間的外部距離。",
+        "placeholder": "24px"
+      },
+      "marginRight": {
+        "helperText": "調整右側外距。",
+        "placeholder": "0px"
+      },
+      "marginBottom": {
+        "helperText": "調整與下一個元素之間的垂直間距。",
+        "placeholder": "24px"
+      },
+      "marginLeft": {
+        "helperText": "調整左側外距。",
+        "placeholder": "0px"
+      },
+      "display": {
+        "label": "顯示方式",
+        "helperText": "切換容器版面模式。只有在 Flex 或 Grid 下，對齊與 Gap 才會真正生效。"
+      },
+      "gap": {
+        "label": "間距",
+        "helperText": "調整子元素之間的空隙，僅在 Flex 或 Grid 下生效。",
+        "placeholder": "16px"
+      },
+      "justifyContent": {
+        "label": "主軸對齊",
+        "helperText": "控制子元素沿主軸的分布方式。"
+      },
+      "alignItems": {
+        "label": "交叉軸",
+        "helperText": "控制子元素沿交叉軸的對齊方式。"
+      },
+      "position": {
+        "label": "定位模式",
+        "helperText": "將元素切換為相對、絕對或固定定位。"
+      },
+      "top": {
+        "label": "頂部偏移",
+        "helperText": "在定位元素上微調頂部偏移。",
+        "placeholder": "12px"
+      },
+      "left": {
+        "label": "左側偏移",
+        "helperText": "在定位元素上微調左側偏移。",
+        "placeholder": "12px"
+      },
+      "zIndex": {
+        "label": "層級",
+        "helperText": "控制元素覆蓋層級，適合浮層、彈窗與裝飾層。",
+        "placeholder": "10"
+      },
+      "transform": {
+        "label": "變形",
+        "helperText": "透過 translate 等方式做不破壞文件流的細微位移。",
+        "placeholder": "translate(10px, 5px)"
+      },
+      "border": {
+        "label": "邊框",
+        "helperText": "控制線條粗細、顏色與樣式。",
+        "placeholder": "1px solid rgba(255,255,255,.12)"
+      },
+      "borderRadius": {
+        "label": "圓角",
+        "helperText": "調整卡片、面板與按鈕的圓角大小。"
+      },
+      "boxShadow": {
+        "label": "投影",
+        "helperText": "用陰影塑造層級與立體感。",
+        "placeholder": "0 10px 30px rgba(0,0,0,.18)"
+      },
+      "backgroundColor": {
+        "label": "背景色",
+        "helperText": "直接調整背景综合色彩，快速推敲層級與強調。"
+      },
+      "opacity": {
+        "label": "透明度",
+        "helperText": "適合製作停用態、疊層與柔化效果。"
+      },
+      "overflow": {
+        "label": "裁切",
+        "helperText": "控制內容溢出時是顯示、隱藏還是允許捲動。"
+      },
+      "fontSize": {
+        "label": "字級",
+        "helperText": "調整標題、副標題與正文的文字尺寸。"
+      },
+      "lineHeight": {
+        "label": "行高",
+        "helperText": "調整文字行距，改善節奏與可讀性。",
+        "placeholder": "1.5 / 24px"
+      },
+      "fontWeight": {
+        "label": "字重",
+        "helperText": "改變文字的輕重感，用於強調或弱化。",
+        "placeholder": "400 / 600"
+      },
+      "fontFamily": {
+        "label": "字體",
+        "helperText": "切換字體家族，快速比較文案氣質。",
+        "placeholder": "Georgia, serif"
+      },
+      "color": {
+        "label": "文字顏色",
+        "helperText": "調整文字顏色以表達層級、品牌色與弱化資訊。"
+      },
+      "textAlign": {
+        "label": "對齊",
+        "helperText": "改變整塊文字的排版方向。"
+      },
+      "objectFit": {
+        "label": "填充方式",
+        "helperText": "控制圖片在容器內是裁切、完整顯示還是延展。"
+      },
+      "imageWidth": {
+        "helperText": "調整圖片或媒體框的最終寬度。",
+        "placeholder": "320px / auto"
+      },
+      "imageHeight": {
+        "helperText": "調整圖片或媒體框的最終高度。",
+        "placeholder": "240px / auto"
+      },
+      "imageBorderRadius": {
+        "helperText": "讓封面圖與頭像等圖片邊緣更柔和。"
+      }
+    }
+  },
+  "workbench": {
+    "toolbar": {
+      "select": "選取元素",
+      "selectOn": "開啟元素選取",
+      "selectOff": "關閉元素選取，恢復真實點擊",
+      "selectActive": "選取中",
+      "interactive": "可互動",
+      "syncing": "同步中",
+      "undo": "復原",
+      "redo": "重做",
+      "reset": "重設"
+    },
+    "empty": {
+      "interactiveTitle": "可互動模式",
+      "interactiveDesc": "目前可以自由操作頁面，點擊上方的「可互動」即可切回選取模式來選擇元素。"
+    },
+    "element": {
+      "containerName": "容器名稱",
+      "elementName": "元素名稱",
+      "copyTitle": "點擊複製 {{name}}"
+    },
+    "sections": {
+      "labels": "標籤意圖",
+      "labelsHint": "這裡直接寫給 AI 你想怎麼修改這個元素。標籤是高優先級意圖，不只是備註。",
+      "quick": "快捷操作",
+      "quickHint": "先用語義化動作和方向卡把物件推到接近目標，再到後面的原始參數區做精修。",
+      "precision": "精準控制",
+      "precisionHint": "快捷操作把物件推進到目標附近後，在這裡做逐項精修。",
+      "assist": "輔助資訊",
+      "assistHint": "上下文說明與預覽集中放在這裡，避免打斷主要編輯流程。",
+      "cssVariables": "CSS 變數"
+    },
+    "helper": {
+      "browseTitle": "真實互動",
+      "browseDesc": "目前已關閉元素拾取。你可以直接點擊並操作真實頁面，讓彈窗、選單與下拉面板自然展開。",
+      "contextTitle": "上下文微調",
+      "contextDesc": "把滑鼠移到任一參數卡片上，畫布會高亮對應的 Margin、Padding 或排版區域，幫助你像看建築藍圖一樣理解結構。",
+      "innerChild": "內部子元素",
+      "innerChildWithClass": "{{className}} 內部的子元素",
+      "paddingCentered": "目前節點是一個 Flex 置中容器。修改 {{field}} 會改變容器內盒尺寸，但子內容仍會維持置中。若你的目標是移動中間內容，請優先調整版面對齊，或繼續選取 {{childTargetName}} 去調整 margin / padding。",
+      "marginCentered": "目前節點透過 Flex 置中排版。外層 margin 主要影響它與兄弟節點之間的距離，不會像內部偏移那樣直接推動中間內容。若想微調中間文案區塊，請優先調整版面對齊，或選取 {{childTargetName}} 再調整 margin。",
+      "sizeCentered": "目前節點是一個 Flex 置中容器。調整寬高會改變容器包圍盒，但內部內容仍會依照主軸 {{justifyContent}}、交叉軸 {{alignItems}} 持續置中。若你希望內容靠上、靠左或貼邊，請優先修改版面對齊。",
+      "gapUnavailable": "目前節點不是 Flex 或 Grid 容器，Gap 即使寫入樣式也不會產生你期待的子元素間距效果。先把顯示方式切到 Flex / Grid，或選取真正承載子元素版面的父容器。"
+    },
+    "insight": {
+      "layoutTitle": "版面洞察",
+      "flexCentered": "目前選中的是一個 Flex 置中容器（主軸 {{justifyContent}}，交叉軸 {{alignItems}}）。這類節點在修改 padding / 寬高時，內容通常仍會維持置中；如果你的目標是移動中間內容的位置，請優先調整版面對齊，或繼續選取內部子元素。",
+      "grid": "目前節點是 Grid 容器。請優先關注 gap、padding 與寬高；如果某個子區塊位置不對，通常需要選取子元素本身，而不是只改外層容器。",
+      "parent": "目前節點是父容器。修改它的 padding / width / height 會影響內部結構，但不一定會直接改變子內容的相對位置；如果你想微調具體的文案區塊或圖片區塊，繼續點選內部子元素會更直接。"
+    },
+    "active": {
+      "labels": "這裡寫的是給 AI 的自然語言目標。先明確物件想達成什麼效果，再繼續做數值微調。",
+      "size": "先用寬高快捷卡把外輪廓推到接近目標，再到下方尺寸欄位做精細值修正。",
+      "padding": "內距快捷盤會優先出現，適合先把容器內部留白拉到位，再逐邊微調。",
+      "margin": "外距快捷盤適合先做模組間距的大方向調整，再到精準控制區修正單邊數值。",
+      "alignmentTitle": "對齊",
+      "layout": "這裡會帶你到版面小節，優先看主軸對齊與交叉軸這些真正決定排布的位置。",
+      "gapShortcut": "目前物件有多個可見子元素，Gap 欄位會作為統一的間距入口顯示在版面小節裡。",
+      "gap": "Gap 會顯示在版面小節裡；只有容器存在真實子項並啟用版面模式時，它才會產生你期待的效果。",
+      "position": "定位相關控制放在精準控制區，適合做 top / left / z-index 這類高精度修正。",
+      "border": "邊框、圓角與投影會一起影響元件氣質，適合在同一組欄位裡聯動觀察。",
+      "background": "背景色與透明度都在這裡，適合快速調整層級感與視覺強弱。",
+      "shadow": "投影與圓角通常要聯動觀察，這裡更適合做穩定的視覺精修。",
+      "typography": "文字控制集中在這裡，適合連續調整字級、行高、字重與對齊。",
+      "overflow": "需要控制內容裁切或捲動時，優先看這裡的 overflow 相關設定。",
+      "image": "圖片模式會把填充方式、尺寸與圓角放在同一區域，方便一起比對。"
+    },
+    "recommended": {
+      "enableFlex": {
+        "label": "啟用 Flex",
+        "description": "先把容器切到 Flex，再繼續做對齊與間距微調。"
+      },
+      "alignCenter": {
+        "label": "讓內容置中",
+        "description": "把主軸與交叉軸都切回置中，快速恢復標準置中狀態。"
+      },
+      "spaceBetween": {
+        "label": "兩端排布",
+        "description": "把主軸分布切到兩端，適合標題列、按鈕列與工具列。"
+      },
+      "centerText": {
+        "label": "文字置中",
+        "description": "把文字對齊方式切到置中，適合標題與短文案區塊。"
+      },
+      "imageCover": {
+        "label": "填滿容器",
+        "description": "將 object-fit 切到 cover，讓圖片優先鋪滿容器。"
+      },
+      "imageContain": {
+        "label": "完整顯示",
+        "description": "將 object-fit 切到 contain，讓圖片完整地留在容器裡。"
+      },
+      "increasePadding": {
+        "label": "增加內距",
+        "description": "四邊同時增加 {{quickStep}}px 留白，快速拉開內容呼吸感。"
+      },
+      "increaseGap": {
+        "label": "增加間距",
+        "description": "把容器內子元素之間的 gap 增加 {{quickStep}}px。"
+      }
+    },
+    "quick": {
+      "step": "步进",
+      "decrease": "減少",
+      "increase": "增加",
+      "decreaseWithStep": "減少 {{step}}px",
+      "increaseWithStep": "增加 {{step}}px",
+      "increased": "增加",
+      "decreased": "減少",
+      "layout": {
+        "title": "版面快捷卡",
+        "hint": "先切換區塊 / Flex / Grid，再用方向盤把內容推到上、下、左、右或置中。",
+        "modeTitle": "版面模式",
+        "modeDescription": "顯示方式已切到 {{display}}。繼續用方向盤可以把內容快速推到上、下、左、右或中央。",
+        "positionTitle": "內容位置",
+        "positionDescription": "已把容器內容切到 {{slot}}。"
+      },
+      "spacing": {
+        "title": "邊距快捷調整",
+        "hint": "先選內距或外距，再點方向。中央表示四邊一起調整。",
+        "currentPadding": "目前快捷調整：內距",
+        "currentMargin": "目前快捷調整：外距",
+        "paddingActionTitle": "內距快捷操作",
+        "marginActionTitle": "外距快捷操作",
+        "adjusted": "{{side}}已{{direction}} {{value}}px。你也可以繼續在下方參數區做更精細的單值微調。"
+      },
+      "cards": {
+        "width": "卡片、面板與圖像框最常先調整寬度。",
+        "height": "適合快速拉高標題區、卡片或圖片區。",
+        "gap": "直接增減容器裡子元素之間的空隙。",
+        "radius": "讓卡片、面板與圖片邊緣更柔和。",
+        "objectFit": "在鋪滿與完整顯示之間快速切換圖片裁切方式。",
+        "opacity": "適合做弱化態、疊層與柔和感。",
+        "fontSize": "標題與正文最常用的快速層級控制。"
+      }
+    },
+    "direction": {
+      "topLeft": "左上",
+      "top": "上",
+      "topRight": "右上",
+      "left": "左",
+      "center": "中",
+      "right": "右",
+      "bottomLeft": "左下",
+      "bottom": "下",
+      "bottomRight": "右下"
+    },
+    "slot": {
+      "topLeft": "左上角",
+      "top": "上方",
+      "topRight": "右上角",
+      "left": "左側",
+      "center": "中心",
+      "right": "右側",
+      "bottomLeft": "左下角",
+      "bottom": "下方",
+      "bottomRight": "右下角"
+    },
+    "editor": {
+      "textContent": "文案內容",
+      "textPlaceholder": "輸入新的文案",
+      "imageUrl": "圖片位址",
+      "altText": "替代文字",
+      "altPlaceholder": "image description"
+    },
+    "labels": {
+      "description": "這裡寫給 AI 的是自然語言目標，不是精確數值。用它描述這個物件想達到的效果、結構意圖與實作限制。",
+      "placeholder": "輸入修改意見…",
+      "placeholderConfirm": "輸入修改意見後按 Enter 確認…",
+      "delete": "刪除標籤"
+    },
+    "snapshot": {
+      "layout": "版面快照",
+      "visual": "視覺快照",
+      "typography": "排版快照",
+      "position": "定位快照"
+    },
+    "export": {
+      "sectionTitle": "匯出提示詞",
+      "sectionHint": "這裡會彙整目前頁面中所有結構化微調與標籤意圖，適合直接複製給 Codex 等 AI 程式工具。",
+      "kicker": "頁面級提示詞",
+      "title": "面向 AI 程式工具的最終微調說明",
+      "summary": "已收集 {{elementCount}} 個元素 / {{modifiedCount}} 組結構化微調 / {{tagCount}} 組標籤",
+      "copyTitle": "複製目前頁面工作階段中的全部微調摘要與標籤",
+      "copyButton": "匯出修改提示詞",
+      "copied": "已複製頁面級修改提示詞",
+      "empty": "目前還沒有收集到頁面級修改。繼續在畫布上調整元素後，DOMPrompter 會自動整理整頁提示詞。"
+    },
+    "field": {
+      "scrubTitle": "{{label}}，左右拖曳可改變數值；方向鍵微調，Shift 加速"
+    }
   }
 }

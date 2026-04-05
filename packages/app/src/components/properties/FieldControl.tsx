@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FocusEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { PropertyFieldConfig } from '../../types'
 
 function parseNumeric(value: string): number | null {
@@ -77,6 +78,7 @@ interface FieldControlProps {
 }
 
 export function FieldControl({ field, value, compact = false, onCommit, onFieldActiveChange }: FieldControlProps) {
+  const { t } = useTranslation()
   const [draftValue, setDraftValue] = useState(value)
   const [isFocused, setIsFocused] = useState(false)
   const [isScrubbing, setIsScrubbing] = useState(false)
@@ -268,7 +270,7 @@ export function FieldControl({ field, value, compact = false, onCommit, onFieldA
         type="button"
         className={`control-card-label scrub-handle ${isScrubbing ? 'active' : ''}`}
         onMouseDown={handleScrubStart}
-        title={`${field.label}，左右拖拽改数值；方向键微调，Shift 加速`}
+        title={t('workbench.field.scrubTitle', { label: field.label })}
       >
         {field.label}
       </button>
