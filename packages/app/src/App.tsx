@@ -34,6 +34,11 @@ const DEFAULT_URL = 'http://localhost:5173'
 const RECENT_HTML_FILES_STORAGE_KEY = 'domprompter:recent-html-files'
 const MAX_RECENT_HTML_FILES = 4
 
+interface RecentHtmlEntry {
+  filePath: string
+  bookmark: string | null
+}
+
 function getDefaultTheme() {
   if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
     return 'dark' as const
@@ -42,10 +47,8 @@ function getDefaultTheme() {
   return 'light' as const
 }
 
-function loadRecentHtmlFiles() {
-  if (typeof window === 'undefined') {
-    return [] as string[]
-  }
+function loadRecentHtmlFiles(): RecentHtmlEntry[] {
+  if (typeof window === 'undefined') return []
 
   try {
     const raw = window.localStorage.getItem(RECENT_HTML_FILES_STORAGE_KEY)
@@ -55,7 +58,17 @@ function loadRecentHtmlFiles() {
     if (!Array.isArray(parsed)) return []
 
     return parsed
-      .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+      .map((item): RecentHtmlEntry | null => {
+        // Migrate legacy string[] format
+        if (typeof item === 'string' && item.trim().length > 0) {
+          return { filePath: item, bookmark: null }
+        }
+        if (item && typeof item === 'object' && typeof item.filePath === 'string' && item.filePath.trim().length > 0) {
+          return { filePath: item.filePath, bookmark: item.bookmark || null }
+        }
+        return null
+      })
+      .filter((item): item is RecentHtmlEntry => item !== null)
       .slice(0, MAX_RECENT_HTML_FILES)
   } catch {
     return []
@@ -68,7 +81,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 }
 const DEFAULT_LICENSE_STATUS: LicenseStatus = {
   isPro: false,
-  provider: 'dev-stub',
+  provider: 'unsupported',
+  offer: null,
   lastValidatedAt: null,
 }
 
@@ -300,17 +314,16 @@ export default function App() {
   const emptyExportPromptPreview = t('workbench.export.empty')
   const workbenchRef = useRef<HTMLElement | null>(null)
   const addressBarRef = useRef<HTMLInputElement | null>(null)
+  const resizingRef = useRef(false)
+  const [workbenchWidth, setWorkbenchWidth] = useState(DEFAULT_WORKBENCH_WIDTH)
   const shortcutActionsRef = useRef({
     openSettings: () => {},
     openHtmlFile: () => {},
     reloadPage: () => {},
     forceReload: () => {},
     toggleToolbar: () => {},
-    copyPagePrompt: () => {},
-    copyElementCSS: () => {},
     focusAddressBar: () => {},
     newWindow: () => {},
-    escape: () => {},
     selectParent: () => {},
     selectChild: () => {},
     addTag: () => {},
@@ -347,7 +360,7 @@ export default function App() {
   const [paywallOpen, setPaywallOpen] = useState(false)
   const [, setLicenseBusy] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [recentHtmlFiles, setRecentHtmlFiles] = useState<string[]>(() => loadRecentHtmlFiles())
+  const [recentHtmlFiles, setRecentHtmlFiles] = useState<RecentHtmlEntry[]>(() => loadRecentHtmlFiles())
 
   useEffect(() => {
     activeToolRef.current = activeTool
@@ -430,6 +443,33 @@ export default function App() {
       window.removeEventListener('resize', syncPanelWidth)
     }
   }, [connected, isWorkbenchVisible])
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    resizingRef.current = true
+    const startX = e.clientX
+    const startWidth = workbenchWidth
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!resizingRef.current) return
+      const delta = startX - ev.clientX
+      const next = Math.max(240, Math.min(600, startWidth + delta))
+      setWorkbenchWidth(next)
+    }
+
+    const onMouseUp = () => {
+      resizingRef.current = false
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [workbenchWidth])
 
   const flash = useCallback((message: string) => {
     setToast(message)
@@ -748,7 +788,7 @@ export default function App() {
   }, [activePersistedStyleHistoryKey])
 
   // --- Global history ---
-  const handleGlobalHistoryCommit = useCallback((info: { backendNodeId: number; kind: 'commit' | 'external' | 'reset' }) => {
+  const handleGlobalHistoryCommit = useCallback((info: { backendNodeId: number; kind: 'commit' | 'nudge' | 'reset' }) => {
     const contextKey = previewPageContext.contextKey
     setGlobalHistory((prev) => {
       const ops = prev.operations.slice(0, prev.cursor)
@@ -1148,20 +1188,49 @@ export default function App() {
     void connectToTarget(targetUrl, t('toast.connected'))
   }, [connectToTarget, t])
 
-  const rememberRecentHtmlFile = useCallback((filePath: string) => {
+  const rememberRecentHtmlFile = useCallback((filePath: string, bookmark: string | null) => {
     setRecentHtmlFiles((current) => (
-      [filePath, ...current.filter((item) => item !== filePath)].slice(0, MAX_RECENT_HTML_FILES)
+      [{ filePath, bookmark }, ...current.filter((item) => item.filePath !== filePath)].slice(0, MAX_RECENT_HTML_FILES)
     ))
   }, [])
 
-  const handleLoadHtmlFile = useCallback(async (providedFilePath?: string) => {
+  const handleLoadHtmlFile = useCallback(async (entry?: RecentHtmlEntry) => {
     try {
-      const filePath = providedFilePath || await window.electronAPI.selectHtmlFile()
-      if (!filePath) return
+      let filePath: string
+      let bookmark: string | null = null
+
+      if (entry) {
+        // Opening from history — try restoring sandbox access via bookmark
+        filePath = entry.filePath
+        bookmark = entry.bookmark
+        if (bookmark) {
+          await window.electronAPI.startFileAccess(bookmark)
+        }
+
+        // Try loading directly; if sandbox blocks the file, fall back to file picker
+        const loaded = await connectToTarget(`file://${filePath}`, t('toast.htmlOpened'))
+        if (loaded) {
+          rememberRecentHtmlFile(filePath, bookmark)
+          return
+        }
+
+        // File not accessible — open picker in the same directory so user can re-select
+        const parentDir = filePath.replace(/[\\/][^\\/]+$/, '')
+        const result = await window.electronAPI.selectHtmlFile(parentDir)
+        if (!result) return
+        filePath = result.filePath
+        bookmark = result.bookmark
+      } else {
+        // Opening via file picker — dialog grants access automatically
+        const result = await window.electronAPI.selectHtmlFile()
+        if (!result) return
+        filePath = result.filePath
+        bookmark = result.bookmark
+      }
 
       const loaded = await connectToTarget(`file://${filePath}`, t('toast.htmlOpened'))
       if (loaded) {
-        rememberRecentHtmlFile(filePath)
+        rememberRecentHtmlFile(filePath, bookmark)
       }
     } catch (error) {
       console.error(error)
@@ -1259,12 +1328,6 @@ export default function App() {
     await copyText(livePrompt, t('toast.promptCopied'))
   }, [canExportPrompt, connected, copyText, element, exportSummaryMeta, flash, licenseStatus, pageExportElements, pageTitle, pageUrl, t, url])
 
-  const handleCopyElementCSS = useCallback(async () => {
-    if (!element) return
-    const css = await window.electronAPI.generateCSS(element)
-    await copyText(css, t('toast.elementCssCopied'))
-  }, [copyText, element, t])
-
   const handleThemeChange = useCallback((theme: AppSettings['theme']) => {
     setSettings((current) => ({ ...current, theme }))
     void window.electronAPI.settings.set('theme', theme)
@@ -1282,34 +1345,32 @@ export default function App() {
     try {
       const result = await LicenseManager.purchase()
       if (!result.success) {
-        flash(result.error || 'Purchase failed.')
-        return
+        flash(result.error || t('paywall.purchaseFailed'))
+        throw new Error('purchase-failed')
       }
 
       await refreshLicenseStatus()
-      setPaywallOpen(false)
-      flash('Pro unlocked')
+      // Don't close dialog — PaywallDialog will show success screen
     } finally {
       setLicenseBusy(false)
     }
-  }, [flash, refreshLicenseStatus])
+  }, [flash, refreshLicenseStatus, t])
 
   const handleRestore = useCallback(async () => {
     setLicenseBusy(true)
     try {
       const result = await LicenseManager.restore()
       if (!result.success) {
-        flash(result.error || 'Restore failed.')
-        return
+        flash(result.error || t('paywall.restoreFailed'))
+        throw new Error('restore-failed')
       }
 
       await refreshLicenseStatus()
-      setPaywallOpen(false)
-      flash('Purchase restored')
+      // Don't close dialog — PaywallDialog will show success screen
     } finally {
       setLicenseBusy(false)
     }
-  }, [flash, refreshLicenseStatus])
+  }, [flash, refreshLicenseStatus, t])
 
   const handleOpenSettings = useCallback(() => {
     setSettingsOpen((prev) => {
@@ -1363,22 +1424,11 @@ export default function App() {
     reloadPage: handleRefresh,
     forceReload: handleRefresh,
     toggleToolbar: () => setIsWorkbenchVisible((visible) => !visible),
-    copyPagePrompt: () => {
-      void handleCopyExportPrompt()
-    },
-    copyElementCSS: () => {
-      void handleCopyElementCSS()
-    },
     focusAddressBar: () => {
       addressBarRef.current?.focus()
       addressBarRef.current?.select()
     },
     newWindow: () => {},
-    escape: () => {
-      setPaywallOpen(false)
-      setSettingsOpen(false)
-      setActiveEditProperty(null)
-    },
     selectParent: () => { void handleSelectParent() },
     selectChild: () => { void handleSelectChild() },
     addTag: () => { handleContextMenuAddTag() },
@@ -1390,11 +1440,8 @@ export default function App() {
     window.electronAPI.shortcuts.onReloadPage(() => shortcutActionsRef.current.reloadPage())
     window.electronAPI.shortcuts.onForceReload(() => shortcutActionsRef.current.forceReload())
     window.electronAPI.shortcuts.onToggleToolbar(() => shortcutActionsRef.current.toggleToolbar())
-    window.electronAPI.shortcuts.onCopyPagePrompt(() => shortcutActionsRef.current.copyPagePrompt())
-    window.electronAPI.shortcuts.onCopyElementCSS(() => shortcutActionsRef.current.copyElementCSS())
     window.electronAPI.shortcuts.onFocusAddressBar(() => shortcutActionsRef.current.focusAddressBar())
     window.electronAPI.shortcuts.onNewWindow(() => shortcutActionsRef.current.newWindow())
-    window.electronAPI.shortcuts.onEscape(() => shortcutActionsRef.current.escape())
   }, [])
 
   const currentTargetLabel = pageTitle || `${APP_NAME} Canvas`
@@ -1516,7 +1563,7 @@ export default function App() {
               defaultUrl={DEFAULT_URL}
               onLoadUrl={handleLoadUrl}
               recentHtmlFiles={recentHtmlFiles}
-              onLoadHtmlFile={(filePath) => void handleLoadHtmlFile(filePath)}
+              onLoadHtmlFile={(entry) => void handleLoadHtmlFile(entry)}
             />
           ) : (
             <div className="canvas-browserview">
@@ -1530,7 +1577,8 @@ export default function App() {
         </div>
 
         {showWorkbench && (
-          <aside ref={workbenchRef} className="right-panel">
+          <aside ref={workbenchRef} className="right-panel" style={{ width: workbenchWidth }}>
+            <div className="panel-resize-handle" onMouseDown={handleResizeStart} />
             {!element ? (
               <div className="workbench-shell">
                 <div className="workbench-scroll-content">
@@ -1550,13 +1598,16 @@ export default function App() {
                       <div className="panel-toolbar-trailing">
                         <div className="history-cluster">
                           <button type="button" className="history-action" onClick={() => void handleGlobalUndo()} disabled={!globalCanUndo}>
-                            <span>↶</span><span>{t('workbench.toolbar.undo')}</span>
+                            <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M3 13a9 9 0 0 1 15.36-6.36" /></svg>
+                            <span>{t('workbench.toolbar.undo')}</span>
                           </button>
                           <button type="button" className="history-action" onClick={() => void handleGlobalRedo()} disabled={!globalCanRedo}>
-                            <span>↷</span><span>{t('workbench.toolbar.redo')}</span>
+                            <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M21 13a9 9 0 0 0-15.36-6.36" /></svg>
+                            <span>{t('workbench.toolbar.redo')}</span>
                           </button>
                           <button type="button" className="history-action" onClick={() => void handleGlobalReset()} disabled={!globalCanReset}>
-                            <span>⟲</span><span>{t('workbench.toolbar.reset')}</span>
+                            <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9" /><polyline points="3 3 3 7 7 7" /></svg>
+                            <span>{t('workbench.toolbar.reset')}</span>
                           </button>
                         </div>
                       </div>
@@ -1608,6 +1659,7 @@ export default function App() {
       <div id="inspector-top-layer" className="inspector-top-layer" />
       <PaywallDialog
         open={paywallOpen}
+        priceLabel={licenseStatus.offer?.formattedPrice || null}
         onClose={() => setPaywallOpen(false)}
         onPurchase={handlePurchase}
         onRestore={handleRestore}

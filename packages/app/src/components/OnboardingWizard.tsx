@@ -1,11 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+interface RecentHtmlEntry {
+  filePath: string
+  bookmark: string | null
+}
+
 interface OnboardingWizardProps {
   defaultUrl: string
   onLoadUrl: (url: string) => void
-  recentHtmlFiles: string[]
-  onLoadHtmlFile: (filePath?: string) => void
+  recentHtmlFiles: RecentHtmlEntry[]
+  onLoadHtmlFile: (entry?: RecentHtmlEntry) => void
 }
 
 type OnboardingPath = 'server' | 'html' | null
@@ -66,15 +71,15 @@ export function OnboardingWizard({
     [aiSetupPrompt],
   )
   const recentHtmlEntries = useMemo(
-    () => recentHtmlFiles.slice(0, 4).map((filePath) => {
-      const normalized = filePath.replace(/\\/g, '/')
+    () => recentHtmlFiles.slice(0, 4).map((entry) => {
+      const normalized = entry.filePath.replace(/\\/g, '/')
       const lastSlashIndex = normalized.lastIndexOf('/')
       const fileName = lastSlashIndex >= 0 ? normalized.slice(lastSlashIndex + 1) : normalized
       const parentPath = lastSlashIndex > 0 ? normalized.slice(0, lastSlashIndex) : normalized
 
       return {
         fileName,
-        filePath,
+        entry,
         parentPath: parentPath || normalized,
       }
     }),
@@ -247,15 +252,15 @@ export function OnboardingWizard({
 
               {recentHtmlEntries.length > 0 ? (
                 <div className="wizard-html-history-list" role="list">
-                  {recentHtmlEntries.map((entry) => (
+                  {recentHtmlEntries.map((item) => (
                     <button
-                      key={entry.filePath}
+                      key={item.entry.filePath}
                       className="wizard-html-history-item"
-                      onClick={() => void onLoadHtmlFile(entry.filePath)}
+                      onClick={() => void onLoadHtmlFile(item.entry)}
                     >
                       <span className="wizard-html-history-copy">
-                        <span className="wizard-html-history-name">{entry.fileName}</span>
-                        <span className="wizard-html-history-path mono">{entry.parentPath}</span>
+                        <span className="wizard-html-history-name">{item.fileName}</span>
+                        <span className="wizard-html-history-path mono">{item.parentPath}</span>
                       </span>
                       <span className="wizard-html-history-action">{t('onboarding.htmlRecentAction')}</span>
                     </button>

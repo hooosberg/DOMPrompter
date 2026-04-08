@@ -1,6 +1,6 @@
 # DOMPrompter — Mac App Store 适配实施指南
 
-> 更新日期：2026-04-03
+> 更新日期：2026-04-05
 > 基于 `mas` 分支，供 Codex 直接执行
 > 参考框架：`智简witnote笔记本`（i18n / Settings / Paywall / Menu）
 > 参考 SOP：TrekReel MAS 封装与上架标准流程
@@ -1045,20 +1045,28 @@ const handleCopyExportPrompt = useCallback(async () => {
 
 ### 13.3 electron-builder 配置
 
-在 `packages/app/package.json` 中添加完整 `build` 配置：
+当前仓库中的 `packages/app/package.json` 已基本收口为下面这一版思路：
 
 ```json
 {
   "name": "domprompter",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "productName": "DOMPrompter",
-  "description": "Visual DOM Inspector & AI Prompt Generator",
+  "author": "maohuhu",
+  "scripts": {
+    "build": "tsc && vite build",
+    "build:mas": "tsc && vite build && electron-builder --mac mas"
+  },
   "build": {
     "appId": "com.domprompter.app",
     "productName": "DOMPrompter",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "build/icon.icns",
       "target": ["mas"],
       "minimumSystemVersion": "12.0"
     },
@@ -1069,62 +1077,59 @@ const handleCopyExportPrompt = useCallback(async () => {
       "entitlementsInherit": "build/entitlements.mas.inherit.plist",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "provisioningProfile": "build/embedded.provisionprofile",
-      "category": "public.app-category.developer-tools",
       "minimumSystemVersion": "12.0"
-    },
-    "files": [
-      "dist/**/*",
-      "dist-electron/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      { "from": "build/en.lproj", "to": "en.lproj" },
-      { "from": "build/zh-Hans.lproj", "to": "zh-Hans.lproj" },
-      { "from": "build/zh-Hant.lproj", "to": "zh-Hant.lproj" },
-      { "from": "build/ja.lproj", "to": "ja.lproj" },
-      { "from": "build/ko.lproj", "to": "ko.lproj" },
-      { "from": "build/fr.lproj", "to": "fr.lproj" },
-      { "from": "build/de.lproj", "to": "de.lproj" },
-      { "from": "build/es.lproj", "to": "es.lproj" },
-      { "from": "build/pt.lproj", "to": "pt.lproj" },
-      { "from": "build/it.lproj", "to": "it.lproj" },
-      { "from": "build/ru.lproj", "to": "ru.lproj" },
-      { "from": "build/ar.lproj", "to": "ar.lproj" }
-    ],
-    "masReview": {
-      "productId": "com.domprompter.app.pro.lifetime",
-      "supportUrl": "https://hooosberg.github.io/DOMPrompter/support.html",
-      "privacyUrl": "https://hooosberg.github.io/DOMPrompter/privacy.html"
     }
   },
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "build:mas": "tsc && vite build && electron-builder --mac mas"
+  "masReview": {
+    "productId": "com.domprompter.app.pro.lifetime",
+    "supportUrl": "https://hooosberg.github.io/DOMPrompter/pages/support.html",
+    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/pages/privacy.html"
   }
 }
 ```
 
+这份配置已经足够通过当前 `npm run mas:check`，但要进入真实上架阶段，还必须补齐下面 4 个发行材料：
+
+1. `packages/app/build/icon.icns`
+2. `packages/app/build/embedded.provisionprofile`
+3. `mac.icon` 与 `mas.provisioningProfile` 的 builder 配置
+4. 上传前递增 `version` 与 build string（`CFBundleVersion`）
+
 ### 13.4 签名证书选择（关键陷阱）
 
-> **electron-builder v25/v26 存在 Bug：`build.mas.identity` 可能被 `build.mac` 自动检测覆盖。**
->
-> 构建时必须通过环境变量强制指定：
-> ```bash
-> CSC_NAME="Apple Distribution: hu Huambo (STWPBZG6S7)" \
-> CSC_IDENTITY_AUTO_DISCOVERY=false \
-> npx electron-builder --mac mas
-> ```
+按 Apple 官方证书分类，Mac App Store 提交流程至少会涉及两类签名材料：
+
+- `Mac App Distribution`：用于签名 `.app`
+- `Mac Installer Distribution`：用于签名上传到 App Store Connect 的 `.pkg`
+
+如果 electron-builder 在你的机器上自动探测错了 identity，优先以最终验证结果为准：
+
+```bash
+codesign --verify --deep --strict --verbose=2 packages/app/dist/mas-arm64/DOMPrompter.app
+pkgutil --check-signature path/to/DOMPrompter.pkg
+```
+
+如果自动探测不稳定，再通过环境变量显式指定证书名。
 
 ### 13.5 PKG 创建
 
 electron-builder 可能不自动创建 PKG，需手动用 `productbuild`：
 
 ```bash
-INSTALLER_CERT=$(security find-identity -v | grep "3rd Party Mac Developer Installer" | head -1 | sed 's/.*"\(.*\)".*/\1/')
-productbuild --component release/mas-arm64/DOMPrompter.app /Applications --sign "$INSTALLER_CERT" release/mas-arm64/DOMPrompter-1.0.0-arm64.pkg
+INSTALLER_CERT=$(security find-identity -v | grep "Mac Installer Distribution" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+productbuild --component packages/app/dist/mas-arm64/DOMPrompter.app /Applications --sign "$INSTALLER_CERT" packages/app/dist/DOMPrompter-1.0.0-arm64.pkg
 ```
+
+### 13.6 当前仓库真实状态（2026-04-05）
+
+- `npm run mas:check`：已通过
+- builtin-only 合同测试：已通过
+- 真正阻塞 `npm run build:mas` 进入可上传状态的，只剩发行材料
+- `packages/app/build/entitlements.mas.plist` 与 `packages/app/build/entitlements.mas.inherit.plist` 已存在
+- 仓库里还没有 `packages/app/build/icon.icns`
+- 仓库里还没有 `packages/app/build/embedded.provisionprofile`
+- 当前 `packages/app/package.json` 也还没把 `mac.icon` 和 `mas.provisioningProfile` 接进去
+- 所以现阶段最先要做的不是继续改功能，而是把证书、profile、图标、版本号这几项补齐
 
 ---
 
@@ -1257,43 +1262,150 @@ productbuild --component release/mas-arm64/DOMPrompter.app /Applications --sign 
 | 恢复购买 | 设置 > 许可证 > 恢复 | 恢复成功 |
 | 无 spawn | `grep "spawn(" dist-electron/` | 零匹配 |
 | 无 WebSocket CDP | `grep "CDPClient" dist-electron/` | 零匹配 |
-| 无 iOS key | `grep "in-app-purchase" build/entitlements.mas.plist` | 零匹配 |
+| 无 iOS key | `grep "in-app-purchase" packages/app/build/entitlements.mas.plist` | 零匹配 |
 | Entitlements | `codesign -d --entitlements :-` | 正确权限集 |
 | PKG 签名 | `pkgutil --check-signature` | 签名有效 |
 | 审核词扫描 | `grep -rn "debug\|mock\|test.*toggle\|beta" src/` | 无敏感词 |
 
 ---
 
-## 十六、提交审核前检查清单
+## 十六、最后上架流程（按顺序执行）
 
-参考 TrekReel SOP Section 7：
+> 最后更新：2026-04-05。已完成到 Step 9，构建 `0.1.0 (3)` 已上传成功。
 
-### 打包前
-- [ ] Provisioning Profile 已更新，`security cms -D -i` 确认包含 IAP 权限
-- [ ] `grep "in-app-purchase" build/entitlements.mas.plist` 返回空
-- [ ] `buildVersion` 已递增
-- [ ] Product ID 代码与 App Store Connect 后台完全一致
+下面这条线是适合当前仓库状态的最终 SOP。不要跳步，按顺序做最稳。
 
-### 打包后
-- [ ] `codesign --verify --deep --strict --verbose=2` 显示 `valid on disk`
-- [ ] `codesign -d --entitlements :-` 确认无 iOS-only key
-- [ ] 构建日志签名行显示 `platform=mas type=distribution`
-- [ ] `pkgutil --check-signature` PKG 签名有效
+### Step 0：先确认后台资格
 
-### 上传后
-- [ ] TestFlight 显示正确版本号
-- [ ] 先删旧 App → TestFlight 安装新版
-- [ ] 无 malware 弹窗
-- [ ] 内购测试通过（购买 + 恢复）
+- [x] Apple Developer Program 会员状态正常
+- [x] App Store Connect 的 Paid Apps Agreement 已签
+- [x] 税务和收款信息已填完
+- [x] 你当前账号至少有 Account Holder / Admin / App Manager 中的可操作权限
 
-### 审核前
-- [ ] UI 无 test/mock/beta/debug 字样
-- [ ] Support URL 可访问
-- [ ] Privacy URL 可访问
-- [ ] 有 "恢复购买" 按钮
-- [ ] 购买按钮有 loading 状态和错误提示
-- [ ] 年龄分级问卷已填写
-- [ ] App Store 描述/截图无竞品词汇
+### Step 1：确认 Developer 后台标识
+
+- [x] 在 Certificates, Identifiers & Profiles 中确认显式 App ID：`com.domprompter.app`
+- [x] 确认 MAS 内购对应的 Product ID 仍为：`com.domprompter.app.pro.lifetime`
+- [x] 如果你改过 capabilities，记住所有旧 provisioning profiles 会失效，要重新生成
+
+### Step 2：准备签名证书
+
+- [x] 本机钥匙串中安装 `3rd Party Mac Developer Application: hu Huambo (STWPBZG6S7)` 证书
+- [x] 本机钥匙串中安装 `3rd Party Mac Developer Installer: hu Huambo (STWPBZG6S7)` 证书
+- [x] Keychain Access 中确认证书状态有效
+
+### Step 3：生成 MAS provisioning profile
+
+- [x] 在 Profiles 中新建 `Mac App Store Connect` 类型 profile（名称：`DOMPrompter MAS Distribution`）
+- [x] 绑定 App ID：`com.domprompter.app`，Team ID：`STWPBZG6S7`
+- [x] 选择上一步的 distribution certificate
+- [x] 下载 profile，放到 `packages/app/build/embedded.provisionprofile`
+- [x] 有效期至 2027-04-05
+
+验证命令：
+
+```bash
+security cms -D -i packages/app/build/embedded.provisionprofile | plutil -p -
+```
+
+### Step 4：补齐仓库里的发行材料
+
+- [x] 生成 `packages/app/public/icon.png`（electron-builder 自动转 icns）
+- [x] 配置 `build.mac.icon: “public/icon.png”`
+- [x] 配置 `build.mas.provisioningProfile: “build/embedded.provisionprofile”`
+- [x] 在 `entitlements.mas.plist` 中添加 `com.apple.application-identifier` 和 `com.apple.developer.team-identifier`
+- [x] 分离版本号与构建号：`version: “0.1.0”` + `build.buildVersion: “3”`
+
+### Step 5：本地重新构建并验签
+
+- [x] `npm run mas:check` — PASS
+- [x] `npm run build:mas` — 通过
+
+构建验证清单：
+
+```bash
+# 1. 验证 provisioning profile 已嵌入
+ls packages/app/dist/mas-arm64/DOMPrompter.app/Contents/embedded.provisionprofile
+
+# 2. 验证签名完整性
+codesign --verify --deep --strict --verbose=2 packages/app/dist/mas-arm64/DOMPrompter.app
+
+# 3. 验证 application-identifier 已写入签名（TestFlight 必需）
+codesign -d --entitlements - packages/app/dist/mas-arm64/DOMPrompter.app
+# 应看到：com.apple.application-identifier = STWPBZG6S7.com.domprompter.app
+
+# 4. 验证 pkg 签名
+pkgutil --check-signature packages/app/dist/mas-arm64/DOMPrompter-0.1.0-arm64.pkg
+```
+
+**踩坑记录（2026-04-05）：**
+
+| 错误 | 原因 | 修复 |
+|------|------|------|
+| “missing a provisioning profile” | `identity: null` 导致 electron-builder 跳过 profile 嵌入 | `repair-mas-build.mjs` 添加 `embedProvisioningProfile()` |
+| “missing an application identifier” | entitlements.mas.plist 未声明 application-identifier | 添加 `com.apple.application-identifier` 和 `com.apple.developer.team-identifier` |
+| “bundle version must be higher” | version 和 buildVersion 未分离，重复上传同版本号 | 新增 `build.buildVersion` 字段独立管理构建号 |
+
+### Step 6：在 App Store Connect 创建 app record
+
+- [x] Apps → `+` → New App
+- [x] 平台选 `macOS`
+- [x] App Name 填 `DOMPrompter`
+- [x] Bundle ID 选 `com.domprompter.app`
+
+### Step 7：补齐商店元数据
+
+- [ ] App Information 中填分类、年龄分级、版权信息
+- [ ] App Privacy 中填写数据收集问卷，并发布 privacy responses
+- [ ] 填好 Privacy Policy URL：`https://hooosberg.github.io/DOMPrompter/pages/privacy.html`
+- [ ] 处理 App Encryption Documentation 问卷
+- [ ] 准备 Mac 截图，尺寸使用 16:10，官方当前接受：
+  `1280x800` / `1440x900` / `2560x1600` / `2880x1800`
+- [ ] 上传描述、副标题、关键词、支持链接、营销文案
+
+### Step 8：创建并配置内购
+
+- [ ] 在 App Store Connect 创建 non-consumable IAP
+- [ ] Product ID 必须和代码一致：`com.domprompter.app.pro.lifetime`
+- [ ] 补本地化标题、描述、价格档位（代码 fallback 为 $19.99）、审核截图
+- [ ] 首次提交 IAP 时，把它和新的 app version 一起送审
+
+### Step 9：上传 build
+
+- [x] 用 Transporter 上传 `DOMPrompter-0.1.0-arm64.pkg`
+- [x] Apple 处理完成，build `0.1.0 (3)` 出现在 App Store Connect
+- [x] 如需重新上传，递增 `build.buildVersion` 后重新构建
+
+### Step 10：选 build 并提交审核
+
+- [ ] 在对应 macOS version 页面选择 build `0.1.0 (3)`
+- [ ] 点 `Add for Review`
+- [ ] 把首个 IAP 一并加入这次 submission
+- [ ] 点 `Submit for Review`
+
+### Step 11：给审核员准备说明
+
+建议在 Review Notes 里主动解释这几点：
+
+- [ ] App 是 Web 开发者工具，需要加载任意用户指定 URL（包括 `http://localhost:*` 本地开发服务器）
+- [ ] App 不会启动外部进程，不会扫描本地端口，不会连接外部浏览器 CDP
+- [ ] 付费功能只有”页面级导出提示词”，购买后解锁，且支持恢复购买
+- [ ] 如果审核需要体验付费墙，说明从哪个入口触发（Settings → License）
+
+### Step 12：上传后的回归检查
+
+- [ ] 处理完成后在 App Store Connect 里确认版本号、build 号正确
+- [ ] 用沙盒账号验证购买与恢复购买
+- [ ] 检查 UI 中没有 `test` / `mock` / `beta` / `debug` 文案
+- [ ] Support URL 和 Privacy URL 可访问
+- [ ] 如果被打回，优先把 rejection 文本和最新 build log 一起归档
+
+### 当前最优先的事
+
+1. 在 App Store Connect 配置内购产品 `com.domprompter.app.pro.lifetime`
+2. 补齐商店元数据（截图、描述、隐私问卷）
+3. TestFlight 内测验证 IAP 流程
+4. 提交审核
 
 ---
 
@@ -1301,27 +1413,37 @@ productbuild --component release/mas-arm64/DOMPrompter.app /Applications --sign 
 
 | 文件 | 用途 |
 |------|------|
+| **主进程** | |
 | `packages/app/electron/main.ts` | Electron 主进程（窗口/菜单/IPC/BrowserView） |
 | `packages/app/electron/preload.ts` | IPC 桥接 |
-| `packages/app/electron/licenseService.ts` | **新增** 主进程内购服务 |
+| `packages/app/electron/licenseService.ts` | 主进程内购服务（StoreKit IAP） |
+| **渲染进程** | |
 | `packages/app/src/main.tsx` | React 入口 |
 | `packages/app/src/App.tsx` | 根组件（topbar/canvas/workbench） |
 | `packages/app/src/App.css` | 主样式表 |
-| `packages/app/src/i18n.ts` | **新增** i18n 初始化 |
-| `packages/app/src/locales/*.json` | **新增** 12 语种翻译文件 |
-| `packages/app/src/components/OnboardingWizard.tsx` | **新增** 替代 WelcomeScreen |
-| `packages/app/src/components/Settings.tsx` | **新增** 设置面板 |
-| `packages/app/src/components/PaywallDialog.tsx` | **新增** 收费墙对话框 |
-| `packages/app/src/services/LicenseManager.ts` | **新增** 渲染进程许可证管理 |
-| `packages/app/src/shared/license.ts` | **新增** 共享常量/类型 |
+| `packages/app/src/i18n.ts` | i18n 初始化 |
+| `packages/app/src/locales/*.json` | 12 语种翻译文件 |
+| `packages/app/src/components/OnboardingWizard.tsx` | 首次引导向导 |
+| `packages/app/src/components/Settings.tsx` | 设置面板 |
+| `packages/app/src/components/PaywallDialog.tsx` | 收费墙对话框（fallback 价格 $19.99） |
+| `packages/app/src/services/LicenseManager.ts` | 渲染进程许可证管理 |
+| `packages/app/src/shared/license.ts` | 共享常量（MAS_PRODUCT_ID）/类型 |
 | `packages/app/src/components/properties/PropertiesWorkbench.tsx` | 右侧属性面板 |
-| `packages/core/src/cdp/connection.ts` | CDP 连接（移除 CDPClient） |
+| **Core** | |
+| `packages/core/src/cdp/connection.ts` | CDP 连接（builtin only） |
 | `packages/core/src/codeGenerator.ts` | 代码/提示词生成 |
-| `build/entitlements.mas.plist` | **新增** 主进程 entitlements |
-| `build/entitlements.mas.inherit.plist` | **新增** 子进程 entitlements |
-| `build/embedded.provisionprofile` | **新增** MAS 分发 Profile |
-| `build/*.lproj/InfoPlist.strings` | **新增** 多语言 App Store 显示 |
-| `scripts/build-mas.sh` | **新增** 一键构建脚本 |
+| **构建与签名** | |
+| `packages/app/package.json` | 版本号（version）、构建号（buildVersion）、electron-builder 配置 |
+| `packages/app/build/entitlements.mas.plist` | 主进程 entitlements（含 application-identifier） |
+| `packages/app/build/entitlements.mas.inherit.plist` | 子进程 entitlements |
+| `packages/app/build/embedded.provisionprofile` | MAS Distribution Profile（有效期至 2027-04-05） |
+| `packages/app/build/*.lproj/InfoPlist.strings` | 多语言 App Store 显示名 |
+| `scripts/repair-mas-build.mjs` | 两阶段签名修复脚本（嵌入 profile + 按序签名 + productbuild） |
+| `scripts/mas-check.mjs` | MAS 合规检查脚本 |
+| **报告** | |
+| `reports/mas/evidence-checklist.md` | MAS gate 证据清单 |
+| `docs/mas-build-guide.md` | 构建与上传完整指南 |
+| `docs/mas-refactor-progress.md` | MAS 改造进度追踪 |
 
 ---
 
@@ -1332,5 +1454,16 @@ productbuild --component release/mas-arm64/DOMPrompter.app /Applications --sign 
 - [App Sandbox Entitlements Reference](https://developer.apple.com/library/archive/documentation/Miscellaneous/Reference/EntitlementKeyReference/Chapters/EnablingAppSandbox.html)
 - [Configuring macOS App Sandbox](https://developer.apple.com/documentation/xcode/configuring-the-macos-app-sandbox)
 - [In-App Purchase for macOS](https://developer.apple.com/documentation/storekit/in-app_purchase)
+- [Certificates Overview](https://developer.apple.com/help/account/certificates/certificates-overview)
+- [Register an App ID](https://developer.apple.com/help/account/identifiers/register-an-app-id/)
+- [Create an App Store Connect Provisioning Profile](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile)
+- [Add a New App](https://developer.apple.com/help/app-store-connect/create-an-app-record/add-a-new-app)
+- [Upload Builds](https://developer.apple.com/help/app-store-connect/manage-builds/upload-builds/)
+- [Choose a Build to Submit](https://developer.apple.com/help/app-store-connect/manage-builds/choose-a-build-to-submit/)
+- [Submit an App](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app)
+- [Submit an In-App Purchase](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
+- [Manage App Privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy)
+- [Determine and Upload App Encryption Documentation](https://developer.apple.com/help/app-store-connect/manage-app-information/determine-and-upload-app-encryption-documentation)
+- [Screenshot Specifications](https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications)
 - TrekReel MAS SOP（内部参考）
 - WitNote 框架（`智简witnote笔记本` 项目，i18n/Settings/Paywall/Menu 参考实现）

@@ -11,8 +11,13 @@ import {
   type IpcMainInvokeEvent,
   type Rectangle,
 } from 'electron'
+
+// MAS sandbox: Electron 28 (Chromium 120) works under App Sandbox without
+// extra flags. GPU acceleration is left enabled for smooth rendering.
+
 import { dirname, join } from 'path'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { pathToFileURL } from 'url'
+import { accessSync, constants as fsConstants, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { InspectorService, generateAIPrompt, generateCSSClass, generateCSSVariables } from '@visual-inspector/core'
 import type { CSSProperty, ICDPTransport, InspectedElement, PageContextSnapshot } from '@visual-inspector/core'
 import { DEVELOPER_GITHUB_URL, PRIVACY_URL, SUPPORT_URL, TERMS_URL, WEBSITE_URL } from '../src/shared/externalLinks'
@@ -61,9 +66,6 @@ interface MenuLabels {
   focusAddressBar: string
   edit: string
   actions: string
-  copyPagePrompt: string
-  copyElementCss: string
-  escape: string
   window: string
   minimize: string
   zoom: string
@@ -107,9 +109,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Focus Address Bar',
     edit: 'Edit',
     actions: 'Actions',
-    copyPagePrompt: 'Copy Page Prompt',
-    copyElementCss: 'Copy Element CSS',
-    escape: 'Escape',
     window: 'Window',
     minimize: 'Minimize',
     zoom: 'Zoom',
@@ -140,9 +139,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: '聚焦地址栏',
     edit: '编辑',
     actions: '操作',
-    copyPagePrompt: '复制页面提示词',
-    copyElementCss: '复制元素 CSS',
-    escape: '关闭 / 退出',
     window: '窗口',
     minimize: '最小化',
     zoom: '缩放',
@@ -173,9 +169,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: '聚焦網址列',
     edit: '編輯',
     actions: '操作',
-    copyPagePrompt: '複製頁面提示詞',
-    copyElementCss: '複製元素 CSS',
-    escape: '關閉 / 離開',
     window: '視窗',
     minimize: '最小化',
     zoom: '縮放',
@@ -206,9 +199,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Adressleiste fokussieren',
     edit: 'Bearbeiten',
     actions: 'Aktionen',
-    copyPagePrompt: 'Seiten-Prompt kopieren',
-    copyElementCss: 'Element-CSS kopieren',
-    escape: 'Schließen / Abbrechen',
     window: 'Fenster',
     minimize: 'Minimieren',
     zoom: 'Zoom',
@@ -239,9 +229,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Enfocar barra de direcciones',
     edit: 'Editar',
     actions: 'Acciones',
-    copyPagePrompt: 'Copiar prompt de página',
-    copyElementCss: 'Copiar CSS del elemento',
-    escape: 'Cerrar / Cancelar',
     window: 'Ventana',
     minimize: 'Minimizar',
     zoom: 'Zoom',
@@ -272,9 +259,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Mettre l\'accent sur la barre d\'adresse',
     edit: 'Édition',
     actions: 'Actions',
-    copyPagePrompt: 'Copier l\'invite de la page',
-    copyElementCss: 'Copier le CSS de l\'élément',
-    escape: 'Fermer / Annuler',
     window: 'Fenêtre',
     minimize: 'Réduire',
     zoom: 'Zoom',
@@ -305,9 +289,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Metti a fuoco la barra degli indirizzi',
     edit: 'Modifica',
     actions: 'Azioni',
-    copyPagePrompt: 'Copia prompt della pagina',
-    copyElementCss: 'Copia CSS dell\'elemento',
-    escape: 'Chiudi / Annulla',
     window: 'Finestra',
     minimize: 'Riduci a icona',
     zoom: 'Zoom',
@@ -338,9 +319,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Focar barra de endereços',
     edit: 'Editar',
     actions: 'Ações',
-    copyPagePrompt: 'Copiar prompt da página',
-    copyElementCss: 'Copiar CSS do elemento',
-    escape: 'Fechar / Cancelar',
     window: 'Janela',
     minimize: 'Minimizar',
     zoom: 'Zoom',
@@ -371,9 +349,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'Сосредоточить адресную строку',
     edit: 'Правка',
     actions: 'Действия',
-    copyPagePrompt: 'Копировать промпт страницы',
-    copyElementCss: 'Копировать CSS элемента',
-    escape: 'Закрыть / Отмена',
     window: 'Окно',
     minimize: 'Свернуть',
     zoom: 'Масштаб',
@@ -404,9 +379,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'ركّز شريط العنوان',
     edit: 'تحرير',
     actions: 'إجراءات',
-    copyPagePrompt: 'نسخ أمر الصفحة',
-    copyElementCss: 'نسخ CSS العنصر',
-    escape: 'إغلاق / إلغاء',
     window: 'نافذة',
     minimize: 'تصغير',
     zoom: 'تكبير/تصغير',
@@ -437,9 +409,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: 'アドレスバーにフォーカス',
     edit: '編集',
     actions: 'アクション',
-    copyPagePrompt: 'ページプロンプトをコピー',
-    copyElementCss: '要素CSSをコピー',
-    escape: '閉じる / キャンセル',
     window: 'ウインドウ',
     minimize: '最小化',
     zoom: 'ズーム',
@@ -470,9 +439,6 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
     focusAddressBar: '주소 표시줄 포커스',
     edit: '편집',
     actions: '작업',
-    copyPagePrompt: '페이지 프롬프트 복사',
-    copyElementCss: '요소 CSS 복사',
-    escape: '닫기 / 취소',
     window: '윈도우',
     minimize: '최소화',
     zoom: '확대/축소',
@@ -492,6 +458,7 @@ const MENU_TRANSLATIONS: Record<'en' | 'zh' | 'zh-TW' | 'de' | 'es' | 'fr' | 'it
 }
 
 const windowSessions = new Map<number, WindowSession>()
+const activeBookmarkStopFns: Array<() => void> = []
 let appSettings: PersistedAppSettings = { ...DEFAULT_SETTINGS }
 
 function getWindowStatePath() {
@@ -623,6 +590,25 @@ function sendShortcut(channel: string) {
   targetWindow.webContents.send(channel)
 }
 
+function getActiveSession() {
+  const targetWindow = BrowserWindow.getFocusedWindow() || getPrimaryWindow()
+  if (!targetWindow || targetWindow.isDestroyed()) return null
+  return getWindowSession(targetWindow)
+}
+
+function sendBrowserViewKey(keyCode: string) {
+  const session = getActiveSession()
+  if (!session?.browserView || session.browserView.webContents.isDestroyed()) return
+  session.browserView.webContents.sendInputEvent({ type: 'keyDown', keyCode })
+  session.browserView.webContents.sendInputEvent({ type: 'keyUp', keyCode })
+}
+
+function sendContextAction(action: string) {
+  const targetWindow = BrowserWindow.getFocusedWindow() || getPrimaryWindow()
+  if (!targetWindow || targetWindow.isDestroyed()) return
+  targetWindow.webContents.send('context-action', action)
+}
+
 function refreshMenus() {
   const labels = getMenuLabels(appSettings.language)
   Menu.setApplicationMenu(buildApplicationMenu(labels))
@@ -696,9 +682,10 @@ function buildApplicationMenu(labels: MenuLabels) {
     {
       label: labels.actions,
       submenu: [
-        { label: labels.copyPagePrompt, accelerator: 'CmdOrCtrl+Shift+C', click: () => sendShortcut('shortcuts:copyPagePrompt') },
-        { label: labels.copyElementCss, accelerator: 'CmdOrCtrl+Shift+E', click: () => sendShortcut('shortcuts:copyElementCSS') },
-        { label: labels.escape, accelerator: 'Escape', click: () => sendShortcut('shortcuts:escape') },
+        { label: labels.inspectorSelectParent, click: () => sendBrowserViewKey('Escape') },
+        { label: labels.inspectorSelectChild, click: () => sendBrowserViewKey('Return') },
+        { type: 'separator' },
+        { label: labels.inspectorAddTag, click: () => sendContextAction('add-tag') },
       ],
     },
     {
@@ -860,17 +847,54 @@ function createBrowserView(session: WindowSession, url: string) {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
+      preload: join(__dirname, 'browserview-preload.js'),
     },
   })
 
   session.browserView = browserView
   session.window.setBrowserView(browserView)
   updateBrowserViewBounds(session)
-  void browserView.webContents.loadURL(url)
+  let normalizedUrl = url
+  if (url.startsWith('file://')) {
+    let filePath = url.slice(7) // strip file://
+    try { filePath = decodeURI(filePath) } catch { /* already decoded */ }
+    normalizedUrl = pathToFileURL(filePath).href
+  }
+  void browserView.webContents.loadURL(normalizedUrl)
 
   browserView.webContents.on('did-finish-load', () => {
     if (session.browserView !== browserView) return
+
+    // Polyfill File System Access API for loaded web apps.
+    // The preload exposes __domprompterBridge; here we wire it into
+    // the standard showDirectoryPicker / showOpenFilePicker / showSaveFilePicker APIs.
+    browserView.webContents.executeJavaScript(`(function(){
+      if(window.__domprompterPickerInjected)return;
+      window.__domprompterPickerInjected=true;
+      var b=window.__domprompterBridge;
+      if(!b)return;
+      window.showDirectoryPicker=async function(){
+        var r=await b.showDirectoryPicker();
+        if(!r)throw new DOMException('The user aborted a request.','AbortError');
+        return{kind:'directory',name:r.name,__electronPath:r.path,
+          values:async function*(){},keys:async function*(){},entries:async function*(){},
+          getDirectoryHandle:async function(){throw new Error('Not supported')},
+          getFileHandle:async function(){throw new Error('Not supported')}};
+      };
+      window.showOpenFilePicker=async function(o){
+        var r=await b.showOpenFilePicker(o);
+        if(!r||!r.length)throw new DOMException('The user aborted a request.','AbortError');
+        return r.map(function(f){return{kind:'file',name:f.name,__electronPath:f.path,
+          getFile:async function(){throw new Error('Not supported')}};});
+      };
+      window.showSaveFilePicker=async function(o){
+        var r=await b.showSaveFilePicker(o);
+        if(!r)throw new DOMException('The user aborted a request.','AbortError');
+        return{kind:'file',name:r.name,__electronPath:r.path,
+          createWritable:async function(){throw new Error('Not supported')}};
+      };
+    })()`).catch(() => {})
 
     sendToRenderer(session, 'browser-view-loaded', {
       url: browserView.webContents.getURL(),
@@ -1014,6 +1038,38 @@ if (!hasSingleInstanceLock) {
       }
     })
 
+    // BrowserView file picker proxies — polyfill File System Access API
+    ipcMain.handle('browserview:showDirectoryPicker', async (event) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return null
+      const result = await dialog.showOpenDialog(win, {
+        properties: ['openDirectory'],
+      })
+      if (result.canceled || result.filePaths.length === 0) return null
+      const p = result.filePaths[0]
+      return { path: p, name: p.split('/').pop() || p }
+    })
+
+    ipcMain.handle('browserview:showOpenFilePicker', async (event, options?: { multiple?: boolean }) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return null
+      const properties: Array<'openFile' | 'multiSelections'> = ['openFile']
+      if (options?.multiple) properties.push('multiSelections')
+      const result = await dialog.showOpenDialog(win, { properties })
+      if (result.canceled || result.filePaths.length === 0) return null
+      return result.filePaths.map((p) => ({ path: p, name: p.split('/').pop() || p }))
+    })
+
+    ipcMain.handle('browserview:showSaveFilePicker', async (event, options?: { suggestedName?: string }) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return null
+      const result = await dialog.showSaveDialog(win, {
+        defaultPath: options?.suggestedName,
+      })
+      if (result.canceled || !result.filePath) return null
+      return { path: result.filePath, name: result.filePath.split('/').pop() || result.filePath }
+    })
+
     refreshMenus()
     createWindow()
 
@@ -1036,6 +1092,18 @@ ipcMain.handle('load-url', async (event, url: string): Promise<boolean> => {
   if (!session) return false
 
   try {
+    // For file:// URLs, verify the file is actually readable (sandbox may block)
+    if (url.startsWith('file://')) {
+      let filePath = url.slice(7)
+      try { filePath = decodeURI(filePath) } catch { /* already decoded */ }
+      try {
+        accessSync(filePath, fsConstants.R_OK)
+      } catch {
+        console.error('File not accessible (sandbox):', filePath)
+        return false
+      }
+    }
+
     session.builtinViewInteractive = false
     createBrowserView(session, url)
     return true
@@ -1111,13 +1179,34 @@ ipcMain.handle('select-html-file', async (event, projectDir?: string) => {
     properties: ['openFile'],
     filters: [{ name: 'HTML', extensions: ['html', 'htm'] }],
     buttonLabel: 'Open',
+    securityScopedBookmarks: true,
   })
 
   if (result.canceled || result.filePaths.length === 0) {
     return null
   }
 
-  return result.filePaths[0]
+  return {
+    filePath: result.filePaths[0],
+    bookmark: result.bookmarks?.[0] || null,
+  }
+})
+
+ipcMain.handle('start-file-access', async (_event, bookmark: string): Promise<boolean> => {
+  if (!bookmark) return false
+  try {
+    // Release any previous security-scoped bookmark access
+    while (activeBookmarkStopFns.length > 0) {
+      const stopFn = activeBookmarkStopFns.pop()
+      try { stopFn?.() } catch { /* ignore */ }
+    }
+    const stopFn = app.startAccessingSecurityScopedResource(bookmark) as unknown as () => void
+    activeBookmarkStopFns.push(stopFn)
+    return true
+  } catch (error) {
+    console.error('Failed to start accessing security-scoped resource:', error)
+    return false
+  }
 })
 
 ipcMain.handle('disconnect', async (event): Promise<void> => {

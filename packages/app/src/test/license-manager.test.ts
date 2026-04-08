@@ -6,7 +6,7 @@ describe('LicenseManager', () => {
     expect(
       LicenseManager.checkFeatureAccess('page-export', {
         isPro: false,
-        provider: 'dev-stub',
+        provider: 'mas',
         lastValidatedAt: null,
       }),
     ).toEqual({
@@ -19,7 +19,7 @@ describe('LicenseManager', () => {
     expect(
       LicenseManager.checkFeatureAccess('page-export', {
         isPro: true,
-        provider: 'dev-stub',
+        provider: 'mas',
         lastValidatedAt: null,
       }),
     ).toEqual({

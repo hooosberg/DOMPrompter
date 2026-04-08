@@ -38,7 +38,10 @@
     "restoring": "正在恢復...",
     "restoreNotFound": "未找到之前的購買紀錄。",
     "restoreFailed": "恢復失敗，請重試。",
-    "ctaNote": "一次付費，無訂閱費用。Pro 功能永久解鎖。"
+    "ctaNote": "一次付費，無訂閱費用。Pro 功能永久解鎖。",
+    "successTitle": "Pro 已解鎖！",
+    "successDesc": "所有 Pro 功能現已可用，盡情使用。",
+    "successDismiss": "開始使用 Pro"
   },
   "topbar": {
     "refresh": "重新整理",

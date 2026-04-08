@@ -34,7 +34,10 @@
     "restoring": "Wiederherstellung...",
     "restoreNotFound": "Kein früherer Kauf gefunden.",
     "restoreFailed": "Wiederherstellung fehlgeschlagen. Bitte versuchen Sie es erneut.",
-    "ctaNote": "Einmalige Zahlung. Keine Abonnementgebühren. Pro-Funktionen bleiben dauerhaft freigeschaltet."
+    "ctaNote": "Einmalige Zahlung. Keine Abonnementgebühren. Pro-Funktionen bleiben dauerhaft freigeschaltet.",
+    "successTitle": "Pro freigeschaltet!",
+    "successDesc": "Alle Pro-Funktionen sind jetzt verfügbar.",
+    "successDismiss": "Pro verwenden"
   },
   "app": {
     "name": "DOMPrompter",

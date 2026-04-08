@@ -169,7 +169,10 @@
     "restoring": "Restoring...",
     "restoreNotFound": "No previous purchase found.",
     "restoreFailed": "Restore failed. Please try again.",
-    "ctaNote": "One-time payment. No subscription fees. Pro features stay unlocked permanently."
+    "ctaNote": "One-time payment. No subscription fees. Pro features stay unlocked permanently.",
+    "successTitle": "Pro Unlocked!",
+    "successDesc": "All Pro features are now available. Enjoy unlimited precision.",
+    "successDismiss": "Start Using Pro"
   },
   "common": {
     "copy": "Copy",

@@ -3,7 +3,7 @@ import type { InspectedElement, OverlayNudgeChange, PersistedStyleHistoryState, 
 
 export interface GlobalHistoryCommitInfo {
   backendNodeId: number
-  kind: 'commit' | 'external' | 'reset'
+  kind: 'commit' | 'nudge' | 'reset'
 }
 
 interface UseStyleBindingOptions {
@@ -246,7 +246,7 @@ export function useStyleBinding({
     if (!hasRealChange) return
 
     pushHistoryEntry({ undoPatch, redoPatch, diffKeys })
-    onGlobalHistoryCommit?.({ backendNodeId: element?.backendNodeId ?? 0, kind: 'external' })
+    onGlobalHistoryCommit?.({ backendNodeId: element?.backendNodeId ?? 0, kind: 'nudge' })
     syncDraftAndDiff(expandStylePatch(redoPatch), diffKeys)
   }, [element, pushHistoryEntry, syncDraftAndDiff, onGlobalHistoryCommit])
 

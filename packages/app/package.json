@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "build": "tsc && vite build",
     "build:mas": "tsc && vite build && electron-builder --mac mas",
-    "clean": "rm -rf dist dist-electron"
+    "clean": "rm -rf dist dist-electron ../../release"
   },
   "dependencies": {
     "@visual-inspector/core": "workspace:*",
@@ -31,8 +31,8 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^28.3.3",
-    "electron-builder": "^25.1.8",
+    "electron": "~28.3.3",
+    "electron-builder": "^24.9.1",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.3",
     "vite": "^5.4.21",
@@ -43,6 +43,10 @@
   "build": {
     "appId": "com.domprompter.app",
     "productName": "DOMPrompter",
+    "buildVersion": "24",
+    "directories": {
+      "output": "../../release"
+    },
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -50,10 +54,17 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
+      "icon": "public/icon.png",
+      "provisioningProfile": "build/embedded.provisionprofile",
+      "identity": "hu Huambo (STWPBZG6S7)",
       "target": [
         "mas"
       ],
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "extendInfo": {
+        "LSRequiresNativeExecution": true,
+        "ElectronTeamID": "STWPBZG6S7"
+      }
     },
     "mas": {
       "type": "distribution",
@@ -65,9 +76,15 @@
       },
       "entitlements": "build/entitlements.mas.plist",
       "entitlementsInherit": "build/entitlements.mas.inherit.plist",
+      "provisioningProfile": "build/embedded.provisionprofile",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "identity": "hu Huambo (STWPBZG6S7)",
+      "binaries": []
+    },
+    "pkg": {
+      "identity": "C5EE5BE0EC389E19AC9A5C33EC4FAF00FE9BE8FE"
     },
     "extraResources": [
       { "from": "build/en.lproj", "to": "en.lproj" },

@@ -154,6 +154,7 @@ function checkPackageMetadata() {
   const failures = []
   const appPackage = readJson(appPackagePath)
   const build = appPackage.build || {}
+  const appDir = join(rootDir, 'packages/app')
   const masReview = appPackage.masReview || build.masReview || {}
 
   if (!String(appPackage.author || '').trim()) {
@@ -164,6 +165,18 @@ function checkPackageMetadata() {
   }
   if (!build.appId || build.appId !== 'com.domprompter.app') {
     failures.push('packages/app/package.json: build.appId must be com.domprompter.app')
+  }
+  const macIconPath = build.mac?.icon
+  if (!String(macIconPath || '').trim()) {
+    failures.push('packages/app/package.json: build.mac.icon is required for MAS packaging')
+  } else if (!existsSync(join(appDir, String(macIconPath)))) {
+    failures.push(`packages/app/package.json: build.mac.icon path does not exist (${macIconPath})`)
+  }
+  const provisioningProfilePath = build.mas?.provisioningProfile
+  if (!String(provisioningProfilePath || '').trim()) {
+    failures.push('packages/app/package.json: build.mas.provisioningProfile is required for MAS signing')
+  } else if (!existsSync(join(appDir, String(provisioningProfilePath)))) {
+    failures.push(`packages/app/package.json: build.mas.provisioningProfile path does not exist (${provisioningProfilePath})`)
   }
   if (build.masReview) {
     failures.push('packages/app/package.json: build.masReview is unsupported by electron-builder; move it to top-level masReview')

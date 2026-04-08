@@ -3,7 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('electronAPI', {
   loadUrl: (url: string): Promise<boolean> => ipcRenderer.invoke('load-url', url),
   attachDebugger: (): Promise<boolean> => ipcRenderer.invoke('attach-debugger'),
-  selectHtmlFile: (projectDir?: string): Promise<string | null> => ipcRenderer.invoke('select-html-file', projectDir),
+  selectHtmlFile: (projectDir?: string): Promise<{ filePath: string; bookmark: string | null } | null> => ipcRenderer.invoke('select-html-file', projectDir),
+  startFileAccess: (bookmark: string): Promise<boolean> => ipcRenderer.invoke('start-file-access', bookmark),
   disconnect: (): Promise<void> => ipcRenderer.invoke('disconnect'),
   setPanelWidth: (width: number): Promise<void> => ipcRenderer.invoke('set-panel-width', width),
   setBuiltinViewInteractive: (interactive: boolean): Promise<boolean> => ipcRenderer.invoke('set-builtin-view-interactive', interactive),
@@ -58,11 +59,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('shortcuts:reloadPage')
     ipcRenderer.removeAllListeners('shortcuts:forceReload')
     ipcRenderer.removeAllListeners('shortcuts:toggleToolbar')
-    ipcRenderer.removeAllListeners('shortcuts:copyPagePrompt')
-    ipcRenderer.removeAllListeners('shortcuts:copyElementCSS')
     ipcRenderer.removeAllListeners('shortcuts:focusAddressBar')
     ipcRenderer.removeAllListeners('shortcuts:newWindow')
-    ipcRenderer.removeAllListeners('shortcuts:escape')
   },
 
   generateAIPrompt: (element: any): Promise<string> => ipcRenderer.invoke('generate-ai-prompt', element),
@@ -95,20 +93,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onToggleToolbar: (callback: () => void): void => {
       ipcRenderer.on('shortcuts:toggleToolbar', () => callback())
     },
-    onCopyPagePrompt: (callback: () => void): void => {
-      ipcRenderer.on('shortcuts:copyPagePrompt', () => callback())
-    },
-    onCopyElementCSS: (callback: () => void): void => {
-      ipcRenderer.on('shortcuts:copyElementCSS', () => callback())
-    },
     onFocusAddressBar: (callback: () => void): void => {
       ipcRenderer.on('shortcuts:focusAddressBar', () => callback())
     },
     onNewWindow: (callback: () => void): void => {
       ipcRenderer.on('shortcuts:newWindow', () => callback())
-    },
-    onEscape: (callback: () => void): void => {
-      ipcRenderer.on('shortcuts:escape', () => callback())
     },
   },
   license: {

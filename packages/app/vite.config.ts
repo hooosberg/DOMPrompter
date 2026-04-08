@@ -95,6 +95,17 @@ export default defineConfig({
             }
           }
         }
+      },
+      {
+        entry: 'electron/browserview-preload.ts',
+        vite: {
+          build: {
+            outDir: 'dist-electron',
+            rollupOptions: {
+              external: ['electron']
+            }
+          }
+        }
       }
     ]),
     renderer()

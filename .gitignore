@@ -8,6 +8,7 @@ node_modules/
 # Build output
 dist/
 dist-electron/
+release/
 build/
 coverage/
 .cache/

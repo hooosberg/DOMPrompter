@@ -1,8 +1,12 @@
-# Visual Inspector — 产品哲学与设计原则
+# DOMPrompter — 产品哲学与设计原则
+
+> 产品名称：DOMPrompter
+> Bundle ID：com.domprompter.app
+> 定位：面向 Web 开发者的可视化 AI 提示词生成工具
 
 ## 我们是什么
 
-Visual Inspector 是一个介于 AI 和专业代码之间的**可视化辅助工具**。
+DOMPrompter 是一个介于 AI 和专业代码之间的**可视化辅助工具**。
 
 它**不是**一个直接修改代码的设计程序。它的核心工作方式是：
 
@@ -15,7 +19,7 @@ Visual Inspector 是一个介于 AI 和专业代码之间的**可视化辅助工
 
 痛点：微调页面时，截图总是选不到对应的对象。AI 无法精确定位「哪个元素要改什么」。
 
-Visual Inspector 解决的是**精确选择 + 精确描述变更**的问题，让非专业用户也能用可视化的方式告诉 AI「我要把这个按钮的宽度从 200px 改成 300px，内边距再大一点」。
+DOMPrompter 解决的是**精确选择 + 精确描述变更**的问题，让非专业用户也能用可视化的方式告诉 AI「我要把这个按钮的宽度从 200px 改成 300px，内边距再大一点」。
 
 ---
 
@@ -198,7 +202,6 @@ App.tsx
                     ▼
 ┌─────────────────────────────────────┐
 │  packages/core                      │
-│  ├─ CDPClient (WebSocket 连接)       │
 │  ├─ CDPHelper (CDP 操作封装)         │
 │  └─ InspectorService (业务编排)      │
 └───────────────────┬─────────────────┘
@@ -209,7 +212,9 @@ App.tsx
 │  ├─ App.tsx (状态管理)               │
 │  ├─ useStyleBinding (变更追踪/撤销)   │
 │  ├─ PropertiesWorkbench (属性编辑)   │
-│  └─ WelcomeScreen (项目启动)         │
+│  ├─ OnboardingWizard (首次引导)      │
+│  ├─ PaywallDialog (收费墙)           │
+│  └─ LicenseManager (许可证管理)      │
 └─────────────────────────────────────┘
 ```
 

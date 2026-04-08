@@ -34,7 +34,10 @@
     "restoring": "Restauration...",
     "restoreNotFound": "Aucun achat précédent trouvé.",
     "restoreFailed": "La restauration a échoué. Veuillez réessayer.",
-    "ctaNote": "Paiement unique. Pas de frais d'abonnement. Les fonctionnalités Pro restent débloquées en permanence."
+    "ctaNote": "Paiement unique. Pas de frais d'abonnement. Les fonctionnalités Pro restent débloquées en permanence.",
+    "successTitle": "Pro déverrouillé !",
+    "successDesc": "Toutes les fonctionnalités Pro sont maintenant disponibles.",
+    "successDismiss": "Commencer avec Pro"
   },
   "app": {
     "name": "DOMPrompter",

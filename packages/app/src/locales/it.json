@@ -34,7 +34,10 @@
     "restoring": "Ripristino...",
     "restoreNotFound": "Nessun acquisto precedente trovato.",
     "restoreFailed": "Ripristino fallito. Riprova.",
-    "ctaNote": "Pagamento unico. Nessun costo di abbonamento. Le funzionalità Pro restano sbloccate in modo permanente."
+    "ctaNote": "Pagamento unico. Nessun costo di abbonamento. Le funzionalità Pro restano sbloccate in modo permanente.",
+    "successTitle": "Pro sbloccato!",
+    "successDesc": "Tutte le funzionalità Pro sono ora disponibili.",
+    "successDismiss": "Inizia a usare Pro"
   },
   "app": {
     "name": "DOMPrompter",

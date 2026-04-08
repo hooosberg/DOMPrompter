@@ -169,7 +169,10 @@
     "restoring": "正在恢复...",
     "restoreNotFound": "未找到之前的购买记录。",
     "restoreFailed": "恢复失败，请重试。",
-    "ctaNote": "一次付费，无订阅费用。Pro 功能永久解锁。"
+    "ctaNote": "一次付费，无订阅费用。Pro 功能永久解锁。",
+    "successTitle": "Pro 已解锁！",
+    "successDesc": "所有 Pro 功能现已可用，尽情使用。",
+    "successDismiss": "开始使用 Pro"
   },
   "common": {
     "copy": "复制",

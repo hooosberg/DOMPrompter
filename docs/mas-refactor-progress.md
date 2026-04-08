@@ -1,11 +1,11 @@
 # DOMPrompter MAS 改造进度
 
-> 最后更新：2026-04-03
+> 最后更新：2026-04-05
 > 工作模式：TDD / 基础优先 / 每阶段停靠
 
 ## 当前阶段
 
-- Phase 4：MAS 打包验证与签名材料收口
+- Phase 5：App Store Connect 上传与审核提交
 
 ## 阶段清单
 
@@ -21,7 +21,15 @@
 - [x] 接入 renderer i18n、Settings、Paywall、LicenseManager
 - [x] 接入主进程 `settings:get/set`、`menu:changeLanguage`、license handlers、基础菜单与单实例
 - [x] 补齐菜单本地化、更多快捷键行为、Dock 菜单与多窗口细化
-- [ ] 验证 `build:mas` 与真实 MAS 签名环境
+- [x] 验证 `build:mas` 与真实 MAS 签名环境
+- [x] 修复 provisioning profile 嵌入（repair-mas-build.mjs 添加 embedProvisioningProfile 步骤）
+- [x] 修复 entitlements 中缺失 application-identifier 和 team-identifier
+- [x] 分离版本号与构建号（version vs buildVersion）
+- [x] 成功上传 pkg 到 App Store Connect
+- [ ] TestFlight 测试验证
+- [ ] 在 App Store Connect 配置内购产品 `com.domprompter.app.pro.lifetime`
+- [ ] 填写 App Store 商品页元数据（截图、描述、关键词）
+- [ ] 提交审核
 
 ## Red / Green / Refactor 日志
 
@@ -30,55 +38,45 @@
 - Red 2026-04-03：`npm run mas:check` 初始报 68 个 blocker。
 - Green 2026-04-03：Phase 1/2 清理后 builtin-only 合同测试通过，core / app external 面已显著收敛。
 - Red 2026-04-03：`npm run dev` 暴露三处真实阻塞。
-  `vite` 入口与本地依赖状态不一致。
-  Vite 监听 `::1` / `127.0.0.1` 在当前环境需显式修正 host。
-  Electron dev 启动时错误依赖 `@visual-inspector/core/dist/index.js`。
 - Green 2026-04-03：已通过以下调整修复开发链路。
-  删除 `.npmrc` 中 pnpm 专用配置重复项，消除 `npm` 警告来源。
-  Vite 固定监听 `127.0.0.1:15173`。
-  Electron dev/build 改为直接解析 workspace 内 `@visual-inspector/core` 源码，不再要求预编译 core。
-  根目录新增 `test:watch`、`test:app`、`test:core`、对应 watch 命令。
-- Red 2026-04-03：新增 “点击 Settings 按钮应打开设置面板” 测试后失败，旧实现只弹 toast。
-- Green 2026-04-03：Renderer 已接入 `i18n`、`Settings`、`PaywallDialog`、`LicenseManager`、语言/主题/玻璃度持久化读取与保存。
-- Green 2026-04-03：主进程已补齐 `settings:get`、`settings:set`、`menu:changeLanguage`、基础菜单 accelerator 事件、单实例锁、license IPC。
-- Green 2026-04-03：`npm run mas:check` 当前为 PASS，evidence 已刷新。
-- Green 2026-04-03：主进程已重构为每窗口独立 session，菜单会随 `language` 设置切换中/英文，Dock 菜单已接入。
-- Red 2026-04-03：首轮 `npm run build:mas` 失败，发现两个纯配置问题。
-  `packages/app/package.json` 缺少 `author`，electron-builder 直接告警。
-  `packages/app/package.json` 使用了不受 electron-builder 支持的 `build.masReview` 字段。
-- Green 2026-04-03：已将审核元数据迁移到顶层 `masReview`，并补齐 app 包 `author`；`npm run mas:check` 已同步增强，能更早发现这类问题。
-- Red 2026-04-03：第二轮 `npm run build:mas` 已通过 TS/Vite/electron-builder schema，但停在 MAS 签名阶段。
-  产物存在于 `packages/app/dist/mas-arm64/DOMPrompter.app`，尚未生成最终 `.pkg`。
-  `/usr/bin/codesign --verify --deep --strict` 对 app 与 helper/framework 全部报 `invalid signature`.
-  `/usr/bin/codesign -d --entitlements :-` 提示 `invalid entitlements blob`.
-  bundle 中未发现 `embedded.provisionprofile`，electron-builder 日志也显示 `provisioningProfile=none`。
-  构建日志还提示未配置 app icon，当前退回默认 Electron 图标。
+- Green 2026-04-03：Renderer 已接入 `i18n`、`Settings`、`PaywallDialog`、`LicenseManager`。
+- Green 2026-04-03：主进程已重构为每窗口独立 session，菜单会随 `language` 设置切换。
+- Red 2026-04-03：首轮 `npm run build:mas` 失败，签名材料缺失。
+- Red 2026-04-05：Transporter 上传报 "missing a provisioning profile"。
+  - 原因：`mas.identity: null` 导致 electron-builder 跳过 profile 嵌入，repair 脚本未补偿。
+  - 修复：repair-mas-build.mjs 新增 `embedProvisioningProfile()` 步骤。
+- Red 2026-04-05：Transporter 上传报 "missing an application identifier"。
+  - 原因：entitlements.mas.plist 未声明 `com.apple.application-identifier`。
+  - 修复：在 entitlements.mas.plist 添加 `com.apple.application-identifier` 和 `com.apple.developer.team-identifier`。
+- Red 2026-04-05：Transporter 上传报 "bundle version must be higher than 0.1.0"。
+  - 原因：version 和 buildVersion 未分离，都是 0.1.0。
+  - 修复：package.json 新增 `build.buildVersion` 字段，version 保持为营销版本号，buildVersion 独立递增。
+- Green 2026-04-05：构建 `0.1.0 (3)` 上传成功，签名验证、provisioning profile、application-identifier 全部通过。
 
 ## 验证记录
 
-- `npm run dev`
-  - 结果：通过
-  - 说明：已实际启动到 `http://127.0.0.1:15173/`，Electron 不再因 core dist 缺失崩溃
-- `npm run test`
-  - 结果：通过
-  - 说明：core 13 tests + app 11 tests 全部通过
-- `npm run typecheck`
-  - 结果：通过
-- `npm run mas:check`
-  - 结果：通过
-  - 说明：evidence 已写入 `reports/mas/evidence-checklist.md`
-- `npm run build:mas`
-  - 结果：失败
-  - 说明：已通过编译与 electron-builder 配置校验，当前阻塞为 MAS 签名阶段的无效签名 / 无效 entitlements blob / 缺少 provisioning profile；未生成最终 `.pkg`
+- `npm run dev` — 通过
+- `npm run test` — 通过（core 13 tests + app 11 tests）
+- `npm run typecheck` — 通过
+- `npm run mas:check` — 通过（Blocking issues: 0）
+- `npm run build:mas` — 通过
+  - codesign --verify --deep --strict: valid on disk
+  - embedded.provisionprofile: 已嵌入
+  - application-identifier: 已写入签名
+  - pkgutil --check-signature: signed by 3rd Party Mac Developer Installer
+- Transporter 上传 — 通过（版本 0.1.0 构建号 3）
 
-## 阻塞项
+## 已解决的阻塞项
 
-- 真实 MAS provisioning profile 尚未接入，当前签名日志显示 `provisioningProfile=none`。
-- 当前中间产物 `packages/app/dist/mas-arm64/DOMPrompter.app` 为 invalid signature，需继续排查签名材料与 entitlements 链。
-- app icon 仍未配置，builder 当前回退到默认 Electron 图标。
-- StoreKit 真实购买链路仍依赖 MAS 环境，本地继续使用 `dev-stub`。
+- ~~真实 MAS provisioning profile 尚未接入~~ → 已嵌入 `DOMPrompter MAS Distribution` profile
+- ~~当前中间产物为 invalid signature~~ → 两阶段签名修复完成
+- ~~app icon 仍未配置~~ → 已配置 `public/icon.png`
+- ~~entitlements 缺少 application-identifier~~ → 已添加到 entitlements.mas.plist
+- ~~版本号与构建号未分离~~ → 使用 build.buildVersion 独立管理
 
-## 下一阶段
+## 下一步
 
-- 优先确认可用的 MAS provisioning profile 与签名身份，再继续排查 `invalid entitlements blob` 的签名链问题。
-- 补应用图标资源，避免继续使用默认 Electron 图标。
+- 在 App Store Connect 完成内购产品配置
+- TestFlight 内测验证 IAP 购买流程
+- 准备商品页截图和描述文案
+- 提交 App Store 审核

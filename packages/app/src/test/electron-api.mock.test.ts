@@ -12,7 +12,14 @@ describe('electron api mock helper', () => {
 
     await expect(api.license.getStatus()).resolves.toEqual({
       isPro: false,
-      provider: 'dev-stub',
+      provider: 'mas',
+      offer: {
+        productId: 'com.domprompter.app.pro.lifetime',
+        title: 'DOMPrompter Pro',
+        description: 'Lifetime unlock',
+        formattedPrice: '$19.99',
+        currencyCode: 'USD',
+      },
       lastValidatedAt: null,
     })
   })
@@ -23,7 +30,7 @@ describe('electron api mock helper', () => {
     await expect(api.license.purchase()).resolves.toEqual({ success: true })
     await expect(api.license.getStatus()).resolves.toMatchObject({
       isPro: true,
-      provider: 'dev-stub',
+      provider: 'mas',
     })
   })
 })

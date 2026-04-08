@@ -34,7 +34,10 @@
     "restoring": "復元中...",
     "restoreNotFound": "以前の購入が見つかりませんでした。",
     "restoreFailed": "復元に失敗しました。もう一度お試しください。",
-    "ctaNote": "一回限りの支払い。サブスクリプション料金なし。Pro機能は永久にアンロック。"
+    "ctaNote": "一回限りの支払い。サブスクリプション料金なし。Pro機能は永久にアンロック。",
+    "successTitle": "Pro アンロック完了！",
+    "successDesc": "すべてのPro機能が利用可能になりました。",
+    "successDismiss": "Proを使い始める"
   },
   "app": {
     "name": "DOMPrompter",

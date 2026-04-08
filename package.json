@@ -38,6 +38,6 @@
     ]
   },
   "dependencies": {
-    "electron": "^33.4.11"
+    "electron": "~28.3.3"
   }
 }

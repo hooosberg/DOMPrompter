@@ -1582,12 +1582,10 @@ export function PropertiesWorkbench({
     return () => window.clearTimeout(timer)
   }, [copiedSelector])
 
+  // Reset "copied" state when user selects a new element or makes style changes
   useEffect(() => {
-    if (!copiedPrompt) return
-
-    const timer = window.setTimeout(() => setCopiedPrompt(false), 1400)
-    return () => window.clearTimeout(timer)
-  }, [copiedPrompt])
+    setCopiedPrompt(false)
+  }, [selectionRevision])
 
   useEffect(() => {
     if (availableSpacingTargets.length === 0) return
@@ -1854,7 +1852,7 @@ export function PropertiesWorkbench({
                   }}
                   disabled={!globalCanUndo}
                 >
-                  <span>↶</span>
+                  <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6" /><path d="M3 13a9 9 0 0 1 15.36-6.36" /></svg>
                   <span>{t('workbench.toolbar.undo')}</span>
                 </button>
                 <button
@@ -1865,7 +1863,7 @@ export function PropertiesWorkbench({
                   }}
                   disabled={!globalCanRedo}
                 >
-                  <span>↷</span>
+                  <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6" /><path d="M21 13a9 9 0 0 0-15.36-6.36" /></svg>
                   <span>{t('workbench.toolbar.redo')}</span>
                 </button>
                 <button
@@ -1876,7 +1874,7 @@ export function PropertiesWorkbench({
                   }}
                   disabled={!globalCanReset}
                 >
-                  <span>⟲</span>
+                  <svg className="history-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9" /><polyline points="3 3 3 7 7 7" /></svg>
                   <span>{t('workbench.toolbar.reset')}</span>
                 </button>
               </div>
@@ -2181,7 +2179,7 @@ export function PropertiesWorkbench({
 
           <button
             type="button"
-            className="panel-export-button"
+            className={`panel-export-button${copiedPrompt ? ' copied' : ''}`}
             onClick={() => void handleCopyPrompt()}
             disabled={!canExportPrompt}
             title={t('workbench.export.copyTitle')}

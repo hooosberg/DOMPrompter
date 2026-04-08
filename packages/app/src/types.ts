@@ -1,4 +1,5 @@
 import type { AppLanguage as SharedAppLanguage } from './shared/languages'
+import type { LicenseOffer, LicenseProvider } from './shared/license'
 
 export type AppLanguage = SharedAppLanguage
 
@@ -98,7 +99,7 @@ export interface GlobalStyleHistoryOperation {
   contextKey: string
   selector: string
   createdAt: number
-  kind: 'commit' | 'external' | 'reset' | 'tag-upsert' | 'tag-delete'
+  kind: 'commit' | 'nudge' | 'reset' | 'tag-upsert' | 'tag-delete'
   tagSnapshot?: {
     before: ElementTag | null
     after: ElementTag | null
@@ -232,8 +233,9 @@ export interface AppSettings {
 
 export interface LicenseStatus {
   isPro: boolean
-  provider: 'mas' | 'dev-stub' | 'unsupported'
+  provider: LicenseProvider
   productId?: string
+  offer?: LicenseOffer | null
   lastValidatedAt?: string | null
 }
 
@@ -247,7 +249,8 @@ declare global {
     electronAPI: {
       loadUrl: (url: string) => Promise<boolean>
       attachDebugger: () => Promise<boolean>
-      selectHtmlFile: (projectDir?: string) => Promise<string | null>
+      selectHtmlFile: (projectDir?: string) => Promise<{ filePath: string; bookmark: string | null } | null>
+      startFileAccess: (bookmark: string) => Promise<boolean>
       disconnect: () => Promise<void>
       setPanelWidth: (width: number) => Promise<void>
       setBuiltinViewInteractive: (interactive: boolean) => Promise<boolean>
@@ -290,11 +293,8 @@ declare global {
         onReloadPage: (cb: () => void) => void
         onForceReload: (cb: () => void) => void
         onToggleToolbar: (cb: () => void) => void
-        onCopyPagePrompt: (cb: () => void) => void
-        onCopyElementCSS: (cb: () => void) => void
         onFocusAddressBar: (cb: () => void) => void
         onNewWindow: (cb: () => void) => void
-        onEscape: (cb: () => void) => void
       }
       license: {
         getStatus: () => Promise<LicenseStatus>

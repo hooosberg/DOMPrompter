@@ -18,15 +18,19 @@ export function createElectronApiMock() {
     reloadPage: [] as Array<() => void>,
     forceReload: [] as Array<() => void>,
     toggleToolbar: [] as Array<() => void>,
-    copyPagePrompt: [] as Array<() => void>,
-    copyElementCSS: [] as Array<() => void>,
     focusAddressBar: [] as Array<() => void>,
     newWindow: [] as Array<() => void>,
-    escape: [] as Array<() => void>,
   }
   let licenseStatus = {
     isPro: false,
-    provider: 'dev-stub' as const,
+    provider: 'mas' as const,
+    offer: {
+      productId: 'com.domprompter.app.pro.lifetime',
+      title: 'DOMPrompter Pro',
+      description: 'Lifetime unlock',
+      formattedPrice: '$19.99',
+      currencyCode: 'USD',
+    },
     lastValidatedAt: null as string | null,
   }
 
@@ -38,7 +42,8 @@ export function createElectronApiMock() {
     discoverLocalApps: vi.fn(asyncValue([])),
     selectProjectDirectory: vi.fn(asyncValue(null)),
     inspectProject: vi.fn(asyncValue(null)),
-    selectHtmlFile: vi.fn(asyncValue(null as string | null)),
+    selectHtmlFile: vi.fn(asyncValue(null as { filePath: string; bookmark: string | null } | null)),
+    startFileAccess: vi.fn(asyncValue(true)),
     launchProjectSession: vi.fn(asyncValue({ success: true })),
     stopProjectSession: vi.fn(asyncValue(undefined)),
     launchElectronApp: vi.fn(asyncValue({ success: true })),
@@ -88,11 +93,8 @@ export function createElectronApiMock() {
       onReloadPage: vi.fn((callback: () => void) => { shortcutListeners.reloadPage.push(callback) }),
       onForceReload: vi.fn((callback: () => void) => { shortcutListeners.forceReload.push(callback) }),
       onToggleToolbar: vi.fn((callback: () => void) => { shortcutListeners.toggleToolbar.push(callback) }),
-      onCopyPagePrompt: vi.fn((callback: () => void) => { shortcutListeners.copyPagePrompt.push(callback) }),
-      onCopyElementCSS: vi.fn((callback: () => void) => { shortcutListeners.copyElementCSS.push(callback) }),
       onFocusAddressBar: vi.fn((callback: () => void) => { shortcutListeners.focusAddressBar.push(callback) }),
       onNewWindow: vi.fn((callback: () => void) => { shortcutListeners.newWindow.push(callback) }),
-      onEscape: vi.fn((callback: () => void) => { shortcutListeners.escape.push(callback) }),
     },
     license: {
       getStatus: vi.fn(async () => ({ ...licenseStatus })),
