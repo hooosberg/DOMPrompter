@@ -4,7 +4,7 @@ import { OnboardingWizard } from './components/OnboardingWizard'
 import { Settings } from './components/Settings'
 import { MAX_TRACKED_ELEMENTS, MAX_TAGS } from './shared/edition'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
-import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
+import { buildPageContextDescriptor, buildCommunityExportPrompt, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
 import { normalizeAppLanguage, RTL_APP_LANGUAGES } from './shared/languages'
 import { buildStyleHistorySlotKey, undoPersistedHistory, redoPersistedHistory, resetPersistedHistory, computeStyleDiffFromHistory } from './styleHistory'
 import type {
@@ -1249,19 +1249,14 @@ export default function App() {
       targetUrl: url,
     })
 
-    const livePrompt = buildPageExportPrompt({
+    const livePrompt = buildCommunityExportPrompt({
       appName: APP_NAME,
-      currentElement: element,
-      elements: pageExportElements,
-      summaryMeta: exportSummaryMeta,
-      pageTitle,
-      pageUrl,
-      targetUrl: url,
       pageContext: livePageContext,
+      summaryMeta: exportSummaryMeta,
     })
 
-    await copyText(livePrompt, t('toast.promptCopied'))
-  }, [canExportPrompt, connected, copyText, element, exportSummaryMeta, flash, pageExportElements, pageTitle, pageUrl, t, url])
+    await copyText(livePrompt, t('toast.promptCopiedCommunity'))
+  }, [canExportPrompt, copyText, exportSummaryMeta, flash, pageTitle, pageUrl, t, url])
 
   const handleCopyElementCSS = useCallback(async () => {
     if (!element) return

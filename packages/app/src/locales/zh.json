@@ -83,6 +83,7 @@
     "htmlFailed": "打开 HTML 文件失败",
     "tagRemoved": "标签已删除",
     "promptCopied": "页面级提示词已复制",
+    "promptCopiedCommunity": "社区精简版提示词已复制 · 前往 App Store 获取完整导出",
     "noPrompt": "当前还没有可导出的页面级提示词",
     "elementCssCopied": "元素 CSS 已复制",
     "maxTagsReached": "标签数量已达上限 — 前往 App Store 下载正式版",
@@ -419,7 +420,9 @@
       "copyTitle": "复制当前页面会话内的全部微调摘要和标签",
       "copyButton": "导出修改提示词",
       "copied": "已复制页面级修改提示词",
-      "empty": "还没有收集到页面级修改。继续在画布上调整元素后，DOMPrompter 会自动整理整页提示词。"
+      "empty": "还没有收集到页面级修改。继续在画布上调整元素后，DOMPrompter 会自动整理整页提示词。",
+      "communityBadge": "社区版",
+      "communityNotice": "精简版导出 · 前往 Mac App Store 下载正式版获取完整 AI 提示词"
     }
   }
 }

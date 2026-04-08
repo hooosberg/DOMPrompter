@@ -83,6 +83,7 @@
     "htmlFailed": "Failed to open HTML file",
     "tagRemoved": "Tag removed",
     "promptCopied": "Page prompt copied",
+    "promptCopiedCommunity": "Community prompt copied · Get Pro for full export",
     "noPrompt": "No page-level prompt is available yet",
     "elementCssCopied": "Element CSS copied",
     "maxTagsReached": "Tag limit reached — get the Pro version on the App Store",
@@ -419,7 +420,9 @@
       "copyTitle": "Copy the complete tuning summary and tags for the current page session",
       "copyButton": "Export Prompt",
       "copied": "Page prompt copied",
-      "empty": "No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you."
+      "empty": "No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you.",
+      "communityBadge": "Community",
+      "communityNotice": "Simplified export · Get the Pro version on the Mac App Store for the full structured AI prompt"
     }
   }
 }
