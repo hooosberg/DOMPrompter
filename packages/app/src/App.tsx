@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OnboardingWizard } from './components/OnboardingWizard'
-import { PaywallDialog } from './components/PaywallDialog'
 import { Settings } from './components/Settings'
+import { MAX_TRACKED_ELEMENTS, MAX_TAGS } from './shared/edition'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
 import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
 import { normalizeAppLanguage, RTL_APP_LANGUAGES } from './shared/languages'
-import { LicenseManager } from './services/LicenseManager'
 import { buildStyleHistorySlotKey, undoPersistedHistory, redoPersistedHistory, resetPersistedHistory, computeStyleDiffFromHistory } from './styleHistory'
 import type {
   ActiveEditProperty,
@@ -20,7 +19,6 @@ import type {
   GlobalStyleHistoryOperation,
   GlobalStyleHistoryState,
   InspectedElement,
-  LicenseStatus,
   OverlayNudgeChange,
   PageEditLedgerEntry,
   PageContextSnapshot,
@@ -65,11 +63,6 @@ function loadRecentHtmlFiles() {
 const DEFAULT_SETTINGS: AppSettings = {
   theme: getDefaultTheme(),
   language: 'en',
-}
-const DEFAULT_LICENSE_STATUS: LicenseStatus = {
-  isPro: false,
-  provider: 'dev-stub',
-  lastValidatedAt: null,
 }
 
 function GearIcon() {
@@ -342,10 +335,7 @@ export default function App() {
   const [persistedStyleHistories, setPersistedStyleHistories] = useState<Record<string, PersistedStyleHistoryState>>({})
   const [globalHistory, setGlobalHistory] = useState<GlobalStyleHistoryState>({ operations: [], cursor: 0 })
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>(DEFAULT_LICENSE_STATUS)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [paywallOpen, setPaywallOpen] = useState(false)
-  const [, setLicenseBusy] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [recentHtmlFiles, setRecentHtmlFiles] = useState<string[]>(() => loadRecentHtmlFiles())
 
@@ -365,12 +355,9 @@ export default function App() {
         theme: await window.electronAPI.settings.get('theme').catch(() => DEFAULT_SETTINGS.theme),
         language: normalizeAppLanguage(await window.electronAPI.settings.get('language').catch(() => DEFAULT_SETTINGS.language)),
       }
-      const nextLicenseStatus = await LicenseManager.getStatus().catch(() => DEFAULT_LICENSE_STATUS)
-
       if (cancelled) return
 
       setSettings(nextSettings)
-      setLicenseStatus(nextLicenseStatus)
       void i18n.changeLanguage(nextSettings.language)
     })()
 
@@ -441,11 +428,6 @@ export default function App() {
     flash(successMessage)
   }, [flash])
 
-  const refreshLicenseStatus = useCallback(async () => {
-    const nextStatus = await LicenseManager.getStatus()
-    setLicenseStatus(nextStatus)
-    return nextStatus
-  }, [])
 
   const refreshPageContextSnapshot = useCallback(async () => {
     try {
@@ -461,7 +443,21 @@ export default function App() {
   const updatePageEditLedger = useCallback((
     updater: (current: Record<number, PageEditLedgerEntry>) => Record<number, PageEditLedgerEntry>,
   ) => {
-    setPageEditLedger((current) => updater(current))
+    setPageEditLedger((current) => {
+      const next = updater(current)
+      // Community Edition: cap tracked elements
+      const keys = Object.keys(next)
+      if (keys.length > MAX_TRACKED_ELEMENTS) {
+        const sorted = keys
+          .map((k) => ({ k, updatedAt: next[Number(k)].updatedAt }))
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .slice(0, MAX_TRACKED_ELEMENTS)
+        const capped: Record<number, PageEditLedgerEntry> = {}
+        sorted.forEach(({ k }) => { capped[Number(k)] = next[Number(k)] })
+        return capped
+      }
+      return next
+    })
   }, [])
 
   const resetInspectorState = useCallback(() => {
@@ -531,6 +527,12 @@ export default function App() {
     const existingTag = tagId
       ? latestTags.find((tag) => tag.id === tagId) || null
       : latestTags.find((tag) => tagHasTarget(tag, targetElement.backendNodeId)) || null
+
+    // Community Edition: cap total tags (only block new tags, allow edits)
+    if (trimmedText && !existingTag && latestTags.length >= MAX_TAGS) {
+      flash(t('toast.maxTagsReached', { max: MAX_TAGS }))
+      return
+    }
 
     if (!trimmedText) {
       if (!existingTag) {
@@ -1128,8 +1130,8 @@ export default function App() {
 
   useEffect(() => {
     if (!connected) return
-    void window.electronAPI.setBuiltinViewInteractive(!(settingsOpen || paywallOpen))
-  }, [connected, paywallOpen, settingsOpen])
+    void window.electronAPI.setBuiltinViewInteractive(!settingsOpen)
+  }, [connected, settingsOpen])
 
   useEffect(() => {
     if (!connected) return
@@ -1221,14 +1223,7 @@ export default function App() {
       return
     }
 
-    const access = LicenseManager.checkFeatureAccess('page-export', licenseStatus)
-    if (!access.allowed) {
-      if (connected) {
-        void window.electronAPI.setBuiltinViewInteractive(false)
-      }
-      setPaywallOpen(true)
-      return
-    }
+    // Community Edition: export is always allowed
 
     let livePageContextSnapshot: PageContextSnapshot | null = null
     try {
@@ -1257,7 +1252,7 @@ export default function App() {
     })
 
     await copyText(livePrompt, t('toast.promptCopied'))
-  }, [canExportPrompt, connected, copyText, element, exportSummaryMeta, flash, licenseStatus, pageExportElements, pageTitle, pageUrl, t, url])
+  }, [canExportPrompt, connected, copyText, element, exportSummaryMeta, flash, pageExportElements, pageTitle, pageUrl, t, url])
 
   const handleCopyElementCSS = useCallback(async () => {
     if (!element) return
@@ -1277,39 +1272,6 @@ export default function App() {
     void i18n.changeLanguage(language)
   }, [i18n])
 
-  const handlePurchase = useCallback(async () => {
-    setLicenseBusy(true)
-    try {
-      const result = await LicenseManager.purchase()
-      if (!result.success) {
-        flash(result.error || 'Purchase failed.')
-        return
-      }
-
-      await refreshLicenseStatus()
-      setPaywallOpen(false)
-      flash('Pro unlocked')
-    } finally {
-      setLicenseBusy(false)
-    }
-  }, [flash, refreshLicenseStatus])
-
-  const handleRestore = useCallback(async () => {
-    setLicenseBusy(true)
-    try {
-      const result = await LicenseManager.restore()
-      if (!result.success) {
-        flash(result.error || 'Restore failed.')
-        return
-      }
-
-      await refreshLicenseStatus()
-      setPaywallOpen(false)
-      flash('Purchase restored')
-    } finally {
-      setLicenseBusy(false)
-    }
-  }, [flash, refreshLicenseStatus])
 
   const handleOpenSettings = useCallback(() => {
     setSettingsOpen((prev) => {
@@ -1375,7 +1337,6 @@ export default function App() {
     },
     newWindow: () => {},
     escape: () => {
-      setPaywallOpen(false)
       setSettingsOpen(false)
       setActiveEditProperty(null)
     },
@@ -1504,12 +1465,9 @@ export default function App() {
             <Settings
               open={settingsOpen}
               settings={settings}
-              licenseStatus={licenseStatus}
               onClose={() => setSettingsOpen(false)}
               onThemeChange={handleThemeChange}
               onLanguageChange={handleLanguageChange}
-              onPurchase={handlePurchase}
-              onRestore={handleRestore}
             />
           ) : !connected && showOnboarding ? (
             <OnboardingWizard
@@ -1606,12 +1564,6 @@ export default function App() {
       </div>
 
       <div id="inspector-top-layer" className="inspector-top-layer" />
-      <PaywallDialog
-        open={paywallOpen}
-        onClose={() => setPaywallOpen(false)}
-        onPurchase={handlePurchase}
-        onRestore={handleRestore}
-      />
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

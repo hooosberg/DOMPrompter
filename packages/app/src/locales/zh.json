@@ -84,7 +84,8 @@
     "tagRemoved": "标签已删除",
     "promptCopied": "页面级提示词已复制",
     "noPrompt": "当前还没有可导出的页面级提示词",
-    "elementCssCopied": "元素 CSS 已复制"
+    "elementCssCopied": "元素 CSS 已复制",
+    "maxTagsReached": "标签数量已达上限（社区版最多 {{max}} 个）"
   },
   "settings": {
     "title": "设置",

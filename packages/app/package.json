@@ -1,7 +1,7 @@
 {
   "name": "domprompter",
   "version": "0.1.0",
-  "description": "DOMPrompter Electron application",
+  "description": "DOMPrompter — Community Edition",
   "productName": "DOMPrompter",
   "author": "maohuhu",
   "main": "dist-electron/main.js",
@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc && vite build",
-    "build:mas": "tsc && vite build && electron-builder --mac mas",
+    "build:dmg": "tsc && vite build && electron-builder --mac dmg",
+    "build:win": "tsc && vite build && electron-builder --win",
     "clean": "rm -rf dist dist-electron"
   },
   "dependencies": {
@@ -41,7 +42,7 @@
     "vitest": "^2.1.9"
   },
   "build": {
-    "appId": "com.domprompter.app",
+    "appId": "com.domprompter.community",
     "productName": "DOMPrompter",
     "files": [
       "dist/**/*",
@@ -51,23 +52,22 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
-        "mas"
+        "dmg"
       ],
       "minimumSystemVersion": "12.0"
     },
-    "mas": {
-      "type": "distribution",
-      "target": {
-        "target": "mas",
-        "arch": [
-          "arm64"
-        ]
-      },
-      "entitlements": "build/entitlements.mas.plist",
-      "entitlementsInherit": "build/entitlements.mas.inherit.plist",
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "minimumSystemVersion": "12.0"
+    "dmg": {
+      "title": "DOMPrompter"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
     },
     "extraResources": [
       { "from": "build/en.lproj", "to": "en.lproj" },
@@ -83,10 +83,5 @@
       { "from": "build/ru.lproj", "to": "ru.lproj" },
       { "from": "build/ar.lproj", "to": "ar.lproj" }
     ]
-  },
-  "masReview": {
-    "productId": "com.domprompter.app.pro.lifetime",
-    "supportUrl": "https://hooosberg.github.io/DOMPrompter/pages/support.html",
-    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/pages/privacy.html"
   }
 }

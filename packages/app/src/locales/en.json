@@ -84,7 +84,8 @@
     "tagRemoved": "Tag removed",
     "promptCopied": "Page prompt copied",
     "noPrompt": "No page-level prompt is available yet",
-    "elementCssCopied": "Element CSS copied"
+    "elementCssCopied": "Element CSS copied",
+    "maxTagsReached": "Tag limit reached (max {{max}} in Community Edition)"
   },
   "settings": {
     "title": "Settings",

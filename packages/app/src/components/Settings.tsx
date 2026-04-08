@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GITHUB_REPO_URL, PRIVACY_URL, SUPPORT_URL, TERMS_URL, WEBSITE_URL } from '../shared/externalLinks'
 import { APP_LANGUAGE_OPTIONS } from '../shared/languages'
-import type { AppLanguage, AppSettings, LicenseStatus } from '../types'
+import type { AppLanguage, AppSettings } from '../types'
 
 const APP_NAME = 'DOMPrompter'
 
@@ -24,25 +24,19 @@ const SHORTCUT_ROWS = [
 interface SettingsProps {
   open: boolean
   settings: AppSettings
-  licenseStatus: LicenseStatus
   onClose: () => void
   onThemeChange: (theme: AppSettings['theme']) => void
   onLanguageChange: (language: AppLanguage) => void
-  onPurchase: () => Promise<void> | void
-  onRestore: () => Promise<void> | void
 }
 
-type SettingsTab = 'appearance' | 'shortcuts' | 'license' | 'about'
+type SettingsTab = 'appearance' | 'shortcuts' | 'about'
 
 export function Settings({
   open,
   settings,
-  licenseStatus,
   onClose,
   onThemeChange,
   onLanguageChange,
-  onPurchase,
-  onRestore,
 }: SettingsProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
@@ -51,7 +45,6 @@ export function Settings({
   const tabs = useMemo<Array<{ id: SettingsTab; label: string }>>(() => ([
     { id: 'appearance', label: t('settings.appearance') },
     { id: 'shortcuts', label: t('settings.shortcuts') },
-    { id: 'license', label: t('settings.license') },
     { id: 'about', label: t('settings.about') },
   ]), [t])
   const currentLanguageLabel = useMemo(
@@ -150,66 +143,6 @@ export function Settings({
                     <code>{item.combo}</code>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {activeTab === 'license' && (
-              <div className="settings-stack">
-                <div className={`license-status-badge ${licenseStatus.isPro ? 'is-pro' : 'is-free'}`}>
-                  <span className="license-status-icon">
-                    {licenseStatus.isPro ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                    )}
-                  </span>
-                  <div className="license-status-copy">
-                    <strong className="license-status-plan">
-                      {licenseStatus.isPro ? t('settings.pro') : t('settings.free')}
-                    </strong>
-                    <span className="license-status-label">{t('settings.currentPlan')}</span>
-                  </div>
-                </div>
-
-                {!licenseStatus.isPro && (
-                  <>
-                    <div className="license-promo">
-                      <h4 className="license-promo-title">{t('license.promoTitle')}</h4>
-                      <p className="license-promo-desc">{t('license.promoDesc')}</p>
-                    </div>
-
-                    <div className="license-benefits">
-                      {(['benefitExport', 'benefitDiff', 'benefitTags', 'benefitFuture'] as const).map((key) => (
-                        <div className="license-benefit" key={key}>
-                          <span className="license-benefit-check">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                          </span>
-                          <span>{t(`license.${key}`)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <button className="license-upgrade-btn" onClick={() => void onPurchase()}>
-                      {t('license.upgradeCta')}
-                    </button>
-                    <p className="license-cta-note">{t('license.ctaNote')}</p>
-                    <button className="license-restore-btn" onClick={() => void onRestore()}>
-                      {t('settings.restore')}
-                    </button>
-                  </>
-                )}
-
-                {licenseStatus.isPro && (
-                  <div className="license-pro-thanks">
-                    <p>{t('license.proThanks')}</p>
-                  </div>
-                )}
               </div>
             )}
 

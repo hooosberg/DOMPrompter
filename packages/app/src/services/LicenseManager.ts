@@ -3,28 +3,25 @@ import type { LicenseFeature } from '../shared/license'
 
 export class LicenseManager {
   static async getStatus(): Promise<LicenseStatus> {
-    return window.electronAPI.license.getStatus()
+    return {
+      isPro: true,
+      provider: 'community',
+      lastValidatedAt: null,
+    } as LicenseStatus
   }
 
   static async purchase(): Promise<LicenseActionResult> {
-    return window.electronAPI.license.purchase()
+    return { success: true }
   }
 
   static async restore(): Promise<LicenseActionResult> {
-    return window.electronAPI.license.restore()
+    return { success: true }
   }
 
-  static checkFeatureAccess(feature: LicenseFeature, status: LicenseStatus) {
-    if (feature === 'page-export' || feature === 'premium-themes') {
-      return {
-        allowed: status.isPro,
-        reason: status.isPro ? null : 'pro-required',
-      }
-    }
-
+  static checkFeatureAccess(_feature: LicenseFeature, _status: LicenseStatus) {
     return {
-      allowed: false,
-      reason: 'unknown-feature',
+      allowed: true,
+      reason: null,
     }
   }
 }

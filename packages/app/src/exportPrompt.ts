@@ -5,6 +5,7 @@ import type {
   PageContextDescriptor,
   PageContextSnapshot,
 } from './types'
+import { EXPORT_INCLUDE_DETAILS, EXPORT_INCLUDE_JSON } from './shared/edition'
 
 export interface PageExportElement {
   backendNodeId: number
@@ -258,13 +259,15 @@ export function buildPageExportPrompt(args: {
       if (entry.textPreview) {
         itemLines.push(`   - textPreview: "${entry.textPreview}"`)
       }
-      const hintKeys = Object.keys(entry.identityHints)
-      if (hintKeys.length > 0) {
-        const hintParts = hintKeys.map((key) => `${key}="${entry.identityHints[key]}"`)
-        itemLines.push(`   - identity: ${hintParts.join(', ')}`)
-      }
-      if (entry.ancestorPath.length > 0) {
-        itemLines.push(`   - location: ${entry.ancestorPath.join(' > ')}`)
+      if (EXPORT_INCLUDE_DETAILS) {
+        const hintKeys = Object.keys(entry.identityHints)
+        if (hintKeys.length > 0) {
+          const hintParts = hintKeys.map((key) => `${key}="${entry.identityHints[key]}"`)
+          itemLines.push(`   - identity: ${hintParts.join(', ')}`)
+        }
+        if (entry.ancestorPath.length > 0) {
+          itemLines.push(`   - location: ${entry.ancestorPath.join(' > ')}`)
+        }
       }
       if (Object.keys(entry.styleDiff).length > 0) {
         itemLines.push(`   - styleChanges: ${JSON.stringify(entry.styleDiff)}`)
@@ -274,11 +277,13 @@ export function buildPageExportPrompt(args: {
       }
       return itemLines
     }),
-    '',
-    'Structured JSON:',
-    '```json',
-    JSON.stringify(payload, null, 2),
-    '```',
+    ...(EXPORT_INCLUDE_JSON ? [
+      '',
+      'Structured JSON:',
+      '```json',
+      JSON.stringify(payload, null, 2),
+      '```',
+    ] : []),
   ]
 
   return lines.join('\n')

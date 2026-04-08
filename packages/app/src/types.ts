@@ -232,7 +232,7 @@ export interface AppSettings {
 
 export interface LicenseStatus {
   isPro: boolean
-  provider: 'mas' | 'dev-stub' | 'unsupported'
+  provider: 'mas' | 'dev-stub' | 'unsupported' | 'community'
   productId?: string
   lastValidatedAt?: string | null
 }
