@@ -158,6 +158,7 @@ export function Settings({
                   <div className="settings-about-meta">
                     <strong className="settings-about-name">{APP_NAME}</strong>
                     <span className="settings-about-version">{t('about.version', { version: '0.1.0' })}</span>
+                    <span className="settings-about-edition">{t('about.edition')}</span>
                   </div>
                 </div>
                 <p className="settings-copy">{t('about.description')}</p>

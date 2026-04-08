@@ -6,10 +6,10 @@
 export const EDITION = 'community' as const
 
 /** Max elements tracked in the page edit ledger */
-export const MAX_TRACKED_ELEMENTS = 5
+export const MAX_TRACKED_ELEMENTS = 1
 
 /** Max tags (annotations) allowed at the same time */
-export const MAX_TAGS = 5
+export const MAX_TAGS = 1
 
 /** Whether the structured JSON block is included in exported prompts */
 export const EXPORT_INCLUDE_JSON = false

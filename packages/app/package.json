@@ -44,6 +44,7 @@
   "build": {
     "appId": "com.domprompter.community",
     "productName": "DOMPrompter",
+    "icon": "build/icon",
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -51,6 +52,7 @@
     ],
     "mac": {
       "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
       "target": [
         "dmg"
       ],
@@ -60,6 +62,7 @@
       "title": "DOMPrompter"
     },
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
       ]
@@ -68,20 +71,6 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false
-    },
-    "extraResources": [
-      { "from": "build/en.lproj", "to": "en.lproj" },
-      { "from": "build/zh-Hans.lproj", "to": "zh-Hans.lproj" },
-      { "from": "build/zh-Hant.lproj", "to": "zh-Hant.lproj" },
-      { "from": "build/ja.lproj", "to": "ja.lproj" },
-      { "from": "build/ko.lproj", "to": "ko.lproj" },
-      { "from": "build/fr.lproj", "to": "fr.lproj" },
-      { "from": "build/de.lproj", "to": "de.lproj" },
-      { "from": "build/es.lproj", "to": "es.lproj" },
-      { "from": "build/pt.lproj", "to": "pt.lproj" },
-      { "from": "build/it.lproj", "to": "it.lproj" },
-      { "from": "build/ru.lproj", "to": "ru.lproj" },
-      { "from": "build/ar.lproj", "to": "ar.lproj" }
-    ]
+    }
   }
 }

@@ -314,6 +314,8 @@ export default function App() {
   const pageIdentityRef = useRef('')
   const overlayNudgeChangeRef = useRef<OverlayNudgeChange | null>(null)
   const contextKeyRef = useRef('')
+  // Community Edition: signal a limit-reached toast from inside a setState callback
+  const limitReachedMsgRef = useRef<string | null>(null)
 
   const [url, setUrl] = useState(DEFAULT_URL)
   const [addressBarUrl, setAddressBarUrl] = useState(DEFAULT_URL)
@@ -423,6 +425,17 @@ export default function App() {
     window.setTimeout(() => setToast(null), 2200)
   }, [])
 
+  // Community Edition: consume limit-reached signals set inside setState callbacks
+  useEffect(() => {
+    if (limitReachedMsgRef.current) {
+      const kind = limitReachedMsgRef.current
+      limitReachedMsgRef.current = null
+      if (kind === 'element') {
+        flash(t('toast.maxElementsReached'))
+      }
+    }
+  })
+
   const copyText = useCallback(async (text: string, successMessage: string) => {
     await navigator.clipboard.writeText(text)
     flash(successMessage)
@@ -445,16 +458,12 @@ export default function App() {
   ) => {
     setPageEditLedger((current) => {
       const next = updater(current)
-      // Community Edition: cap tracked elements
-      const keys = Object.keys(next)
-      if (keys.length > MAX_TRACKED_ELEMENTS) {
-        const sorted = keys
-          .map((k) => ({ k, updatedAt: next[Number(k)].updatedAt }))
-          .sort((a, b) => b.updatedAt - a.updatedAt)
-          .slice(0, MAX_TRACKED_ELEMENTS)
-        const capped: Record<number, PageEditLedgerEntry> = {}
-        sorted.forEach(({ k }) => { capped[Number(k)] = next[Number(k)] })
-        return capped
+      // Community Edition: block adding a second element to the ledger
+      const currentIds = new Set(Object.keys(current))
+      const newIds = Object.keys(next).filter((k) => !currentIds.has(k))
+      if (newIds.length > 0 && currentIds.size >= MAX_TRACKED_ELEMENTS) {
+        limitReachedMsgRef.current = 'element'
+        return current
       }
       return next
     })
@@ -528,9 +537,9 @@ export default function App() {
       ? latestTags.find((tag) => tag.id === tagId) || null
       : latestTags.find((tag) => tagHasTarget(tag, targetElement.backendNodeId)) || null
 
-    // Community Edition: cap total tags (only block new tags, allow edits)
+    // Community Edition: block new tags beyond limit
     if (trimmedText && !existingTag && latestTags.length >= MAX_TAGS) {
-      flash(t('toast.maxTagsReached', { max: MAX_TAGS }))
+      flash(t('toast.maxTagsReached'))
       return
     }
 

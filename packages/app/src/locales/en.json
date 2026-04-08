@@ -85,7 +85,8 @@
     "promptCopied": "Page prompt copied",
     "noPrompt": "No page-level prompt is available yet",
     "elementCssCopied": "Element CSS copied",
-    "maxTagsReached": "Tag limit reached (max {{max}} in Community Edition)"
+    "maxTagsReached": "Tag limit reached — get the Pro version on the App Store",
+    "maxElementsReached": "Element limit reached — get the Pro version on the App Store"
   },
   "settings": {
     "title": "Settings",
@@ -131,7 +132,8 @@
     "terms": "Terms of Service",
     "github": "GitHub",
     "copyright": "\u00a9 2025 hooosberg. All rights reserved.",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "edition": "Community Edition"
   },
   "shortcuts": {
     "openSettings": "Open Settings",
