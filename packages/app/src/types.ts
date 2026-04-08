@@ -251,6 +251,7 @@ declare global {
       disconnect: () => Promise<void>
       setPanelWidth: (width: number) => Promise<void>
       setBuiltinViewInteractive: (interactive: boolean) => Promise<boolean>
+      setModalOpen: (open: boolean) => Promise<void>
       startInspect: () => Promise<boolean>
       stopInspect: () => Promise<void>
       setActiveEditProperty: (property: ActiveEditProperty | null) => Promise<void>

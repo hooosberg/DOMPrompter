@@ -7,8 +7,6 @@ import type {
 } from './types'
 import { EXPORT_INCLUDE_DETAILS, EXPORT_INCLUDE_JSON } from './shared/edition'
 
-export const COMMUNITY_EXPORT_MAX_CHARS = 30
-
 export interface PageExportElement {
   backendNodeId: number
   selector: string
@@ -172,17 +170,20 @@ export function buildPageExportPrompt(args: {
   pageUrl: string
   targetUrl: string
   pageContext: PageContextDescriptor
+  /** If set, only the first N elements are included in the output */
+  elementLimit?: number
 }) {
   const {
     appName,
     currentElement,
-    elements,
     summaryMeta,
     pageTitle,
     pageUrl,
     targetUrl,
     pageContext,
+    elementLimit,
   } = args
+  const elements = elementLimit != null ? args.elements.slice(0, elementLimit) : args.elements
   const exportedAt = new Date().toISOString()
   const currentSelection = currentElement
     ? {
@@ -291,20 +292,3 @@ export function buildPageExportPrompt(args: {
   return lines.join('\n')
 }
 
-export function buildCommunityExportPrompt(args: {
-  appName: string
-  pageContext: PageContextDescriptor
-  summaryMeta: ExportPromptSummaryMeta
-}): string {
-  const { appName, pageContext, summaryMeta } = args
-  const raw = `${pageContext.pageLabel}: ${summaryMeta.elementCount} element${summaryMeta.elementCount === 1 ? '' : 's'}, ${summaryMeta.tagCount} tag${summaryMeta.tagCount === 1 ? '' : 's'}`
-  const simplified = raw.length > COMMUNITY_EXPORT_MAX_CHARS ? `${raw.slice(0, COMMUNITY_EXPORT_MAX_CHARS)}…` : raw
-
-  return [
-    simplified,
-    '',
-    '---',
-    `${appName} Community Edition — simplified export.`,
-    'Get the Pro version on the Mac App Store for the full structured AI prompt.',
-  ].join('\n')
-}

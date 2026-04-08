@@ -106,18 +106,22 @@
     "currentPlan": "当前计划",
     "free": "免费版",
     "pro": "专业版",
+    "community": "社区版",
     "buyPro": "购买 Pro",
     "restore": "恢复购买"
   },
   "license": {
     "promoTitle": "解锁 DOMPrompter Pro",
     "promoDesc": "充分发挥可视化检查工作流的潜力。导出整页提示词、追踪每次样式变化、使用自然语言注释。",
-    "benefitExport": "无限页面提示词导出",
+    "communityPromoDesc": "你正在使用免费社区版。Mac App Store 上的 Pro 版可导出不限数量的元素，获取完整结构化 AI 提示词。",
+    "benefitExport": "无限元素导出 — 每次导出包含全部元素",
     "benefitDiff": "样式差异追踪（修改前/后）",
     "benefitTags": "自然语言标签与注释",
     "benefitFuture": "包含所有未来 Pro 功能",
     "upgradeCta": "升级到 Pro — $19.99",
+    "getOnAppStore": "了解正式版 →",
     "ctaNote": "一次付费，无订阅。Pro 功能永久解锁。",
+    "communityCtaNote": "访问官网了解正式版详情。",
     "proThanks": "感谢支持 DOMPrompter！所有 Pro 功能已解锁。一次购买即可享有我们未来添加的每项 Pro 功能。",
     "purchase": "购买 Pro",
     "restore": "恢复购买",
@@ -420,9 +424,22 @@
       "copyTitle": "复制当前页面会话内的全部微调摘要和标签",
       "copyButton": "导出修改提示词",
       "copied": "已复制页面级修改提示词",
-      "empty": "还没有收集到页面级修改。继续在画布上调整元素后，DOMPrompter 会自动整理整页提示词。",
-      "communityBadge": "社区版",
-      "communityNotice": "精简版导出 · 前往 Mac App Store 下载正式版获取完整 AI 提示词"
+      "empty": "还没有收集到页面级修改。继续在画布上调整元素后，DOMPrompter 会自动整理整页提示词。"
     }
+  },
+  "exportCompare": {
+    "kicker": "社区版",
+    "title": "导出提示词 — 版本对比",
+    "diffNote": "社区版导出包含 {{totalCount}} 个元素中的 {{communityCount}} 个，升级正式版可导出全部 {{totalCount}} 个。",
+    "diffNoteSame": "当前共 {{count}} 个元素，社区版与正式版导出内容完全一致。",
+    "communityLabel": "社区版 · 免费",
+    "communityMeta": "包含 {{count}} 个元素",
+    "proLabel": "正式版 · App Store",
+    "proMeta": "全部 {{count}} 个元素",
+    "getProBtn": "了解正式版 →",
+    "copyBtn": "复制社区版提示词",
+    "copying": "复制中…",
+    "copyDone": "已复制！",
+    "footerNote": "唯一区别：正式版可导出全部元素，其余内容完全相同。"
   }
 }

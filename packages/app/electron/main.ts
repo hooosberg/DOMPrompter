@@ -44,6 +44,7 @@ interface WindowSession {
   inspectorService: InspectorService | null
   debuggerTransport: ElectronDebuggerTransport | null
   builtinViewInteractive: boolean
+  modalOpen: boolean
   currentRightPanelWidth: number
 }
 
@@ -843,8 +844,9 @@ function updateBrowserViewBounds(session: WindowSession) {
 
   const bounds = session.window.getContentBounds()
   const rightPanelWidth = Math.max(0, Math.round(session.currentRightPanelWidth))
+  const isVisible = session.builtinViewInteractive && !session.modalOpen
   const nextBounds = {
-    x: session.builtinViewInteractive ? 0 : -(bounds.width + 10000),
+    x: isVisible ? 0 : -(bounds.width + 10000),
     y: TOP_CHROME_HEIGHT,
     width: Math.max(100, bounds.width - rightPanelWidth),
     height: Math.max(100, bounds.height - TOP_CHROME_HEIGHT),
@@ -920,6 +922,7 @@ function createWindow() {
     inspectorService: null,
     debuggerTransport: null,
     builtinViewInteractive: false,
+    modalOpen: false,
     currentRightPanelWidth: RIGHT_PANEL_WIDTH,
   }
 
@@ -1147,6 +1150,13 @@ ipcMain.handle('set-builtin-view-interactive', async (event, interactive: boolea
     console.error('Failed to toggle BrowserView interactivity:', error)
     return false
   }
+})
+
+ipcMain.handle('set-modal-open', async (event, open: boolean): Promise<void> => {
+  const session = getSessionFromEvent(event)
+  if (!session) return
+  session.modalOpen = open
+  updateBrowserViewBounds(session)
 })
 
 ipcMain.handle('start-inspect', async (event): Promise<boolean> => {

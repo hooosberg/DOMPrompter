@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent 
 import { useTranslation } from 'react-i18next'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { Settings } from './components/Settings'
-import { MAX_TRACKED_ELEMENTS, MAX_TAGS } from './shared/edition'
+import { MAX_TRACKED_ELEMENTS, MAX_TAGS, EXPORT_MAX_ELEMENTS } from './shared/edition'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
-import { buildPageContextDescriptor, buildCommunityExportPrompt, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
+import { ExportCompareDialog } from './components/ExportCompareDialog'
+import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
 import { normalizeAppLanguage, RTL_APP_LANGUAGES } from './shared/languages'
 import { buildStyleHistorySlotKey, undoPersistedHistory, redoPersistedHistory, resetPersistedHistory, computeStyleDiffFromHistory } from './styleHistory'
 import type {
@@ -339,6 +340,8 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [exportDialogData, setExportDialogData] = useState<{ community: string; full: string } | null>(null)
   const [recentHtmlFiles, setRecentHtmlFiles] = useState<string[]>(() => loadRecentHtmlFiles())
 
   useEffect(() => {
@@ -1232,8 +1235,6 @@ export default function App() {
       return
     }
 
-    // Community Edition: export is always allowed
-
     let livePageContextSnapshot: PageContextSnapshot | null = null
     try {
       livePageContextSnapshot = await window.electronAPI.getPageContextSnapshot()
@@ -1249,14 +1250,23 @@ export default function App() {
       targetUrl: url,
     })
 
-    const livePrompt = buildCommunityExportPrompt({
+    const baseArgs = {
       appName: APP_NAME,
-      pageContext: livePageContext,
+      currentElement: element,
+      elements: pageExportElements,
       summaryMeta: exportSummaryMeta,
-    })
+      pageTitle,
+      pageUrl,
+      targetUrl: url,
+      pageContext: livePageContext,
+    }
 
-    await copyText(livePrompt, t('toast.promptCopiedCommunity'))
-  }, [canExportPrompt, copyText, exportSummaryMeta, flash, pageTitle, pageUrl, t, url])
+    const communityPrompt = buildPageExportPrompt({ ...baseArgs, elementLimit: EXPORT_MAX_ELEMENTS })
+    const fullPrompt = buildPageExportPrompt(baseArgs)
+
+    setExportDialogData({ community: communityPrompt, full: fullPrompt })
+    setExportDialogOpen(true)
+  }, [canExportPrompt, element, exportSummaryMeta, flash, pageExportElements, pageTitle, pageUrl, t, url])
 
   const handleCopyElementCSS = useCallback(async () => {
     if (!element) return
@@ -1569,6 +1579,20 @@ export default function App() {
 
       <div id="inspector-top-layer" className="inspector-top-layer" />
       {toast && <div className="toast">{toast}</div>}
+
+      <ExportCompareDialog
+        open={exportDialogOpen}
+        onClose={() => setExportDialogOpen(false)}
+        onCopy={async () => {
+          if (!exportDialogData) return
+          await copyText(exportDialogData.community, t('toast.promptCopied'))
+          setExportDialogOpen(false)
+        }}
+        communityPrompt={exportDialogData?.community ?? ''}
+        fullPrompt={exportDialogData?.full ?? ''}
+        communityElementCount={Math.min(EXPORT_MAX_ELEMENTS, exportSummaryMeta.elementCount)}
+        totalElementCount={exportSummaryMeta.elementCount}
+      />
     </div>
   )
 }

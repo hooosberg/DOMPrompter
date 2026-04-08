@@ -2189,10 +2189,6 @@ export function PropertiesWorkbench({
             {copiedPrompt ? t('workbench.export.copied') : t('workbench.export.copyButton')}
           </button>
 
-          <div className="community-export-notice">
-            <span className="community-export-notice-badge">{t('workbench.export.communityBadge')}</span>
-            <span className="community-export-notice-text">{t('workbench.export.communityNotice')}</span>
-          </div>
         </SectionBlock>
       </div>
     </div>

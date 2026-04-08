@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   disconnect: (): Promise<void> => ipcRenderer.invoke('disconnect'),
   setPanelWidth: (width: number): Promise<void> => ipcRenderer.invoke('set-panel-width', width),
   setBuiltinViewInteractive: (interactive: boolean): Promise<boolean> => ipcRenderer.invoke('set-builtin-view-interactive', interactive),
+  setModalOpen: (open: boolean): Promise<void> => ipcRenderer.invoke('set-modal-open', open),
   startInspect: (): Promise<boolean> => ipcRenderer.invoke('start-inspect'),
   stopInspect: (): Promise<void> => ipcRenderer.invoke('stop-inspect'),
   setActiveEditProperty: (property: string | null): Promise<void> => ipcRenderer.invoke('set-active-edit-property', property),

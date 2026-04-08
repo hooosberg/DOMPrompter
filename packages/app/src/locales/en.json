@@ -106,18 +106,22 @@
     "currentPlan": "Current Plan",
     "free": "Free",
     "pro": "Pro",
+    "community": "Community Edition",
     "buyPro": "Buy Pro",
     "restore": "Restore Purchase"
   },
   "license": {
     "promoTitle": "Unlock DOMPrompter Pro",
     "promoDesc": "Get the most out of your visual inspection workflow. Export full-page prompts, track every style change, and annotate with natural language.",
-    "benefitExport": "Unlimited page prompt export",
+    "communityPromoDesc": "You're using the free Community Edition. The Pro version on the Mac App Store unlocks unlimited element exports and gives you the full structured AI prompt.",
+    "benefitExport": "Unlimited element export — all elements in every prompt",
     "benefitDiff": "Style diff tracking (before/after)",
     "benefitTags": "Natural language tags & annotations",
     "benefitFuture": "All future Pro features included",
     "upgradeCta": "Upgrade to Pro \u2014 $19.99",
+    "getOnAppStore": "Learn more about Pro →",
     "ctaNote": "One-time payment. No subscription. Pro features stay unlocked permanently.",
+    "communityCtaNote": "Visit the website to learn more about the Pro version.",
     "proThanks": "Thank you for supporting DOMPrompter! All Pro features are unlocked. Your one-time purchase covers every future Pro feature we add.",
     "purchase": "Purchase Pro",
     "restore": "Restore Purchase",
@@ -420,9 +424,22 @@
       "copyTitle": "Copy the complete tuning summary and tags for the current page session",
       "copyButton": "Export Prompt",
       "copied": "Page prompt copied",
-      "empty": "No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you.",
-      "communityBadge": "Community",
-      "communityNotice": "Simplified export · Get the Pro version on the Mac App Store for the full structured AI prompt"
+      "empty": "No page-level edits have been collected yet. Adjust elements on the canvas and DOMPrompter will assemble a page prompt for you."
     }
+  },
+  "exportCompare": {
+    "kicker": "Community Edition",
+    "title": "Export Prompt — Compare Versions",
+    "diffNote": "Community export includes {{communityCount}} of {{totalCount}} elements. Get Pro for all {{totalCount}}.",
+    "diffNoteSame": "You have {{count}} element(s) — same output as Pro for this session.",
+    "communityLabel": "Community · Free",
+    "communityMeta": "{{count}} element(s) included",
+    "proLabel": "Pro · App Store",
+    "proMeta": "All {{count}} element(s)",
+    "getProBtn": "Learn more about Pro →",
+    "copyBtn": "Copy Community Prompt",
+    "copying": "Copying…",
+    "copyDone": "Copied!",
+    "footerNote": "Only difference: Pro exports all elements. Everything else is identical."
   }
 }

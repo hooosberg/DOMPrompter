@@ -4,3 +4,4 @@ export const PRIVACY_URL = 'https://hooosberg.github.io/DOMPrompter/pages/privac
 export const TERMS_URL = 'https://hooosberg.github.io/DOMPrompter/pages/terms.html'
 export const GITHUB_REPO_URL = 'https://github.com/hooosberg/DOMPrompter'
 export const DEVELOPER_GITHUB_URL = 'https://github.com/hooosberg'
+export const MAS_APP_URL = 'https://hooosberg.github.io/DOMPrompter/pages/index.html'

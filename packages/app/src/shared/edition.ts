@@ -1,7 +1,8 @@
 /**
  * Community Edition configuration.
  * DMG/Windows builds allow unlimited element tracking and tagging.
- * The differentiator from Pro (MAS) is the simplified export prompt.
+ * The differentiator from Pro (MAS) is that the exported prompt is limited to
+ * EXPORT_MAX_ELEMENTS elements. All other prompt content is identical.
  */
 
 export const EDITION = 'community' as const
@@ -18,5 +19,5 @@ export const EXPORT_INCLUDE_JSON = false
 /** Whether identity hints & ancestor paths are included in exported prompts */
 export const EXPORT_INCLUDE_DETAILS = false
 
-/** Community edition exports a simplified prompt instead of the full structured one */
-export const EXPORT_COMMUNITY_SIMPLIFIED = true
+/** Community edition export is limited to this many elements */
+export const EXPORT_MAX_ELEMENTS = 2
