@@ -48,19 +48,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onContextAction: (callback: (action: string) => void): void => {
     ipcRenderer.on('context-action', (_event, action) => callback(action))
   },
-  removeAllListeners: (): void => {
+  removeCdpListeners: (): void => {
     ipcRenderer.removeAllListeners('element-selected')
     ipcRenderer.removeAllListeners('browser-view-loaded')
     ipcRenderer.removeAllListeners('property-activated')
     ipcRenderer.removeAllListeners('property-increment')
     ipcRenderer.removeAllListeners('context-action')
-    ipcRenderer.removeAllListeners('shortcuts:openSettings')
-    ipcRenderer.removeAllListeners('shortcuts:openHtmlFile')
-    ipcRenderer.removeAllListeners('shortcuts:reloadPage')
-    ipcRenderer.removeAllListeners('shortcuts:forceReload')
-    ipcRenderer.removeAllListeners('shortcuts:toggleToolbar')
-    ipcRenderer.removeAllListeners('shortcuts:focusAddressBar')
-    ipcRenderer.removeAllListeners('shortcuts:newWindow')
   },
 
   generateAIPrompt: (element: any): Promise<string> => ipcRenderer.invoke('generate-ai-prompt', element),

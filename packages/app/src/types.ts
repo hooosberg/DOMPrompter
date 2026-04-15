@@ -273,7 +273,7 @@ declare global {
       onPropertyActivated: (cb: (property: ActiveEditProperty) => void) => void
       onPropertyIncrement: (cb: (cssProperty: string) => void) => void
       onContextAction: (cb: (action: string) => void) => void
-      removeAllListeners: () => void
+      removeCdpListeners: () => void
       generateAIPrompt: (el: InspectedElement) => Promise<string>
       generateCSS: (el: InspectedElement) => Promise<string>
       generateCSSVariables: (vars: Record<string, string>) => Promise<string>

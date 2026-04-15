@@ -1144,7 +1144,7 @@ export default function App() {
       void refreshPageContextSnapshot()
     })
 
-    return () => window.electronAPI.removeAllListeners()
+    return () => window.electronAPI.removeCdpListeners()
   }, [addressBarUrl, refreshPageContextSnapshot, resetInspectorState, syncCurrentElement, url])
 
   useEffect(() => {

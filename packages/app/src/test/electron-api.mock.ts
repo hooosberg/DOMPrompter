@@ -73,7 +73,7 @@ export function createElectronApiMock() {
     onPropertyActivated: vi.fn(),
     onPropertyIncrement: vi.fn(),
     onContextAction: vi.fn(),
-    removeAllListeners: vi.fn(),
+    removeCdpListeners: vi.fn(),
     generateAIPrompt: vi.fn(asyncValue('')),
     generateCSS: vi.fn(asyncValue('')),
     generateCSSVariables: vi.fn(asyncValue('')),
