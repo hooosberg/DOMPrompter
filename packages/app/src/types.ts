@@ -289,6 +289,7 @@ declare global {
       }
       shortcuts: {
         onOpenSettings: (cb: () => void) => void
+        onOpenAbout: (cb: () => void) => void
         onOpenHtmlFile: (cb: () => void) => void
         onReloadPage: (cb: () => void) => void
         onForceReload: (cb: () => void) => void

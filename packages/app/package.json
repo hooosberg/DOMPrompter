@@ -43,7 +43,7 @@
   "build": {
     "appId": "com.domprompter.app",
     "productName": "DOMPrompter",
-    "buildVersion": "25",
+    "buildVersion": "26",
     "directories": {
       "output": "../../release"
     },

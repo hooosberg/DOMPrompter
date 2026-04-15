@@ -74,6 +74,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onOpenSettings: (callback: () => void): void => {
       ipcRenderer.on('shortcuts:openSettings', () => callback())
     },
+    onOpenAbout: (callback: () => void): void => {
+      ipcRenderer.on('shortcuts:openAbout', () => callback())
+    },
     onOpenHtmlFile: (callback: () => void): void => {
       ipcRenderer.on('shortcuts:openHtmlFile', () => callback())
     },

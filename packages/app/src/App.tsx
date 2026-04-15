@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent 
 import { useTranslation } from 'react-i18next'
 import { OnboardingWizard } from './components/OnboardingWizard'
 import { PaywallDialog } from './components/PaywallDialog'
-import { Settings } from './components/Settings'
+import { Settings, type SettingsTab } from './components/Settings'
 import { PropertiesWorkbench } from './components/properties/PropertiesWorkbench'
 import { buildPageContextDescriptor, buildPageExportPrompt, type PageExportElement } from './exportPrompt'
 import { normalizeAppLanguage, RTL_APP_LANGUAGES } from './shared/languages'
@@ -318,6 +318,7 @@ export default function App() {
   const [workbenchWidth, setWorkbenchWidth] = useState(DEFAULT_WORKBENCH_WIDTH)
   const shortcutActionsRef = useRef({
     openSettings: () => {},
+    openAbout: () => {},
     openHtmlFile: () => {},
     reloadPage: () => {},
     forceReload: () => {},
@@ -357,6 +358,7 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus>(DEFAULT_LICENSE_STATUS)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('appearance')
   const [paywallOpen, setPaywallOpen] = useState(false)
   const [, setLicenseBusy] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -1373,6 +1375,7 @@ export default function App() {
   }, [flash, refreshLicenseStatus, t])
 
   const handleOpenSettings = useCallback(() => {
+    setSettingsInitialTab('appearance')
     setSettingsOpen((prev) => {
       const next = !prev
       if (connected) {
@@ -1417,7 +1420,8 @@ export default function App() {
   }, [element, isWorkbenchVisible])
 
   shortcutActionsRef.current = {
-    openSettings: () => setSettingsOpen(true),
+    openSettings: () => { setSettingsInitialTab('appearance'); setSettingsOpen(true) },
+    openAbout: () => { setSettingsInitialTab('about'); setSettingsOpen(true) },
     openHtmlFile: () => {
       void handleLoadHtmlFile()
     },
@@ -1436,6 +1440,7 @@ export default function App() {
 
   useEffect(() => {
     window.electronAPI.shortcuts.onOpenSettings(() => shortcutActionsRef.current.openSettings())
+    window.electronAPI.shortcuts.onOpenAbout(() => shortcutActionsRef.current.openAbout())
     window.electronAPI.shortcuts.onOpenHtmlFile(() => shortcutActionsRef.current.openHtmlFile())
     window.electronAPI.shortcuts.onReloadPage(() => shortcutActionsRef.current.reloadPage())
     window.electronAPI.shortcuts.onForceReload(() => shortcutActionsRef.current.forceReload())
@@ -1552,6 +1557,7 @@ export default function App() {
               open={settingsOpen}
               settings={settings}
               licenseStatus={licenseStatus}
+              initialTab={settingsInitialTab}
               onClose={() => setSettingsOpen(false)}
               onThemeChange={handleThemeChange}
               onLanguageChange={handleLanguageChange}

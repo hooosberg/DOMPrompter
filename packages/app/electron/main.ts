@@ -626,7 +626,7 @@ function buildApplicationMenu(labels: MenuLabels) {
     {
       label: labels.app,
       submenu: [
-        { label: labels.about, click: () => sendShortcut('shortcuts:openSettings') },
+        { label: labels.about, click: () => sendShortcut('shortcuts:openAbout') },
         { type: 'separator' },
         { label: labels.settings, accelerator: 'CmdOrCtrl+,', click: () => sendShortcut('shortcuts:openSettings') },
         { type: 'separator' },
@@ -847,7 +847,7 @@ function createBrowserView(session: WindowSession, url: string) {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
       preload: join(__dirname, 'browserview-preload.js'),
     },
   })
@@ -1142,18 +1142,19 @@ ipcMain.handle('attach-debugger', async (event): Promise<boolean> => {
         session.browserView.webContents.sendInputEvent({ type: 'keyDown', keyCode })
         session.browserView.webContents.sendInputEvent({ type: 'keyUp', keyCode })
       }
+      const labels = getMenuLabels(appSettings.language)
       const contextMenu = Menu.buildFromTemplate([
         {
-          label: '选择上一级元素          Esc',
+          label: labels.inspectorSelectParent,
           click: () => sendKey('Escape'),
         },
         {
-          label: '选择下一级元素          Enter',
+          label: labels.inspectorSelectChild,
           click: () => sendKey('Return'),
         },
         { type: 'separator' },
         {
-          label: '添加标签',
+          label: labels.inspectorAddTag,
           click: () => sendToRenderer(session, 'context-action', 'add-tag'),
         },
       ])

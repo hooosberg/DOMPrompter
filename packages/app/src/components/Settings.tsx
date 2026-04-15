@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GITHUB_REPO_URL, PRIVACY_URL, SUPPORT_URL, TERMS_URL, WEBSITE_URL } from '../shared/externalLinks'
 import { APP_LANGUAGE_OPTIONS } from '../shared/languages'
@@ -21,10 +21,13 @@ const SHORTCUT_ROWS = [
   { key: 'escape', combo: 'Esc' },
 ]
 
+export type SettingsTab = 'appearance' | 'shortcuts' | 'license' | 'about'
+
 interface SettingsProps {
   open: boolean
   settings: AppSettings
   licenseStatus: LicenseStatus
+  initialTab?: SettingsTab
   onClose: () => void
   onThemeChange: (theme: AppSettings['theme']) => void
   onLanguageChange: (language: AppLanguage) => void
@@ -32,12 +35,11 @@ interface SettingsProps {
   onRestore: () => Promise<void> | void
 }
 
-type SettingsTab = 'appearance' | 'shortcuts' | 'license' | 'about'
-
 export function Settings({
   open,
   settings,
   licenseStatus,
+  initialTab = 'appearance',
   onClose,
   onThemeChange,
   onLanguageChange,
@@ -45,7 +47,11 @@ export function Settings({
   onRestore,
 }: SettingsProps) {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab)
+
+  useEffect(() => {
+    setActiveTab(initialTab)
+  }, [initialTab])
   const [languageExpanded, setLanguageExpanded] = useState(false)
 
   const tabs = useMemo<Array<{ id: SettingsTab; label: string }>>(() => ([

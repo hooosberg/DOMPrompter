@@ -14,6 +14,7 @@ const defaultSettings = {
 export function createElectronApiMock() {
   const shortcutListeners = {
     openSettings: [] as Array<() => void>,
+    openAbout: [] as Array<() => void>,
     openHtmlFile: [] as Array<() => void>,
     reloadPage: [] as Array<() => void>,
     forceReload: [] as Array<() => void>,
@@ -89,6 +90,7 @@ export function createElectronApiMock() {
     },
     shortcuts: {
       onOpenSettings: vi.fn((callback: () => void) => { shortcutListeners.openSettings.push(callback) }),
+      onOpenAbout: vi.fn((callback: () => void) => { shortcutListeners.openAbout.push(callback) }),
       onOpenHtmlFile: vi.fn((callback: () => void) => { shortcutListeners.openHtmlFile.push(callback) }),
       onReloadPage: vi.fn((callback: () => void) => { shortcutListeners.reloadPage.push(callback) }),
       onForceReload: vi.fn((callback: () => void) => { shortcutListeners.forceReload.push(callback) }),
