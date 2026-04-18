@@ -32,7 +32,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Mac_App_Store-Coming_Soon-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Coming Soon on Mac App Store" height="40">
+  <a href="https://apps.apple.com/app/id6761685716"><img src="https://img.shields.io/badge/Download_on_the-Mac_App_Store-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download on the Mac App Store" height="40"></a>
 </p>
 
 ---
