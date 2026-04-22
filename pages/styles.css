@@ -796,6 +796,31 @@ details p {
   color: var(--text-primary);
 }
 
+.footer-siblings {
+  max-width: 896px;
+  margin: 16px auto 0;
+  padding: 16px 32px 0;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.footer-siblings-label {
+  color: var(--text-secondary);
+}
+
+.footer-siblings a {
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.footer-siblings a:hover {
+  color: var(--text-primary);
+}
+
 /* ── Background Graphic ── */
 .bg-graphic {
   position: fixed;
