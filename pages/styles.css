@@ -797,39 +797,41 @@ details p {
 }
 
 .more-works {
-  max-width: 896px;
-  margin: 64px auto 32px;
-  padding: 48px 32px;
+  margin: 96px auto 0;
+  padding: 96px 20px;
   text-align: center;
-  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.015);
 }
 
 .more-works-title {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 8px;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
 }
 
 .more-works-sub {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
-  margin: 0 0 32px;
+  margin: 0 0 56px;
 }
 
 .more-works-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 28px;
+  gap: 40px 36px;
+  max-width: 920px;
+  margin: 0 auto;
 }
 
 .more-works-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  width: 96px;
+  gap: 12px;
+  width: 104px;
   text-decoration: none;
   color: var(--text-primary);
   transition: transform 0.2s;

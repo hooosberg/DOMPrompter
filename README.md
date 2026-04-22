@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="pages/img/DMG_Icon_1024x1024.png" width="128" height="128" alt="DOMPrompter Icon" />
+  <img src="pages/img/icon-128.png" width="128" height="128" alt="DOMPrompter Icon" />
 </p>
 
 <h1 align="center">DOMPrompter</h1>
