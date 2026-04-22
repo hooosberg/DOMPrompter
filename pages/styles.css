@@ -796,29 +796,67 @@ details p {
   color: var(--text-primary);
 }
 
-.footer-siblings {
+.more-works {
   max-width: 896px;
-  margin: 16px auto 0;
-  padding: 16px 32px 0;
+  margin: 64px auto 32px;
+  padding: 48px 32px;
+  text-align: center;
   border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.more-works-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.more-works-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 32px;
+}
+
+.more-works-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  justify-content: center;
+  gap: 28px;
 }
 
-.footer-siblings-label {
-  color: var(--text-secondary);
-}
-
-.footer-siblings a {
-  color: var(--text-secondary);
-  transition: color 0.2s;
-}
-
-.footer-siblings a:hover {
+.more-works-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 96px;
+  text-decoration: none;
   color: var(--text-primary);
+  transition: transform 0.2s;
+}
+
+.more-works-card:hover {
+  transform: translateY(-3px);
+}
+
+.more-works-card img {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: contain;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.more-works-card a[href*="uixskills"] img,
+.more-works-card[href*="uixskills"] img,
+.more-works-card[href*="agentlimb"] img {
+  padding: 4px;
+}
+
+.more-works-card span {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* ── Background Graphic ── */
