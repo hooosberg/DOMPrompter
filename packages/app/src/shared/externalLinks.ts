@@ -1,0 +1,6 @@
+export const WEBSITE_URL = 'https://hooosberg.github.io/DOMPrompter/'
+export const SUPPORT_URL = 'https://hooosberg.github.io/DOMPrompter/pages/support.html'
+export const PRIVACY_URL = 'https://hooosberg.github.io/DOMPrompter/pages/privacy.html'
+export const TERMS_URL = 'https://hooosberg.github.io/DOMPrompter/pages/terms.html'
+export const GITHUB_REPO_URL = 'https://github.com/hooosberg/DOMPrompter'
+export const DEVELOPER_GITHUB_URL = 'https://github.com/hooosberg'
