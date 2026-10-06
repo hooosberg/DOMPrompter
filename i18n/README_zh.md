@@ -9,7 +9,7 @@
   <br>
   AI 编程助手与你之间的可视化桥梁
   <br>
-  <a href="https://hooosberg.github.io/DOMPrompter/">官方网站</a>
+  <a href="https://hooosberg.com/apps/domprompter/">官方网站</a>
 </p>
 
 <p align="center">
@@ -112,10 +112,10 @@ DOMPrompter 生成的提示词兼容所有 AI 编程助手：
 
 ## 相关链接
 
-- [官方网站](https://hooosberg.github.io/DOMPrompter/)
-- [支持中心](https://hooosberg.github.io/DOMPrompter/pages/support.html)
-- [隐私政策](https://hooosberg.github.io/DOMPrompter/pages/privacy.html)
-- [服务条款](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
+- [官方网站](https://hooosberg.com/apps/domprompter/)
+- [支持中心](https://hooosberg.com/apps/domprompter/)
+- [隐私政策](https://hooosberg.com/privacy/)
+- [服务条款](https://hooosberg.com/terms/)
 
 ---
 

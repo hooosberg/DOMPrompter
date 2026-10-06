@@ -9,7 +9,7 @@
   <br>
   Muestra a la IA exactamente lo que quieres cambiar
   <br>
-  <a href="https://hooosberg.github.io/DOMPrompter/">Sitio web</a>
+  <a href="https://hooosberg.com/apps/domprompter/">Sitio web</a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
 
 ## Enlaces
 
-- [Sitio web](https://hooosberg.github.io/DOMPrompter/) · [Soporte](https://hooosberg.github.io/DOMPrompter/pages/support.html) · [Privacidad](https://hooosberg.github.io/DOMPrompter/pages/privacy.html) · [Términos](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
+- [Sitio web](https://hooosberg.com/apps/domprompter/) · [Soporte](https://hooosberg.com/apps/domprompter/) · [Privacidad](https://hooosberg.com/privacy/) · [Términos](https://hooosberg.com/terms/)
 
 ---
 

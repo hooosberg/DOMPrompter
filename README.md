@@ -13,8 +13,8 @@
   <a href="https://apps.apple.com/app/id6761685716">
     <img src="https://img.shields.io/badge/Download_on_the-Mac_App_Store-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download on the Mac App Store">
   </a>
-  <a href="https://hooosberg.github.io/DOMPrompter/">
-    <img src="https://img.shields.io/badge/Website-hooosberg.github.io/DOMPrompter-F5A623?style=for-the-badge" alt="Website">
+  <a href="https://hooosberg.com/apps/domprompter/">
+    <img src="https://img.shields.io/badge/Website-hooosberg.com/apps/domprompter/-F5A623?style=for-the-badge" alt="Website">
   </a>
   <a href="https://github.com/hooosberg/DOMPrompter">
     <img src="https://img.shields.io/github/stars/hooosberg/DOMPrompter?style=for-the-badge&logo=github&label=Star&color=24292f" alt="Star on GitHub">
@@ -152,11 +152,11 @@ DOMPrompter's generated prompts are compatible with every major AI coding assist
 
 ## Resources
 
-- **Website**: [hooosberg.github.io/DOMPrompter](https://hooosberg.github.io/DOMPrompter/)
+- **Website**: [hooosberg.com/apps/domprompter/](https://hooosberg.com/apps/domprompter/)
 - **Mac App Store**: [Download DOMPrompter](https://apps.apple.com/app/id6761685716)
-- **Support**: [Support Center](https://hooosberg.github.io/DOMPrompter/pages/support.html)
-- **Privacy Policy**: [Privacy Policy](https://hooosberg.github.io/DOMPrompter/pages/privacy.html)
-- **Terms of Service**: [Terms of Service](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
+- **Support**: [Support Center](https://hooosberg.com/apps/domprompter/)
+- **Privacy Policy**: [Privacy Policy](https://hooosberg.com/privacy/)
+- **Terms of Service**: [Terms of Service](https://hooosberg.com/terms/)
 
 ## Contact
 
@@ -168,11 +168,11 @@ DOMPrompter's generated prompts are compatible with every major AI coding assist
 Built by [hooosberg](https://github.com/hooosberg):
 
 - [AgentLimb](https://agentlimb.com) — teach AI to control your browser
-- [BeRaw](https://hooosberg.github.io/BeRaw/) — Behance raw-image grabber
-- [Packpour](https://hooosberg.github.io/Packpour/) — App Store Connect locale filler
-- [WitNote](https://hooosberg.github.io/WitNote/) — local-first AI writing companion
-- [GlotShot](https://hooosberg.github.io/GlotShot/) — perfect App Store preview images
-- [TrekReel](https://hooosberg.github.io/TrekReel/) — outdoor trails, cinematic reels
+- [BeRaw](https://hooosberg.com/apps/beraw/) — Behance raw-image grabber
+- [Packpour](https://hooosberg.com/apps/packpour/) — App Store Connect locale filler
+- [WitNote](https://hooosberg.com/apps/witnote/) — local-first AI writing companion
+- [GlotShot](https://hooosberg.com/apps/glotshot/) — perfect App Store preview images
+- [TrekReel](https://hooosberg.com/apps/trekreel/) — outdoor trails, cinematic reels
 - [UIXskills](https://uixskills.com) — AI → JSON → Whiteboard → UI
 
 ## License

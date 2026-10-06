@@ -9,7 +9,7 @@
   <br>
   AI에게 변경하고 싶은 부분을 정확히 보여주세요
   <br>
-  <a href="https://hooosberg.github.io/DOMPrompter/">공식 웹사이트</a>
+  <a href="https://hooosberg.com/apps/domprompter/">공식 웹사이트</a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
 
 ## 링크
 
-- [공식 웹사이트](https://hooosberg.github.io/DOMPrompter/) · [지원](https://hooosberg.github.io/DOMPrompter/pages/support.html) · [개인정보](https://hooosberg.github.io/DOMPrompter/pages/privacy.html) · [이용약관](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
+- [공식 웹사이트](https://hooosberg.com/apps/domprompter/) · [지원](https://hooosberg.com/apps/domprompter/) · [개인정보](https://hooosberg.com/privacy/) · [이용약관](https://hooosberg.com/terms/)
 
 ---
 

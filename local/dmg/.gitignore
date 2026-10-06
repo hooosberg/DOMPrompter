@@ -1,0 +1,36 @@
+.DS_Store
+
+# Dependencies
+node_modules/
+.pnpm/
+.pnpm-store/
+
+# Build output
+dist/
+dist-electron/
+build/
+# Keep app icon assets tracked
+!packages/app/build/icon.icns
+!packages/app/build/icon.ico
+coverage/
+.cache/
+.turbo/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor metadata
+.vscode/
+.idea/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt

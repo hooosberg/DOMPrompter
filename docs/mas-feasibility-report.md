@@ -1052,7 +1052,7 @@ const handleCopyExportPrompt = useCallback(async () => {
   "name": "domprompter",
   "version": "0.1.0",
   "productName": "DOMPrompter",
-  "author": "maohuhu",
+  "author": "Hooosberg",
   "scripts": {
     "build": "tsc && vite build",
     "build:mas": "tsc && vite build && electron-builder --mac mas"
@@ -1082,8 +1082,8 @@ const handleCopyExportPrompt = useCallback(async () => {
   },
   "masReview": {
     "productId": "com.domprompter.app.pro.lifetime",
-    "supportUrl": "https://hooosberg.github.io/DOMPrompter/pages/support.html",
-    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/pages/privacy.html"
+    "supportUrl": "https://hooosberg.com/apps/domprompter/",
+    "privacyUrl": "https://hooosberg.com/privacy/"
   }
 }
 ```
@@ -1357,7 +1357,7 @@ pkgutil --check-signature packages/app/dist/mas-arm64/DOMPrompter-0.1.0-arm64.pk
 
 - [ ] App Information 中填分类、年龄分级、版权信息
 - [ ] App Privacy 中填写数据收集问卷，并发布 privacy responses
-- [ ] 填好 Privacy Policy URL：`https://hooosberg.github.io/DOMPrompter/pages/privacy.html`
+- [ ] 填好 Privacy Policy URL：`https://hooosberg.com/privacy/`
 - [ ] 处理 App Encryption Documentation 问卷
 - [ ] 准备 Mac 截图，尺寸使用 16:10，官方当前接受：
   `1280x800` / `1440x900` / `2560x1600` / `2880x1800`

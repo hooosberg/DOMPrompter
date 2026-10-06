@@ -1,0 +1,43 @@
+{
+  "name": "visual-inspector",
+  "version": "0.1.0",
+  "description": "Zero-config visual development tool for Chrome-based applications",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter ./packages/app dev",
+    "dev:app": "pnpm --filter ./packages/app dev",
+    "test": "pnpm --filter ./packages/core test && pnpm --filter ./packages/app test",
+    "test:core": "pnpm --filter ./packages/core test",
+    "test:app": "pnpm --filter ./packages/app test",
+    "test:watch": "pnpm --parallel --filter ./packages/core --filter ./packages/app test:watch",
+    "test:core:watch": "pnpm --filter ./packages/core test:watch",
+    "test:app:watch": "pnpm --filter ./packages/app test:watch",
+    "typecheck": "pnpm --filter ./packages/core exec tsc --noEmit && pnpm --filter ./packages/app exec tsc --noEmit",
+    "i18n:check": "node scripts/i18n-locale-tools.mjs check --base en --strict",
+    "i18n:reference": "node scripts/i18n-locale-tools.mjs reference --base zh --secondary en --out docs/i18n/reference.zh-en.md",
+    "i18n:table": "node scripts/i18n-locale-tools.mjs table --base zh --secondary en",
+    "i18n:tables:all": "node scripts/i18n-locale-tools.mjs table --base zh --secondary en --all",
+    "mas:check": "node scripts/mas-check.mjs",
+    "mas:check:ci": "node scripts/mas-check.mjs --ci",
+    "build:mas": "pnpm --filter ./packages/app build:mas",
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": [
+    "visual-inspector",
+    "electron",
+    "devtools",
+    "cdp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  },
+  "dependencies": {
+    "electron": "^33.4.11"
+  }
+}

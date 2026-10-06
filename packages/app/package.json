@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "DOMPrompter Electron application",
   "productName": "DOMPrompter",
-  "author": "maohuhu",
+  "author": "Hooosberg",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -103,7 +103,7 @@
   },
   "masReview": {
     "productId": "com.domprompter.app.pro.lifetime",
-    "supportUrl": "https://hooosberg.github.io/DOMPrompter/pages/support.html",
-    "privacyUrl": "https://hooosberg.github.io/DOMPrompter/pages/privacy.html"
+    "supportUrl": "https://hooosberg.com/apps/domprompter/",
+    "privacyUrl": "https://hooosberg.com/privacy/"
   }
 }

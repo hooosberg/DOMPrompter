@@ -9,7 +9,7 @@
   <br>
   AIに変更したい箇所を正確に伝える
   <br>
-  <a href="https://hooosberg.github.io/DOMPrompter/">公式サイト</a>
+  <a href="https://hooosberg.com/apps/domprompter/">公式サイト</a>
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
 
 ## リンク
 
-- [公式サイト](https://hooosberg.github.io/DOMPrompter/) · [サポート](https://hooosberg.github.io/DOMPrompter/pages/support.html) · [プライバシー](https://hooosberg.github.io/DOMPrompter/pages/privacy.html) · [利用規約](https://hooosberg.github.io/DOMPrompter/pages/terms.html)
+- [公式サイト](https://hooosberg.com/apps/domprompter/) · [サポート](https://hooosberg.com/apps/domprompter/) · [プライバシー](https://hooosberg.com/privacy/) · [利用規約](https://hooosberg.com/terms/)
 
 ---
 
